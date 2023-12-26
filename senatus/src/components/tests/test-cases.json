@@ -1,0 +1,27 @@
+{
+  "collectionName": "components_tests_test_cases",
+  "info": {
+    "displayName": "Test Cases",
+    "icon": "check",
+    "description": ""
+  },
+  "options": {},
+  "attributes": {
+    "input": {
+      "type": "text"
+    },
+    "output": {
+      "type": "text"
+    },
+    "hidden": {
+      "type": "boolean"
+    },
+    "locked": {
+      "type": "boolean"
+    },
+    "weight": {
+      "type": "float",
+      "private": true
+    }
+  }
+}
