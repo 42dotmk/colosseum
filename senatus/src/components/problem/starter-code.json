@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_problem_starter_codes",
+  "info": {
+    "displayName": "Starter Code",
+    "icon": "alien"
+  },
+  "options": {},
+  "attributes": {
+    "code": {
+      "type": "text"
+    },
+    "language": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::language.language"
+    }
+  }
+}
