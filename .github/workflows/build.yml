@@ -1,0 +1,30 @@
+name: ci
+
+on:
+  push:
+    branches:
+      - "main"
+      - "development"
+      - COLOS-9-deploy
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
+
+      - name: Build and push Senatus image
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          context: ./senatus
+          file: ./senatus/Dockerfile
+          push: true
+          tags: ghcr.io/42dotmk/colosseum-senatus:latest
