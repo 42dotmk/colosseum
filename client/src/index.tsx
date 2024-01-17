@@ -1,14 +1,18 @@
-import React from "react";
+import { ThemeProvider } from "@emotion/react";
 import ReactDOM from "react-dom/client";
-import App from "./App.tsx";
-import { store } from "./app/store";
 import { Provider } from "react-redux";
-import "./index.css";
+import React from "react";
+
+import { store } from "./redux/store.ts";
+import themeConfig from "./theme/index.ts";
+import App from "./App.tsx";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <Provider store={store}>
     <React.StrictMode>
-      <App />
+      <ThemeProvider theme={themeConfig}>
+        <App />
+      </ThemeProvider>
     </React.StrictMode>
   </Provider>
 );
