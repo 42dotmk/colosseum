@@ -1,11 +1,12 @@
 import { Box } from "@mui/material";
 import Header from "./components/shared/header";
+import CompetePage from "./pages/compete";
 
 const App = () => {
   return (
     <Box>
       <Header />
-      <div>Testing out the font</div>
+      <CompetePage />
     </Box>
   );
 }
