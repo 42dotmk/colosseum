@@ -5,6 +5,7 @@ const App = () => {
   return (
     <Box>
       <Header />
+      <div>Testing out the font</div>
     </Box>
   );
 }
