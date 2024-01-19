@@ -8,6 +8,7 @@ import {
   Tabs,
 } from "@mui/material";
 import { Link, useLocation } from 'react-router-dom';
+import themeOptions from '../theme';
 
 const Header = () => {
   const { pathname } = useLocation();
@@ -18,15 +19,10 @@ const Header = () => {
         position="static"
         sx={{ borderBottom: 1, borderColor: "divider" }}
       >
-        <Toolbar sx={{ marginX: "50px" }}>
-          <Box flexGrow={1} display={"inline-flex"}>
+        <Toolbar sx={{ backgroundColor: themeOptions.palette?.background?.default }}>
+          <Box flexGrow={1} sx={{ display: 'inline-flex', margin: 3 }}>
             <img src="/logo.svg" alt="logo" />
-            <Typography
-              color={"primary"}
-              marginX={1}
-              variant="h6"
-              textTransform={"uppercase"}
-            >
+            <Typography color={"primary"} variant="h6" textTransform={"uppercase"} marginX={1} >
               Colosseum
             </Typography>
           </Box>
@@ -37,22 +33,19 @@ const Header = () => {
               indicatorColor="primary"
               textColor="primary"
               variant="scrollable"
+              role="navigation"
+
             >
-              <Tab label="Home" component={Link} to="/home" value="/home" />
-              <Tab label="Compete" component={Link} to="/compete" value="/compete" />
+              <Tab label="Home" component={Link} to="/home" value="/home" sx={{ color: themeOptions.palette?.text?.primary }}/>
+              <Tab label="Compete" component={Link} to="/compete" value="/compete" sx={{ color: themeOptions.palette?.text?.primary }}/>
             </Tabs>
           </Box>
 
-          <Box
-            flexGrow={1}
-            display={"flex"}
-            justifyContent={"flex-end"}
-            gap={1}
-          >
-            <Button variant="outlined" color="inherit">
-              Login
+          <Box flexGrow={1} sx={{ display: 'flex', justifyContent: 'flex-end', margin: 3, gap: 1 }}>
+            <Button variant="outlined" color="secondary" size='medium'>
+              Log in
             </Button>
-            <Button variant="contained" color="primary">
+            <Button variant="contained" color="primary" size='medium'>
               Sign up
             </Button>
           </Box>
