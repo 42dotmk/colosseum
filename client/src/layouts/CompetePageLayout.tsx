@@ -2,18 +2,18 @@ import { Grid } from "@mui/material";
 import { ReactNode } from "react";
 
 type Props = {
-  centerElementChildren: ReactNode;
-  rightPanelChildren: ReactNode;
+  leftGridChildren: ReactNode;
+  rightGridChildren: ReactNode;
 };
 
 const CompetePageLayout = ({
-  centerElementChildren,
-  rightPanelChildren,
+  leftGridChildren,
+  rightGridChildren,
 }: Props) => {
   return (
     <Grid container bgcolor={"background.default"}>
       <Grid item xs={9} height={"100vh"} width={"100vw"}>
-        {centerElementChildren}
+        {leftGridChildren}
       </Grid>
       <Grid
         item
@@ -25,7 +25,7 @@ const CompetePageLayout = ({
           padding: 1,
         }}
       >
-        {rightPanelChildren}
+        {rightGridChildren}
       </Grid>
     </Grid>
   );

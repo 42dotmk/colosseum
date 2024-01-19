@@ -4,7 +4,7 @@ import CompetePageLayout from "../../layouts/CompetePageLayout";
 const CompetePage = () => {
   return (
     <CompetePageLayout
-      centerElementChildren={
+      leftGridChildren={
         <Typography
           color={"primary"}
           marginX={1}
@@ -14,7 +14,8 @@ const CompetePage = () => {
           Center page elements
         </Typography>
       }
-      rightPanelChildren={
+      
+      rightGridChildren={
         <Typography
           color={"primary"}
           marginX={1}
