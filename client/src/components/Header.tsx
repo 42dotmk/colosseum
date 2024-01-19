@@ -1,8 +1,4 @@
-import AppBar from "@mui/material/AppBar";
-import Box from "@mui/material/Box";
-import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
-import Button from "@mui/material/Button";
+import { Toolbar, Box, Typography, Button, AppBar } from '@mui/material';
 
 const Header = () => {
   return (
@@ -18,8 +14,8 @@ const Header = () => {
           </Box>
 
           <Box>
-            <Button color="inherit">Home</Button>
-            <Button color="inherit">Compete</Button>
+            <Button color="inherit" href='/'>Home</Button>
+            <Button color="inherit" href='/compete'>Compete</Button>
           </Box>
 
           <Box flexGrow={1} display={"flex"} justifyContent={"flex-end"} gap={1}>
@@ -32,6 +28,6 @@ const Header = () => {
     </Box>
 
   );
-}
+};
 
 export default Header;
