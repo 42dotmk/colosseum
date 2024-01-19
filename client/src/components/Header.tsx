@@ -1,9 +1,24 @@
-import { Toolbar, Box, Typography, Button, AppBar } from "@mui/material";
+import {
+  Toolbar,
+  Box,
+  Typography,
+  Button,
+  AppBar,
+  Tab,
+  Tabs,
+} from "@mui/material";
+// import { useState } from "react";
+import { Link, useLocation } from 'react-router-dom';
 
 const Header = () => {
+  const { pathname } = useLocation();
+
   return (
     <Box flexGrow={1}>
-      <AppBar position="static" sx={{ borderBottom: 1, borderColor: 'divider' }}>
+      <AppBar
+        position="static"
+        sx={{ borderBottom: 1, borderColor: "divider" }}
+      >
         <Toolbar sx={{ marginX: "50px" }}>
           <Box flexGrow={1} display={"inline-flex"}>
             <img src="/logo.svg" alt="logo" />
@@ -18,12 +33,15 @@ const Header = () => {
           </Box>
 
           <Box>
-            <Button color="inherit" href="/">
-              Home
-            </Button>
-            <Button color="inherit" href="/compete">
-              Compete
-            </Button>
+            <Tabs
+              value={pathname}
+              indicatorColor="primary"
+              textColor="primary"
+              variant="scrollable"
+            >
+              <Tab label="Home" component={Link} to="/home" value="/home" />
+              <Tab label="Compete" component={Link} to="/compete" value="/compete" />
+            </Tabs>
           </Box>
 
           <Box
