@@ -20,7 +20,7 @@ const Header = () => {
         sx={{ borderBottom: 1, borderColor: "divider" }}
       >
         <Toolbar sx={{ backgroundColor: themeOptions.palette?.background?.default }}>
-          <Box flexGrow={1} sx={{ display: 'inline-flex', margin: 3 }}>
+          <Box flexGrow={1} sx={{ display: 'inline-flex', marginX: 3 }}>
             <img src="/logo.svg" alt="logo" />
             <Typography color={"primary"} variant="h6" textTransform={"uppercase"} marginX={1} >
               Colosseum
@@ -41,7 +41,7 @@ const Header = () => {
             </Tabs>
           </Box>
 
-          <Box flexGrow={1} sx={{ display: 'flex', justifyContent: 'flex-end', margin: 3, gap: 1 }}>
+          <Box flexGrow={1} sx={{ display: 'flex', justifyContent: 'flex-end', marginX: 3, gap: 1 }}>
             <Button variant="outlined" color="secondary" size='medium'>
               Log in
             </Button>
