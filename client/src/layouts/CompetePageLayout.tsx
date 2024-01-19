@@ -21,8 +21,8 @@ const CompetePageLayout = ({
         height={"100vh"}
         width={"100vw"}
         sx={{
-          borderLeft: "1px solid grey",
-          padding: 1,
+          borderLeft: 1,
+          borderColor: 'divider'
         }}
       >
         {rightGridChildren}

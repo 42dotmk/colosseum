@@ -3,7 +3,7 @@ import { Toolbar, Box, Typography, Button, AppBar } from "@mui/material";
 const Header = () => {
   return (
     <Box flexGrow={1}>
-      <AppBar position="static" sx={{ borderBottom: "1px solid grey" }}>
+      <AppBar position="static" sx={{ borderBottom: 1, borderColor: 'divider' }}>
         <Toolbar sx={{ marginX: "50px" }}>
           <Box flexGrow={1} display={"inline-flex"}>
             <img src="/logo.svg" alt="logo" />
