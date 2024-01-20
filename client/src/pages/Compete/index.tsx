@@ -1,8 +1,8 @@
-import CompetePageLayout from "../../layouts/CompetePageLayout";
+import PageLayout from "../../components/PageLayout";
 
 const CompetePage = () => {
   return (
-    <CompetePageLayout
+    <PageLayout
       leftGridChildren={undefined}
       rightGridChildren={undefined}
     />

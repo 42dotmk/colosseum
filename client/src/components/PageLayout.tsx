@@ -6,29 +6,20 @@ type Props = {
   rightGridChildren: ReactNode;
 };
 
-const CompetePageLayout = ({
+const PageLayout = ({
   leftGridChildren,
   rightGridChildren,
 }: Props) => {
   return (
     <Grid container bgcolor={"background.default"}>
-      <Grid item xs={9} height={"100vh"} width={"100vw"}>
+      <Grid item xs={9} sx={{ height: '100%' }}>
         {leftGridChildren}
       </Grid>
-      <Grid
-        item
-        xs={3}
-        height={"100vh"}
-        width={"100vw"}
-        sx={{
-          borderLeft: 1,
-          borderColor: 'divider'
-        }}
-      >
+      <Grid item xs={3} sx={{ borderLeft: 1, borderColor: 'divider', height: '100%' }}>
         {rightGridChildren}
       </Grid>
     </Grid>
   );
 };
 
-export default CompetePageLayout;
+export default PageLayout;
