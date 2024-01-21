@@ -8,7 +8,6 @@ import {
   Tabs,
 } from "@mui/material";
 import { Link, useLocation } from 'react-router-dom';
-import themeOptions from '../theme';
 
 const Header = () => {
   const { pathname } = useLocation();
@@ -19,7 +18,7 @@ const Header = () => {
         position="static"
         sx={{ borderBottom: 1, borderColor: "divider" }}
       >
-        <Toolbar sx={{ backgroundColor: themeOptions.palette?.background?.default }}>
+        <Toolbar sx={{ backgroundColor: "background.default" }}>
           <Box flexGrow={1} sx={{ display: 'inline-flex', marginX: 3 }}>
             <img src="/logo.svg" alt="logo" />
             <Typography color={"primary"} variant="h6" textTransform={"uppercase"} marginX={1} >
@@ -36,8 +35,8 @@ const Header = () => {
               role="navigation"
 
             >
-              <Tab label="Home" component={Link} to="/home" value="/home" sx={{ color: themeOptions.palette?.text?.primary }}/>
-              <Tab label="Compete" component={Link} to="/compete" value="/compete" sx={{ color: themeOptions.palette?.text?.primary }}/>
+              <Tab label="Home" component={Link} to="/home" value="/home" sx={{ color: "text.primary" }}/>
+              <Tab label="Compete" component={Link} to="/compete" value="/compete" sx={{ color: "text.primary" }}/>
             </Tabs>
           </Box>
 
