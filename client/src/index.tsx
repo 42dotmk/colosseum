@@ -6,6 +6,7 @@ import React from "react";
 import { store } from "./redux/store.ts";
 import themeOptions from "./theme/index.ts";
 import App from "./App.tsx";
+import "./index.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <Provider store={store}>
