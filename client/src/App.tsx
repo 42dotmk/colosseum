@@ -1,10 +1,12 @@
-import { Route, Routes, BrowserRouter, Navigate } from "react-router-dom";
-import HomePage from "./pages/Home";
-import CompetePage from "./pages/Compete";
-import { Grid } from "@mui/material";
-import Header from "./components/Header";
+import {
+  Route, Routes, BrowserRouter, Navigate,
+} from 'react-router-dom';
+import { Grid } from '@mui/material';
+import HomePage from './pages/Home';
+import CompetePage from './pages/Compete';
+import Header from './components/Header';
 
-const App = () => {
+function App() {
   return (
     <BrowserRouter>
       <Grid container>
@@ -12,7 +14,7 @@ const App = () => {
           <Header />
         </Grid>
 
-        <Grid container bgcolor={"background.default"}>
+        <Grid container bgcolor="background.default">
           <Routes>
             <Route index element={<Navigate to="/home" />} />
             <Route path="/home" element={<HomePage />} />
@@ -22,6 +24,6 @@ const App = () => {
       </Grid>
     </BrowserRouter>
   );
-};
+}
 
 export default App;

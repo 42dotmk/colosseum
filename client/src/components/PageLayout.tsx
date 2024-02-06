@@ -1,17 +1,17 @@
-import { Grid } from "@mui/material";
-import { ReactNode } from "react";
+import { Grid } from '@mui/material';
+import { ReactNode } from 'react';
 
 type Props = {
   leftGridChildren: ReactNode;
   rightGridChildren: ReactNode;
 };
 
-const PageLayout = ({
+function PageLayout({
   leftGridChildren,
   rightGridChildren,
-}: Props) => {
+}: Props) {
   return (
-    <Grid container bgcolor={"background.default"}>
+    <Grid container bgcolor="background.default">
       <Grid item xs={9} sx={{ height: '100vh' }}>
         {leftGridChildren}
       </Grid>
@@ -20,6 +20,6 @@ const PageLayout = ({
       </Grid>
     </Grid>
   );
-};
+}
 
 export default PageLayout;
