@@ -6,6 +6,6 @@
   },
   "scripts": {
     "prepareClientHusky": "husky client/.husky",
-    "prepareSenatusHusky": "husky client/.husky"
+    "prepareSenatusHusky": "husky senatus/.husky"
   }
 }
