@@ -14,9 +14,15 @@ extends:
   - 'plugin:@typescript-eslint/recommended'
   - 'plugin:react/recommended'
   - 'plugin:jsx-a11y/recommended'
+  - 'plugin:import/typescript'
+settings:
+  import/resolver:
+    typescript: true
+    node: true
 rules: {
   'react/jsx-filename-extension': 'off',
   'react/react-in-jsx-scope': 'off',
+  'import/extensions': 'off',
 }
 overrides:
   - files: vite.config.ts
