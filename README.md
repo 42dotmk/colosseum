@@ -20,6 +20,6 @@ Replace the content of the `.husky/_/pre-push` file with the following:
 ```bash
 #!/usr/bin/env sh
 
-npm run lint
-npm run ts-check
+npm --prefix [directoryName] run lint
+npm --prefix [directoryName] run ts-check
 ```
