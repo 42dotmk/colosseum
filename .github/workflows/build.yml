@@ -5,6 +5,7 @@ on:
     branches:
       - "main"
       - "development"
+      - COLOS-9-deploy
 
 jobs:
   build:
