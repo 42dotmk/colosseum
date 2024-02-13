@@ -22,8 +22,8 @@ settings:
 rules: {
   'react/jsx-filename-extension': 'off',
   'react/react-in-jsx-scope': 'off',
+  'react/function-component-definition': 'off',
   'import/extensions': 'off',
-  "prefer-arrow-callback": "error"
   "no-restricted-syntax": [
     "error",
     "FunctionExpression",

@@ -53,6 +53,6 @@ const Header = () => {
       </AppBar>
     </Box>
   );
-}
+};
 
 export default Header;
