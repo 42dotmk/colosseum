@@ -21,5 +21,5 @@ Replace the content of the `.husky/_/pre-push` file with the following:
 #!/usr/bin/env sh
 
 npm --prefix [directoryName] run lint
-npm --prefix [directoryName] run ts-check
+npm --prefix [directoryName] run ts-checks
 ```

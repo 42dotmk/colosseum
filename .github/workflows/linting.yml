@@ -1,0 +1,39 @@
+name: Linting and TypeScript checks
+
+on:
+  pull_request:
+    branches:
+      - development
+      - main
+        
+jobs:
+  code-linting:
+    name: Running checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current code
+        uses: actions/checkout@v4
+
+      - name: Setup Node v18
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Check if changes are in specified directory
+        id: check_changes
+        run: echo "::set-output name=changed::$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^${directory}/' || true)"
+        env:
+          directory: ${{ matrix.directory }}
+
+      - name: Run linting checks if files were done in ${directory}
+        if: steps.check_changes.outputs.changed
+        working-directory: ${directory}
+        run: |
+          npm run lint
+          npm run ts-checks
+
+    strategy:
+      matrix:
+        directory:
+          - client
+          - senatus
