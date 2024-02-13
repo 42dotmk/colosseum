@@ -32,7 +32,7 @@ jobs:
           npm install --package-lock-only --ignore-scripts
           npm ci
 
-      - name: Run linting checks for: ${{ matrix.directory }}
+      - name: Run linting checks for ${{ matrix.directory }}
         if: steps.check_changes.outputs.changed
         working-directory: ${{ matrix.directory }}
         run: |
