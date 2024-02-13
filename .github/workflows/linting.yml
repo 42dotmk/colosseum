@@ -21,7 +21,7 @@ jobs:
 
       - name: Check if changes are in specified directory
         id: check_changes
-        run: echo "changed=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^${{ matrix.directory }}/' || true)" >> $GITHUB_OUTPUT
+        run: echo "changed=$(git diff --name-only ${{ github.base_ref }} ${{ github.head_ref }} | grep '^${{ matrix.directory }}/' || true)" >> $GITHUB_OUTPUT
         
       - name: Run linting checks if files were done in ${{ matrix.directory }}
         if: steps.check_changes.outputs.changed
