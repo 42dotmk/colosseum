@@ -701,12 +701,6 @@ export interface ApiEventEvent extends Schema.CollectionType {
           localized: true;
         };
       }>;
-    title: Attribute.RichText &
-      Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
     description: Attribute.RichText &
       Attribute.SetPluginOptions<{
         i18n: {
@@ -719,15 +713,27 @@ export interface ApiEventEvent extends Schema.CollectionType {
           localized: true;
         };
       }>;
-    problems: Attribute.Relation<
-      'api::event.event',
-      'oneToMany',
-      'api::problem.problem'
-    >;
     supportedLanguages: Attribute.Relation<
       'api::event.event',
       'oneToMany',
       'api::language.language'
+    >;
+    title: Attribute.String &
+      Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    slug: Attribute.UID<'api::event.event', 'title'> &
+      Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    problem: Attribute.Relation<
+      'api::event.event',
+      'manyToOne',
+      'api::problem.problem'
     >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
@@ -849,12 +855,6 @@ export interface ApiProblemProblem extends Schema.CollectionType {
     };
   };
   attributes: {
-    title: Attribute.RichText &
-      Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
     description: Attribute.RichText &
       Attribute.SetPluginOptions<{
         i18n: {
@@ -871,6 +871,23 @@ export interface ApiProblemProblem extends Schema.CollectionType {
       'api::problem.problem',
       'oneToMany',
       'api::test-case.test-case'
+    >;
+    title: Attribute.String &
+      Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    slug: Attribute.UID<'api::problem.problem', 'title'> &
+      Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    events: Attribute.Relation<
+      'api::problem.problem',
+      'oneToMany',
+      'api::event.event'
     >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
@@ -971,6 +988,7 @@ export interface ApiTestCaseTestCase extends Schema.CollectionType {
       'manyToOne',
       'api::problem.problem'
     >;
+    explanation: Attribute.RichText;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;

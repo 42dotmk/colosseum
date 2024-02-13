@@ -32,6 +32,9 @@
       "relation": "manyToOne",
       "target": "api::problem.problem",
       "inversedBy": "testCases"
+    },
+    "explanation": {
+      "type": "richtext"
     }
   }
 }
