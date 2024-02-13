@@ -19,12 +19,14 @@ const Header = () => {
         sx={{ borderBottom: 1, borderColor: "divider" }}
       >
         <Toolbar sx={{ backgroundColor: "background.default" }}>
-          <Box flexGrow={1} display={"inline-flex"} marginLeft={5}>
-            <img src="/logo.svg" alt="logo" />
-            <Typography color={"primary"} variant="h6" textTransform={"uppercase"} marginX={1} >
-              Colosseum
-            </Typography>
-          </Box>
+          <Link to="/">
+            <Box flexGrow={1} display={"inline-flex"} marginLeft={5}>
+              <img src="/logo.svg" alt="logo" />
+              <Typography color={"primary"} variant="h6" textTransform={"uppercase"} marginX={1} >
+                Colosseum
+              </Typography>
+            </Box>
+          </Link>
 
           <Box>
             <Tabs
