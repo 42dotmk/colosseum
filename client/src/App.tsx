@@ -1,20 +1,27 @@
-import { useGetAllEvents } from "./data/useGetAllEvents";
+import { Route, Routes, BrowserRouter, Navigate } from "react-router-dom";
+import HomePage from "./pages/Home";
+import CompetePage from "./pages/Compete";
+import { Grid } from "@mui/material";
+import Header from "./components/Header";
 
-function App() {
-  const { events } = useGetAllEvents();
-  const myEvent = events?.[0];
+const App = () => {
   return (
-    <>
-      <h1>{myEvent?.title}</h1>
-      <h2>{myEvent?.description}</h2>
-      <h3>{myEvent?.startDate.toDateString()}</h3>
-      <h4>{`${myEvent?.startDate.getHours()}:${myEvent?.startDate.getMinutes()}`}</h4>
-      <h3>{myEvent?.endDate.toDateString()}</h3>
-      <h4>{`${myEvent?.endDate.getHours()}:${myEvent?.endDate.getMinutes()}`}</h4>
-      {myEvent?.supportedLanguages.map((lang) => <h5 key={lang}>{lang}</h5>)}
-      {myEvent?.id}
-    </>
+    <BrowserRouter>
+      <Grid container>
+        <Grid item xs>
+          <Header />
+        </Grid>
+
+        <Grid container bgcolor={"background.default"}>
+          <Routes>
+            <Route index element={<Navigate to="/home" />} />
+            <Route path="/home" element={<HomePage />} />
+            <Route path="/compete" element={<CompetePage />} />
+          </Routes>
+        </Grid>
+      </Grid>
+    </BrowserRouter>
   );
-}
+};
 
 export default App;
