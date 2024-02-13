@@ -19,7 +19,7 @@ const Header = () => {
         sx={{ borderBottom: 1, borderColor: "divider" }}
       >
         <Toolbar sx={{ backgroundColor: "background.default" }}>
-          <Box flexGrow={1} sx={{ display: 'inline-flex', marginX: 3 }}>
+          <Box flexGrow={1} display={"inline-flex"} marginLeft={5}>
             <img src="/logo.svg" alt="logo" />
             <Typography color={"primary"} variant="h6" textTransform={"uppercase"} marginX={1} >
               Colosseum
@@ -33,14 +33,13 @@ const Header = () => {
               textColor="primary"
               variant="scrollable"
               role="navigation"
-
             >
-              <Tab label="Home" component={Link} to="/home" value="/home" sx={{ color: "text.primary" }}/>
-              <Tab label="Compete" component={Link} to="/compete" value="/compete" sx={{ color: "text.primary" }}/>
+              <Tab label="Home" component={Link} to="/home" value="/home" color="text.primary" />
+              <Tab label="Compete" component={Link} to="/compete" value="/compete" color="text.primary" />
             </Tabs>
           </Box>
 
-          <Box flexGrow={1} sx={{ display: 'flex', justifyContent: 'flex-end', marginX: 3, gap: 1 }}>
+          <Box flexGrow={1} display={"flex"} justifyContent={"flex-end"} gap={1} marginRight={5}>
             <Button variant="outlined" color="secondary" size='medium'>
               Log in
             </Button>
