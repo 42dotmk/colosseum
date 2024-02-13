@@ -753,6 +753,52 @@ export interface ApiEventEvent extends Schema.CollectionType {
   };
 }
 
+export interface ApiExecutionExecution extends Schema.CollectionType {
+  collectionName: 'executions';
+  info: {
+    singularName: 'execution';
+    pluralName: 'executions';
+    displayName: 'Execution';
+    description: '';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    stdout: Attribute.Text;
+    stderr: Attribute.Text;
+    testCase: Attribute.Relation<
+      'api::execution.execution',
+      'oneToOne',
+      'api::test-case.test-case'
+    > &
+      Attribute.Private;
+    submission: Attribute.Relation<
+      'api::execution.execution',
+      'oneToOne',
+      'api::submission.submission'
+    >;
+    passed: Attribute.Boolean & Attribute.Private;
+    processed: Attribute.Boolean;
+    executionTime: Attribute.Float;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    publishedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::execution.execution',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'api::execution.execution',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
 export interface ApiLanguageLanguage extends Schema.CollectionType {
   collectionName: 'languages';
   info: {
@@ -815,18 +861,17 @@ export interface ApiProblemProblem extends Schema.CollectionType {
           localized: true;
         };
       }>;
-    testCases: Attribute.Component<'tests.test-cases', true> &
-      Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
     starterCodes: Attribute.Component<'problem.starter-code', true> &
       Attribute.SetPluginOptions<{
         i18n: {
           localized: true;
         };
       }>;
+    testCases: Attribute.Relation<
+      'api::problem.problem',
+      'oneToMany',
+      'api::test-case.test-case'
+    >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;
@@ -851,6 +896,99 @@ export interface ApiProblemProblem extends Schema.CollectionType {
   };
 }
 
+export interface ApiSubmissionSubmission extends Schema.CollectionType {
+  collectionName: 'submissions';
+  info: {
+    singularName: 'submission';
+    pluralName: 'submissions';
+    displayName: 'Submission';
+    description: '';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    event: Attribute.Relation<
+      'api::submission.submission',
+      'oneToOne',
+      'api::event.event'
+    >;
+    problem: Attribute.Relation<
+      'api::submission.submission',
+      'oneToOne',
+      'api::problem.problem'
+    >;
+    user: Attribute.Relation<
+      'api::submission.submission',
+      'oneToOne',
+      'plugin::users-permissions.user'
+    >;
+    code: Attribute.Text;
+    language: Attribute.Relation<
+      'api::submission.submission',
+      'oneToOne',
+      'api::language.language'
+    >;
+    triggeredAt: Attribute.DateTime;
+    finishedAt: Attribute.DateTime;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    publishedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::submission.submission',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'api::submission.submission',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
+export interface ApiTestCaseTestCase extends Schema.CollectionType {
+  collectionName: 'test_cases';
+  info: {
+    singularName: 'test-case';
+    pluralName: 'test-cases';
+    displayName: 'TestCase';
+    description: '';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    input: Attribute.Text;
+    output: Attribute.Text;
+    hidden: Attribute.Boolean;
+    locked: Attribute.Boolean;
+    weight: Attribute.Float;
+    problem: Attribute.Relation<
+      'api::test-case.test-case',
+      'manyToOne',
+      'api::problem.problem'
+    >;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    publishedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::test-case.test-case',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'api::test-case.test-case',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
 declare module '@strapi/types' {
   export module Shared {
     export interface ContentTypes {
@@ -868,8 +1006,11 @@ declare module '@strapi/types' {
       'plugin::users-permissions.role': PluginUsersPermissionsRole;
       'plugin::users-permissions.user': PluginUsersPermissionsUser;
       'api::event.event': ApiEventEvent;
+      'api::execution.execution': ApiExecutionExecution;
       'api::language.language': ApiLanguageLanguage;
       'api::problem.problem': ApiProblemProblem;
+      'api::submission.submission': ApiSubmissionSubmission;
+      'api::test-case.test-case': ApiTestCaseTestCase;
     }
   }
 }
