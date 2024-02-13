@@ -6,10 +6,7 @@ type Props = {
   rightGridChildren: ReactNode;
 };
 
-function PageLayout({
-  leftGridChildren,
-  rightGridChildren,
-}: Props) {
+const PageLayout = ({ leftGridChildren, rightGridChildren }: Props) => {
   return (
     <Grid container bgcolor="background.default">
       <Grid item xs={9} sx={{ height: '100vh' }}>

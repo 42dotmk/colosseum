@@ -1,6 +1,6 @@
 import PageLayout from '../../components/PageLayout';
 
-function CompetePage() {
+const CompetePage = () => {
   return (
     <PageLayout
       leftGridChildren={undefined}

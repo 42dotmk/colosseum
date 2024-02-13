@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
 
-function Header() {
+const Header = () => {
   const { pathname } = useLocation();
 
   return (

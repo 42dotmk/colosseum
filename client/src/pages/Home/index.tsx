@@ -1,6 +1,6 @@
 import { Grid } from '@mui/material';
 
-function HomePage() {
+const HomePage = () => {
   return (
     <Grid container>
       <Grid item height="100vh" />

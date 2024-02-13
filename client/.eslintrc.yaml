@@ -23,6 +23,12 @@ rules: {
   'react/jsx-filename-extension': 'off',
   'react/react-in-jsx-scope': 'off',
   'import/extensions': 'off',
+  "prefer-arrow-callback": "error"
+  "no-restricted-syntax": [
+    "error",
+    "FunctionExpression",
+    "FunctionDeclaration"
+  ]
 }
 overrides:
   - files: vite.config.ts

@@ -6,7 +6,7 @@ import HomePage from './pages/Home';
 import CompetePage from './pages/Compete';
 import Header from './components/Header';
 
-function App() {
+const App = () => {
   return (
     <BrowserRouter>
       <Grid container>
