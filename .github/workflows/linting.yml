@@ -25,7 +25,7 @@ jobs:
         id: check_changes
         run: |
           COMMIT_ID=$(git rev-parse --short HEAD)
-          echo "changed=$(git diff --name-only $COMMIT_ID `git merge-base $COMMIT_ID origin/${{ github.base_ref }}` | grep '^${{ matrix.directory }}/' || true)" >> $GITHUB_OUTPUT
+          echo "changed=$(git diff --name-only $COMMIT_ID `git merge-base $COMMIT_ID origin/${{ github.base_ref }}` -- . | grep '^${{ matrix.directory }}/' || true)" >> $GITHUB_OUTPUT
                
       - name: Installing ${{ matrix.directory }} dependencies
         if: steps.check_changes.outputs.changed
