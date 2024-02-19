@@ -30,3 +30,6 @@ Join us every Tuesday at 5:30 PM in Base42 as we embark on the journey of crafti
 * Martin Dinev @casper9539 [Organization]
 * Pavlina Buchevska @pavlinab [Organization]
 * Gjorgi Krenkov @gjorgi.krenkov
+
+### License
+Colosseum is [MIT Licensed](https://github.com/42dotmk/colosseum/blob/main/LICENSE)
