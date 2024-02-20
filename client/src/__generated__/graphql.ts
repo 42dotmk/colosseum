@@ -79,26 +79,6 @@ export type ComponentTestsTestCases = {
   output?: Maybe<Scalars['String']['output']>;
 };
 
-export type ComponentTestsTestCasesFiltersInput = {
-  and?: InputMaybe<Array<InputMaybe<ComponentTestsTestCasesFiltersInput>>>;
-  hidden?: InputMaybe<BooleanFilterInput>;
-  input?: InputMaybe<StringFilterInput>;
-  locked?: InputMaybe<BooleanFilterInput>;
-  not?: InputMaybe<ComponentTestsTestCasesFiltersInput>;
-  or?: InputMaybe<Array<InputMaybe<ComponentTestsTestCasesFiltersInput>>>;
-  output?: InputMaybe<StringFilterInput>;
-  weight?: InputMaybe<FloatFilterInput>;
-};
-
-export type ComponentTestsTestCasesInput = {
-  hidden?: InputMaybe<Scalars['Boolean']['input']>;
-  id?: InputMaybe<Scalars['ID']['input']>;
-  input?: InputMaybe<Scalars['String']['input']>;
-  locked?: InputMaybe<Scalars['Boolean']['input']>;
-  output?: InputMaybe<Scalars['String']['input']>;
-  weight?: InputMaybe<Scalars['Float']['input']>;
-};
-
 export type DateTimeFilterInput = {
   and?: InputMaybe<Array<InputMaybe<Scalars['DateTime']['input']>>>;
   between?: InputMaybe<Array<InputMaybe<Scalars['DateTime']['input']>>>;
@@ -131,8 +111,9 @@ export type Event = {
   end?: Maybe<Scalars['DateTime']['output']>;
   locale?: Maybe<Scalars['String']['output']>;
   localizations?: Maybe<EventRelationResponseCollection>;
-  problems?: Maybe<ProblemRelationResponseCollection>;
+  problem?: Maybe<ProblemEntityResponse>;
   publishedAt?: Maybe<Scalars['DateTime']['output']>;
+  slug?: Maybe<Scalars['String']['output']>;
   start: Scalars['DateTime']['output'];
   supportedLanguages?: Maybe<LanguageRelationResponseCollection>;
   title?: Maybe<Scalars['String']['output']>;
@@ -142,14 +123,6 @@ export type Event = {
 
 export type EventLocalizationsArgs = {
   filters?: InputMaybe<EventFiltersInput>;
-  pagination?: InputMaybe<PaginationArg>;
-  publicationState?: InputMaybe<PublicationState>;
-  sort?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
-};
-
-
-export type EventProblemsArgs = {
-  filters?: InputMaybe<ProblemFiltersInput>;
   pagination?: InputMaybe<PaginationArg>;
   publicationState?: InputMaybe<PublicationState>;
   sort?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
@@ -190,8 +163,9 @@ export type EventFiltersInput = {
   localizations?: InputMaybe<EventFiltersInput>;
   not?: InputMaybe<EventFiltersInput>;
   or?: InputMaybe<Array<InputMaybe<EventFiltersInput>>>;
-  problems?: InputMaybe<ProblemFiltersInput>;
+  problem?: InputMaybe<ProblemFiltersInput>;
   publishedAt?: InputMaybe<DateTimeFilterInput>;
+  slug?: InputMaybe<StringFilterInput>;
   start?: InputMaybe<DateTimeFilterInput>;
   supportedLanguages?: InputMaybe<LanguageFiltersInput>;
   title?: InputMaybe<StringFilterInput>;
@@ -201,8 +175,9 @@ export type EventFiltersInput = {
 export type EventInput = {
   description?: InputMaybe<Scalars['String']['input']>;
   end?: InputMaybe<Scalars['DateTime']['input']>;
-  problems?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>>>;
+  problem?: InputMaybe<Scalars['ID']['input']>;
   publishedAt?: InputMaybe<Scalars['DateTime']['input']>;
+  slug?: InputMaybe<Scalars['String']['input']>;
   start?: InputMaybe<Scalars['DateTime']['input']>;
   supportedLanguages?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>>>;
   title?: InputMaybe<Scalars['String']['input']>;
@@ -211,6 +186,63 @@ export type EventInput = {
 export type EventRelationResponseCollection = {
   __typename?: 'EventRelationResponseCollection';
   data: Array<EventEntity>;
+};
+
+export type Execution = {
+  __typename?: 'Execution';
+  createdAt?: Maybe<Scalars['DateTime']['output']>;
+  executionTime?: Maybe<Scalars['Float']['output']>;
+  processed?: Maybe<Scalars['Boolean']['output']>;
+  publishedAt?: Maybe<Scalars['DateTime']['output']>;
+  stderr?: Maybe<Scalars['String']['output']>;
+  stdout?: Maybe<Scalars['String']['output']>;
+  submission?: Maybe<SubmissionEntityResponse>;
+  updatedAt?: Maybe<Scalars['DateTime']['output']>;
+};
+
+export type ExecutionEntity = {
+  __typename?: 'ExecutionEntity';
+  attributes?: Maybe<Execution>;
+  id?: Maybe<Scalars['ID']['output']>;
+};
+
+export type ExecutionEntityResponse = {
+  __typename?: 'ExecutionEntityResponse';
+  data?: Maybe<ExecutionEntity>;
+};
+
+export type ExecutionEntityResponseCollection = {
+  __typename?: 'ExecutionEntityResponseCollection';
+  data: Array<ExecutionEntity>;
+  meta: ResponseCollectionMeta;
+};
+
+export type ExecutionFiltersInput = {
+  and?: InputMaybe<Array<InputMaybe<ExecutionFiltersInput>>>;
+  createdAt?: InputMaybe<DateTimeFilterInput>;
+  executionTime?: InputMaybe<FloatFilterInput>;
+  id?: InputMaybe<IdFilterInput>;
+  not?: InputMaybe<ExecutionFiltersInput>;
+  or?: InputMaybe<Array<InputMaybe<ExecutionFiltersInput>>>;
+  passed?: InputMaybe<BooleanFilterInput>;
+  processed?: InputMaybe<BooleanFilterInput>;
+  publishedAt?: InputMaybe<DateTimeFilterInput>;
+  stderr?: InputMaybe<StringFilterInput>;
+  stdout?: InputMaybe<StringFilterInput>;
+  submission?: InputMaybe<SubmissionFiltersInput>;
+  testCase?: InputMaybe<TestCaseFiltersInput>;
+  updatedAt?: InputMaybe<DateTimeFilterInput>;
+};
+
+export type ExecutionInput = {
+  executionTime?: InputMaybe<Scalars['Float']['input']>;
+  passed?: InputMaybe<Scalars['Boolean']['input']>;
+  processed?: InputMaybe<Scalars['Boolean']['input']>;
+  publishedAt?: InputMaybe<Scalars['DateTime']['input']>;
+  stderr?: InputMaybe<Scalars['String']['input']>;
+  stdout?: InputMaybe<Scalars['String']['input']>;
+  submission?: InputMaybe<Scalars['ID']['input']>;
+  testCase?: InputMaybe<Scalars['ID']['input']>;
 };
 
 export type FileInfoInput = {
@@ -244,7 +276,7 @@ export type FloatFilterInput = {
   startsWith?: InputMaybe<Scalars['Float']['input']>;
 };
 
-export type GenericMorph = ComponentProblemStarterCode | ComponentTestsTestCases | Event | I18NLocale | Language | Problem | UploadFile | UploadFolder | UsersPermissionsPermission | UsersPermissionsRole | UsersPermissionsUser;
+export type GenericMorph = ComponentProblemStarterCode | ComponentTestsTestCases | Event | Execution | I18NLocale | Language | Problem | Submission | TestCase | UploadFile | UploadFolder | UsersPermissionsPermission | UsersPermissionsRole | UsersPermissionsUser;
 
 export type I18NLocale = {
   __typename?: 'I18NLocale';
@@ -415,9 +447,12 @@ export type Mutation = {
   changePassword?: Maybe<UsersPermissionsLoginPayload>;
   createEvent?: Maybe<EventEntityResponse>;
   createEventLocalization?: Maybe<EventEntityResponse>;
+  createExecution?: Maybe<ExecutionEntityResponse>;
   createLanguage?: Maybe<LanguageEntityResponse>;
   createProblem?: Maybe<ProblemEntityResponse>;
   createProblemLocalization?: Maybe<ProblemEntityResponse>;
+  createSubmission?: Maybe<SubmissionEntityResponse>;
+  createTestCase?: Maybe<TestCaseEntityResponse>;
   createUploadFile?: Maybe<UploadFileEntityResponse>;
   createUploadFolder?: Maybe<UploadFolderEntityResponse>;
   /** Create a new role */
@@ -425,8 +460,11 @@ export type Mutation = {
   /** Create a new user */
   createUsersPermissionsUser: UsersPermissionsUserEntityResponse;
   deleteEvent?: Maybe<EventEntityResponse>;
+  deleteExecution?: Maybe<ExecutionEntityResponse>;
   deleteLanguage?: Maybe<LanguageEntityResponse>;
   deleteProblem?: Maybe<ProblemEntityResponse>;
+  deleteSubmission?: Maybe<SubmissionEntityResponse>;
+  deleteTestCase?: Maybe<TestCaseEntityResponse>;
   deleteUploadFile?: Maybe<UploadFileEntityResponse>;
   deleteUploadFolder?: Maybe<UploadFolderEntityResponse>;
   /** Delete an existing role */
@@ -445,9 +483,12 @@ export type Mutation = {
   /** Reset user password. Confirm with a code (resetToken from forgotPassword) */
   resetPassword?: Maybe<UsersPermissionsLoginPayload>;
   updateEvent?: Maybe<EventEntityResponse>;
+  updateExecution?: Maybe<ExecutionEntityResponse>;
   updateFileInfo: UploadFileEntityResponse;
   updateLanguage?: Maybe<LanguageEntityResponse>;
   updateProblem?: Maybe<ProblemEntityResponse>;
+  updateSubmission?: Maybe<SubmissionEntityResponse>;
+  updateTestCase?: Maybe<TestCaseEntityResponse>;
   updateUploadFile?: Maybe<UploadFileEntityResponse>;
   updateUploadFolder?: Maybe<UploadFolderEntityResponse>;
   /** Update an existing role */
@@ -478,6 +519,11 @@ export type MutationCreateEventLocalizationArgs = {
 };
 
 
+export type MutationCreateExecutionArgs = {
+  data: ExecutionInput;
+};
+
+
 export type MutationCreateLanguageArgs = {
   data: LanguageInput;
 };
@@ -493,6 +539,16 @@ export type MutationCreateProblemLocalizationArgs = {
   data?: InputMaybe<ProblemInput>;
   id?: InputMaybe<Scalars['ID']['input']>;
   locale?: InputMaybe<Scalars['I18NLocaleCode']['input']>;
+};
+
+
+export type MutationCreateSubmissionArgs = {
+  data: SubmissionInput;
+};
+
+
+export type MutationCreateTestCaseArgs = {
+  data: TestCaseInput;
 };
 
 
@@ -522,6 +578,11 @@ export type MutationDeleteEventArgs = {
 };
 
 
+export type MutationDeleteExecutionArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationDeleteLanguageArgs = {
   id: Scalars['ID']['input'];
 };
@@ -530,6 +591,16 @@ export type MutationDeleteLanguageArgs = {
 export type MutationDeleteProblemArgs = {
   id: Scalars['ID']['input'];
   locale?: InputMaybe<Scalars['I18NLocaleCode']['input']>;
+};
+
+
+export type MutationDeleteSubmissionArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationDeleteTestCaseArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -600,6 +671,12 @@ export type MutationUpdateEventArgs = {
 };
 
 
+export type MutationUpdateExecutionArgs = {
+  data: ExecutionInput;
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationUpdateFileInfoArgs = {
   id: Scalars['ID']['input'];
   info?: InputMaybe<FileInfoInput>;
@@ -616,6 +693,18 @@ export type MutationUpdateProblemArgs = {
   data: ProblemInput;
   id: Scalars['ID']['input'];
   locale?: InputMaybe<Scalars['I18NLocaleCode']['input']>;
+};
+
+
+export type MutationUpdateSubmissionArgs = {
+  data: SubmissionInput;
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationUpdateTestCaseArgs = {
+  data: TestCaseInput;
+  id: Scalars['ID']['input'];
 };
 
 
@@ -670,13 +759,23 @@ export type Problem = {
   __typename?: 'Problem';
   createdAt?: Maybe<Scalars['DateTime']['output']>;
   description?: Maybe<Scalars['String']['output']>;
+  events?: Maybe<EventRelationResponseCollection>;
   locale?: Maybe<Scalars['String']['output']>;
   localizations?: Maybe<ProblemRelationResponseCollection>;
   publishedAt?: Maybe<Scalars['DateTime']['output']>;
+  slug?: Maybe<Scalars['String']['output']>;
   starterCodes?: Maybe<Array<Maybe<ComponentProblemStarterCode>>>;
-  testCases?: Maybe<Array<Maybe<ComponentTestsTestCases>>>;
+  testCases?: Maybe<TestCaseRelationResponseCollection>;
   title?: Maybe<Scalars['String']['output']>;
   updatedAt?: Maybe<Scalars['DateTime']['output']>;
+};
+
+
+export type ProblemEventsArgs = {
+  filters?: InputMaybe<EventFiltersInput>;
+  pagination?: InputMaybe<PaginationArg>;
+  publicationState?: InputMaybe<PublicationState>;
+  sort?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
 };
 
 
@@ -696,8 +795,9 @@ export type ProblemStarterCodesArgs = {
 
 
 export type ProblemTestCasesArgs = {
-  filters?: InputMaybe<ComponentTestsTestCasesFiltersInput>;
+  filters?: InputMaybe<TestCaseFiltersInput>;
   pagination?: InputMaybe<PaginationArg>;
+  publicationState?: InputMaybe<PublicationState>;
   sort?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
 };
 
@@ -722,23 +822,27 @@ export type ProblemFiltersInput = {
   and?: InputMaybe<Array<InputMaybe<ProblemFiltersInput>>>;
   createdAt?: InputMaybe<DateTimeFilterInput>;
   description?: InputMaybe<StringFilterInput>;
+  events?: InputMaybe<EventFiltersInput>;
   id?: InputMaybe<IdFilterInput>;
   locale?: InputMaybe<StringFilterInput>;
   localizations?: InputMaybe<ProblemFiltersInput>;
   not?: InputMaybe<ProblemFiltersInput>;
   or?: InputMaybe<Array<InputMaybe<ProblemFiltersInput>>>;
   publishedAt?: InputMaybe<DateTimeFilterInput>;
+  slug?: InputMaybe<StringFilterInput>;
   starterCodes?: InputMaybe<ComponentProblemStarterCodeFiltersInput>;
-  testCases?: InputMaybe<ComponentTestsTestCasesFiltersInput>;
+  testCases?: InputMaybe<TestCaseFiltersInput>;
   title?: InputMaybe<StringFilterInput>;
   updatedAt?: InputMaybe<DateTimeFilterInput>;
 };
 
 export type ProblemInput = {
   description?: InputMaybe<Scalars['String']['input']>;
+  events?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>>>;
   publishedAt?: InputMaybe<Scalars['DateTime']['input']>;
+  slug?: InputMaybe<Scalars['String']['input']>;
   starterCodes?: InputMaybe<Array<InputMaybe<ComponentProblemStarterCodeInput>>>;
-  testCases?: InputMaybe<Array<InputMaybe<ComponentTestsTestCasesInput>>>;
+  testCases?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>>>;
   title?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -756,6 +860,8 @@ export type Query = {
   __typename?: 'Query';
   event?: Maybe<EventEntityResponse>;
   events?: Maybe<EventEntityResponseCollection>;
+  execution?: Maybe<ExecutionEntityResponse>;
+  executions?: Maybe<ExecutionEntityResponseCollection>;
   i18NLocale?: Maybe<I18NLocaleEntityResponse>;
   i18NLocales?: Maybe<I18NLocaleEntityResponseCollection>;
   language?: Maybe<LanguageEntityResponse>;
@@ -763,6 +869,10 @@ export type Query = {
   me?: Maybe<UsersPermissionsMe>;
   problem?: Maybe<ProblemEntityResponse>;
   problems?: Maybe<ProblemEntityResponseCollection>;
+  submission?: Maybe<SubmissionEntityResponse>;
+  submissions?: Maybe<SubmissionEntityResponseCollection>;
+  testCase?: Maybe<TestCaseEntityResponse>;
+  testCases?: Maybe<TestCaseEntityResponseCollection>;
   uploadFile?: Maybe<UploadFileEntityResponse>;
   uploadFiles?: Maybe<UploadFileEntityResponseCollection>;
   uploadFolder?: Maybe<UploadFolderEntityResponse>;
@@ -783,6 +893,19 @@ export type QueryEventArgs = {
 export type QueryEventsArgs = {
   filters?: InputMaybe<EventFiltersInput>;
   locale?: InputMaybe<Scalars['I18NLocaleCode']['input']>;
+  pagination?: InputMaybe<PaginationArg>;
+  publicationState?: InputMaybe<PublicationState>;
+  sort?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+};
+
+
+export type QueryExecutionArgs = {
+  id?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
+export type QueryExecutionsArgs = {
+  filters?: InputMaybe<ExecutionFiltersInput>;
   pagination?: InputMaybe<PaginationArg>;
   publicationState?: InputMaybe<PublicationState>;
   sort?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
@@ -823,6 +946,32 @@ export type QueryProblemArgs = {
 export type QueryProblemsArgs = {
   filters?: InputMaybe<ProblemFiltersInput>;
   locale?: InputMaybe<Scalars['I18NLocaleCode']['input']>;
+  pagination?: InputMaybe<PaginationArg>;
+  publicationState?: InputMaybe<PublicationState>;
+  sort?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+};
+
+
+export type QuerySubmissionArgs = {
+  id?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
+export type QuerySubmissionsArgs = {
+  filters?: InputMaybe<SubmissionFiltersInput>;
+  pagination?: InputMaybe<PaginationArg>;
+  publicationState?: InputMaybe<PublicationState>;
+  sort?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
+};
+
+
+export type QueryTestCaseArgs = {
+  id?: InputMaybe<Scalars['ID']['input']>;
+};
+
+
+export type QueryTestCasesArgs = {
+  filters?: InputMaybe<TestCaseFiltersInput>;
   pagination?: InputMaybe<PaginationArg>;
   publicationState?: InputMaybe<PublicationState>;
   sort?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
@@ -904,6 +1053,129 @@ export type StringFilterInput = {
   null?: InputMaybe<Scalars['Boolean']['input']>;
   or?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
   startsWith?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type Submission = {
+  __typename?: 'Submission';
+  code?: Maybe<Scalars['String']['output']>;
+  createdAt?: Maybe<Scalars['DateTime']['output']>;
+  event?: Maybe<EventEntityResponse>;
+  finishedAt?: Maybe<Scalars['DateTime']['output']>;
+  language?: Maybe<LanguageEntityResponse>;
+  problem?: Maybe<ProblemEntityResponse>;
+  publishedAt?: Maybe<Scalars['DateTime']['output']>;
+  triggeredAt?: Maybe<Scalars['DateTime']['output']>;
+  updatedAt?: Maybe<Scalars['DateTime']['output']>;
+  user?: Maybe<UsersPermissionsUserEntityResponse>;
+};
+
+export type SubmissionEntity = {
+  __typename?: 'SubmissionEntity';
+  attributes?: Maybe<Submission>;
+  id?: Maybe<Scalars['ID']['output']>;
+};
+
+export type SubmissionEntityResponse = {
+  __typename?: 'SubmissionEntityResponse';
+  data?: Maybe<SubmissionEntity>;
+};
+
+export type SubmissionEntityResponseCollection = {
+  __typename?: 'SubmissionEntityResponseCollection';
+  data: Array<SubmissionEntity>;
+  meta: ResponseCollectionMeta;
+};
+
+export type SubmissionFiltersInput = {
+  and?: InputMaybe<Array<InputMaybe<SubmissionFiltersInput>>>;
+  code?: InputMaybe<StringFilterInput>;
+  createdAt?: InputMaybe<DateTimeFilterInput>;
+  event?: InputMaybe<EventFiltersInput>;
+  finishedAt?: InputMaybe<DateTimeFilterInput>;
+  id?: InputMaybe<IdFilterInput>;
+  language?: InputMaybe<LanguageFiltersInput>;
+  not?: InputMaybe<SubmissionFiltersInput>;
+  or?: InputMaybe<Array<InputMaybe<SubmissionFiltersInput>>>;
+  problem?: InputMaybe<ProblemFiltersInput>;
+  publishedAt?: InputMaybe<DateTimeFilterInput>;
+  triggeredAt?: InputMaybe<DateTimeFilterInput>;
+  updatedAt?: InputMaybe<DateTimeFilterInput>;
+  user?: InputMaybe<UsersPermissionsUserFiltersInput>;
+};
+
+export type SubmissionInput = {
+  code?: InputMaybe<Scalars['String']['input']>;
+  event?: InputMaybe<Scalars['ID']['input']>;
+  finishedAt?: InputMaybe<Scalars['DateTime']['input']>;
+  language?: InputMaybe<Scalars['ID']['input']>;
+  problem?: InputMaybe<Scalars['ID']['input']>;
+  publishedAt?: InputMaybe<Scalars['DateTime']['input']>;
+  triggeredAt?: InputMaybe<Scalars['DateTime']['input']>;
+  user?: InputMaybe<Scalars['ID']['input']>;
+};
+
+export type TestCase = {
+  __typename?: 'TestCase';
+  createdAt?: Maybe<Scalars['DateTime']['output']>;
+  explanation?: Maybe<Scalars['String']['output']>;
+  hidden?: Maybe<Scalars['Boolean']['output']>;
+  input?: Maybe<Scalars['String']['output']>;
+  locked?: Maybe<Scalars['Boolean']['output']>;
+  output?: Maybe<Scalars['String']['output']>;
+  problem?: Maybe<ProblemEntityResponse>;
+  publishedAt?: Maybe<Scalars['DateTime']['output']>;
+  updatedAt?: Maybe<Scalars['DateTime']['output']>;
+  weight?: Maybe<Scalars['Float']['output']>;
+};
+
+export type TestCaseEntity = {
+  __typename?: 'TestCaseEntity';
+  attributes?: Maybe<TestCase>;
+  id?: Maybe<Scalars['ID']['output']>;
+};
+
+export type TestCaseEntityResponse = {
+  __typename?: 'TestCaseEntityResponse';
+  data?: Maybe<TestCaseEntity>;
+};
+
+export type TestCaseEntityResponseCollection = {
+  __typename?: 'TestCaseEntityResponseCollection';
+  data: Array<TestCaseEntity>;
+  meta: ResponseCollectionMeta;
+};
+
+export type TestCaseFiltersInput = {
+  and?: InputMaybe<Array<InputMaybe<TestCaseFiltersInput>>>;
+  createdAt?: InputMaybe<DateTimeFilterInput>;
+  explanation?: InputMaybe<StringFilterInput>;
+  hidden?: InputMaybe<BooleanFilterInput>;
+  id?: InputMaybe<IdFilterInput>;
+  input?: InputMaybe<StringFilterInput>;
+  locked?: InputMaybe<BooleanFilterInput>;
+  not?: InputMaybe<TestCaseFiltersInput>;
+  or?: InputMaybe<Array<InputMaybe<TestCaseFiltersInput>>>;
+  output?: InputMaybe<StringFilterInput>;
+  problem?: InputMaybe<ProblemFiltersInput>;
+  publishedAt?: InputMaybe<DateTimeFilterInput>;
+  updatedAt?: InputMaybe<DateTimeFilterInput>;
+  weight?: InputMaybe<FloatFilterInput>;
+};
+
+export type TestCaseInput = {
+  explanation?: InputMaybe<Scalars['String']['input']>;
+  hidden?: InputMaybe<Scalars['Boolean']['input']>;
+  input?: InputMaybe<Scalars['String']['input']>;
+  locked?: InputMaybe<Scalars['Boolean']['input']>;
+  output?: InputMaybe<Scalars['String']['input']>;
+  problem?: InputMaybe<Scalars['ID']['input']>;
+  publishedAt?: InputMaybe<Scalars['DateTime']['input']>;
+  weight?: InputMaybe<Scalars['Float']['input']>;
+};
+
+export type TestCaseRelationResponseCollection = {
+  __typename?: 'TestCaseRelationResponseCollection';
+  data: Array<TestCaseEntity>;
 };
 
 export type UploadFile = {
@@ -1282,7 +1554,15 @@ export type UsersPermissionsUserRelationResponseCollection = {
 export type GetEventsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetEventsQuery = { __typename?: 'Query', events?: { __typename: 'EventEntityResponseCollection', data: Array<{ __typename?: 'EventEntity', id?: string | null, attributes?: { __typename?: 'Event', start: any, title?: string | null, description?: string | null, end?: any | null, supportedLanguages?: { __typename?: 'LanguageRelationResponseCollection', data: Array<{ __typename?: 'LanguageEntity', id?: string | null, attributes?: { __typename?: 'Language', name?: string | null, defaultMaxCpuTime?: number | null, defaultMaxMemory?: number | null } | null }> } | null } | null }>, meta: { __typename?: 'ResponseCollectionMeta', pagination: { __typename?: 'Pagination', total: number, page: number, pageSize: number, pageCount: number } } } | null };
+export type GetEventsQuery = { __typename?: 'Query', events?: { __typename: 'EventEntityResponseCollection', data: Array<{ __typename?: 'EventEntity', id?: string | null, attributes?: { __typename?: 'Event', start: any, title?: string | null, description?: string | null, end?: any | null, supportedLanguages?: { __typename?: 'LanguageRelationResponseCollection', data: Array<{ __typename?: 'LanguageEntity', id?: string | null, attributes?: { __typename?: 'Language', name?: string | null } | null }> } | null } | null }>, meta: { __typename?: 'ResponseCollectionMeta', pagination: { __typename?: 'Pagination', total: number, page: number, pageSize: number, pageCount: number } } } | null };
+
+export type GetProblemBySlugQueryVariables = Exact<{
+  slug?: InputMaybe<Scalars['String']['input']>;
+}>;
 
 
-export const GetEventsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetEvents"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"events"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"attributes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"start"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"end"}},{"kind":"Field","name":{"kind":"Name","value":"supportedLanguages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"attributes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"defaultMaxCpuTime"}},{"kind":"Field","name":{"kind":"Name","value":"defaultMaxMemory"}}]}}]}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"meta"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"pagination"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"total"}},{"kind":"Field","name":{"kind":"Name","value":"page"}},{"kind":"Field","name":{"kind":"Name","value":"pageSize"}},{"kind":"Field","name":{"kind":"Name","value":"pageCount"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"__typename"}}]}}]}}]} as unknown as DocumentNode<GetEventsQuery, GetEventsQueryVariables>;
+export type GetProblemBySlugQuery = { __typename?: 'Query', problems?: { __typename?: 'ProblemEntityResponseCollection', data: Array<{ __typename?: 'ProblemEntity', id?: string | null, attributes?: { __typename?: 'Problem', title?: string | null, description?: string | null, testCases?: { __typename?: 'TestCaseRelationResponseCollection', data: Array<{ __typename?: 'TestCaseEntity', id?: string | null, attributes?: { __typename?: 'TestCase', input?: string | null, output?: string | null, locked?: boolean | null, hidden?: boolean | null, explanation?: string | null } | null }> } | null } | null }> } | null };
+
+
+export const GetEventsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetEvents"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"events"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"attributes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"start"}},{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"end"}},{"kind":"Field","name":{"kind":"Name","value":"supportedLanguages"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"attributes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}}]}}]}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"meta"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"pagination"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"total"}},{"kind":"Field","name":{"kind":"Name","value":"page"}},{"kind":"Field","name":{"kind":"Name","value":"pageSize"}},{"kind":"Field","name":{"kind":"Name","value":"pageCount"}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"__typename"}}]}}]}}]} as unknown as DocumentNode<GetEventsQuery, GetEventsQueryVariables>;
+export const GetProblemBySlugDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"GetProblemBySlug"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"slug"}},"type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"problems"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"filters"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"slug"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"eq"},"value":{"kind":"Variable","name":{"kind":"Name","value":"slug"}}}]}}]}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"attributes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"title"}},{"kind":"Field","name":{"kind":"Name","value":"description"}},{"kind":"Field","name":{"kind":"Name","value":"testCases"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"data"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"attributes"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"input"}},{"kind":"Field","name":{"kind":"Name","value":"output"}},{"kind":"Field","name":{"kind":"Name","value":"locked"}},{"kind":"Field","name":{"kind":"Name","value":"hidden"}},{"kind":"Field","name":{"kind":"Name","value":"explanation"}}]}}]}}]}}]}}]}}]}}]}}]} as unknown as DocumentNode<GetProblemBySlugQuery, GetProblemBySlugQueryVariables>;

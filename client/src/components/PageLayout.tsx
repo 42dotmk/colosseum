@@ -12,10 +12,10 @@ const PageLayout = ({
 }: Props) => {
   return (
     <Grid container bgcolor={"background.default"}>
-      <Grid item xs={9} sx={{ height: '100vh' }}>
+      <Grid item xs={9} sx={{ minHeight: '100vh' }}>
         {leftGridChildren}
       </Grid>
-      <Grid item xs={3} sx={{ borderLeft: 1, borderColor: 'divider', height: '100vh' }}>
+      <Grid item xs={3} sx={{ borderLeft: 1, borderColor: 'divider', minHeight: '100vh' }}>
         {rightGridChildren}
       </Grid>
     </Grid>
