@@ -1,12 +1,10 @@
-import PageLayout from "../../components/PageLayout";
+import PageLayout from '../../components/PageLayout';
 
-const CompetePage = () => {
-  return (
-    <PageLayout
-      leftGridChildren={undefined}
-      rightGridChildren={undefined}
-    />
-  );
-};
+const CompetePage = () => (
+  <PageLayout
+    leftGridChildren={undefined}
+    rightGridChildren={undefined}
+  />
+);
 
 export default CompetePage;

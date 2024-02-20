@@ -138,7 +138,7 @@ const themeOptions: ThemeOptions = createTheme({
       fontWeight: 400,
       lineHeight: 1.43,
       letterSpacing: '0.17px',
-    }
+    },
   },
   spacing: (factor: number) => factor * 8,
 });
