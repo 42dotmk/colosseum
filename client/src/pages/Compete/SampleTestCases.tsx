@@ -1,5 +1,4 @@
 import { Box, Typography } from "@mui/material";
-import { useGetProblemBySlug } from "../../data/useGetProblem";
 import Markdown from "react-markdown";
 import { TestCase } from "../../data/schema";
 
