@@ -43,7 +43,7 @@ const themeOptions: ThemeOptions = createTheme({
     fontWeightMedium: 500,
     fontWeightBold: 700,
     h1: {
-      color: '#201D1D',
+      color: '#CCC',
       fontSize: '96px',
       fontStyle: 'normal',
       fontWeight: 300,
@@ -51,7 +51,7 @@ const themeOptions: ThemeOptions = createTheme({
       letterSpacing: '-1.5px',
     },
     h2: {
-      color: '#201D1D',
+      color: '#CCC',
       fontSize: '60px',
       fontStyle: 'normal',
       fontWeight: 300,
@@ -59,7 +59,7 @@ const themeOptions: ThemeOptions = createTheme({
       letterSpacing: '-0.5px',
     },
     h3: {
-      color: '#201D1D',
+      color: '#CCC',
       fontSize: '48px',
       fontStyle: 'normal',
       fontWeight: 400,
@@ -67,7 +67,7 @@ const themeOptions: ThemeOptions = createTheme({
       letterSpacing: '0px',
     },
     h4: {
-      color: '#201D1D',
+      color: '#CCC',
       fontSize: '34px',
       fontStyle: 'normal',
       fontWeight: 400,
@@ -75,7 +75,7 @@ const themeOptions: ThemeOptions = createTheme({
       letterSpacing: '0.25px',
     },
     h5: {
-      color: '#201D1D',
+      color: '#CCC',
       fontSize: '24px',
       fontStyle: 'normal',
       fontWeight: 400,
@@ -83,7 +83,7 @@ const themeOptions: ThemeOptions = createTheme({
       letterSpacing: '0px',
     },
     h6: {
-      color: '#201D1D',
+      color: '#CCC',
       fontSize: '20px',
       fontStyle: 'normal',
       fontWeight: 500,
@@ -91,7 +91,7 @@ const themeOptions: ThemeOptions = createTheme({
       letterSpacing: '0.15px',
     },
     caption: {
-      color: '#201D1D',
+      color: '#CCC',
       fontSize: '12px',
       fontStyle: 'normal',
       fontWeight: 400,
@@ -99,7 +99,7 @@ const themeOptions: ThemeOptions = createTheme({
       letterSpacing: '0.5px',
     },
     overline: {
-      color: '#201D1D',
+      color: '#CCC',
       fontSize: '12px',
       fontStyle: 'normal',
       fontWeight: 400,
@@ -108,7 +108,7 @@ const themeOptions: ThemeOptions = createTheme({
       textTransform: 'uppercase',
     },
     subtitle1: {
-      color: '#201D1D',
+      color: '#CCC',
       fontSize: '16px',
       fontStyle: 'normal',
       fontWeight: 400,
@@ -116,7 +116,7 @@ const themeOptions: ThemeOptions = createTheme({
       letterSpacing: '0.15px',
     },
     subtitle2: {
-      color: '#201D1D',
+      color: '#CCC',
       fontSize: '14px',
       fontStyle: 'normal',
       fontWeight: 500,
@@ -124,7 +124,7 @@ const themeOptions: ThemeOptions = createTheme({
       letterSpacing: '0.1px',
     },
     body1: {
-      color: '#3E3E42',
+      color: '#CCC',
       fontSize: '16px',
       fontStyle: 'normal',
       fontWeight: 400,
@@ -132,7 +132,7 @@ const themeOptions: ThemeOptions = createTheme({
       letterSpacing: '0.15px',
     },
     body2: {
-      color: '#3E3E42',
+      color: '#CCC',
       fontSize: '14px',
       fontStyle: 'normal',
       fontWeight: 400,
