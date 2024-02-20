@@ -41,6 +41,7 @@ jobs:
         if: github.ref == 'refs/heads/development' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/COLOS-19-frontend-ci'
         with:
           context: ./senatus
+          push: true
           file: ./senatus/Dockerfile
           tags: ghcr.io/42dotmk/colosseum-senatus:latest
 
@@ -49,5 +50,6 @@ jobs:
         if: github.ref == 'refs/heads/development' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/COLOS-19-frontend-ci'
         with:
           context: ./client
+          push: true
           file: ./client/Dockerfile
           tags: ghcr.io/42dotmk/colosseum-client-prod:latest
