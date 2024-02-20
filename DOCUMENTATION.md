@@ -1,12 +1,16 @@
 # Documentation 
 
-## Automagical way
+You can set up husky in 2 ways - automagical, or manual, pick your poision and follow the steps.
+
+## Automagical setup
 
 Run:
 
 `./setup-husky.sh`
 
 It will install husky and set up the pre-commit hooks automagically.
+
+## Manual setup:
 
 ## Setup Husky
 
