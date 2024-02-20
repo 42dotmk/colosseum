@@ -5,7 +5,7 @@ on:
 
 jobs:
   build_senatus_image:
-    if: (github.head_ref != 'development' && github.head_ref != 'main') && contains(github.event.pull_request.files, 'senatus/')
+    # if: (github.head_ref != 'development' && github.head_ref != 'main') && contains(github.event.pull_request.files, 'senatus/')
     name: Build Senatus docker image
     runs-on: ubuntu-latest
     permissions:
@@ -13,8 +13,8 @@ jobs:
       packages: write
 
     steps:
+      - run: echo ${{ github.event.pull_request.files }}
       - name: Build Senatus image
-        if: 
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
         with:
           context: ./senatus
