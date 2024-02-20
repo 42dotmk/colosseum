@@ -1,5 +1,6 @@
 # Colosseum: Organize Competitive Programming and Interview Events
 Join us every Tuesday at 5:30 PM in Base42 as we embark on the journey of crafting the colossal masterpiece Colosseum, our open-source web solution tailored for organizing competitive programming and interview events.
+# [Wiki](https://wiki.42.mk/en/projects/colosseum-competitive-programming-engine)
 
 ## Core Applications:
 
