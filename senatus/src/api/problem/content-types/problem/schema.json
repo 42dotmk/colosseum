@@ -32,17 +32,6 @@
       },
       "type": "richtext"
     },
-    "testCases": {
-      "displayName": "Test Cases",
-      "type": "component",
-      "repeatable": true,
-      "pluginOptions": {
-        "i18n": {
-          "localized": true
-        }
-      },
-      "component": "tests.test-cases"
-    },
     "starterCodes": {
       "type": "component",
       "repeatable": true,
@@ -52,6 +41,12 @@
         }
       },
       "component": "problem.starter-code"
+    },
+    "testCases": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::test-case.test-case",
+      "mappedBy": "problem"
     }
   }
 }
