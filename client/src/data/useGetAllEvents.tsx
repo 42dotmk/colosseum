@@ -34,7 +34,7 @@ query GetEvents {
   }
 }`
 
-const stripeAttributes = (event: EventEntity | undefined) => {
+const mapFromQuery = (event: EventEntity | undefined) => {
   if(!event) return undefined;
 
   return {
@@ -51,7 +51,7 @@ const stripeAttributes = (event: EventEntity | undefined) => {
 
 export const useGetAllEvents = () => {
   const { loading, data } = useQuery<GetEventsQuery, GetEventsQueryVariables>(GET_ALL_EVENTS);
-  const eventsRaw = data?.events?.data.map(stripeAttributes);
+  const eventsRaw = data?.events?.data.map(mapFromQuery);
 
   return {
     events: eventsRaw ? EventSchema.array().parse(eventsRaw) : undefined, 

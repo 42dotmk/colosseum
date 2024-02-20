@@ -1,7 +1,10 @@
+import 'dotenv/config'
+
 import { CodegenConfig } from '@graphql-codegen/cli';
+import { GQL_URL } from './src/config';
 
 const config: CodegenConfig = {
-  schema: 'http://127.0.0.1:1337/graphql',
+  schema: GQL_URL,
   documents: ['src/**/*.{ts,tsx}'],
   generates: {
     './src/__generated__/': {
