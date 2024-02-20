@@ -23,18 +23,18 @@ Join us every Tuesday at 5:30 PM in Base42 as we embark on the journey of crafti
 
 ## List of Contributors
 ### Development
-* Veronika Gjoreva @vergjor 
-* Ilija Boshkov @iboshkov 
-* Mario Stojchevski @MarioStojcevski 
-* Vasilaki Tocili @VasilakiG
-* Gjorgi Krenkov @gjorgi-krenkov
+* [Veronika Gjoreva [@vergjor](https://github.com/vergjor) 
+* Ilija Boshkov [@iboshkov](https://github.com/iboshkov) 
+* Mario Stojchevski [@MarioStojcevski](https://github.com/MarioStojcevski) 
+* Vasilaki Tocili [@VasilakiG](https://github.com/VasilakiG)
+* Gjorgi Krenkov [@gjorgi-krenkov](https://github.com/gjorgi-krenkov)
 
 ### Design
 * Bojana Dimitrova
 * Tereza Lozanovska
 
 ### Organization
-* Martin Dinev @martin-dinev
+* Martin Dinev [@martin-dinev](https://github.com/martin-dinev)
 * Pavlina Buchevska
 
 ## License
