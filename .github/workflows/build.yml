@@ -41,7 +41,7 @@ jobs:
         if:
           contains(github.ref, '
             refs/heads/development
-            refs/heads/master
+            refs/heads/main
             refs/heads/COLOS-19-frontend-ci
           ')
         with:
@@ -54,7 +54,7 @@ jobs:
         if:
           contains(github.ref, '
             refs/heads/development
-            refs/heads/master
+            refs/heads/main
             refs/heads/COLOS-19-frontend-ci
           ')
         with:
