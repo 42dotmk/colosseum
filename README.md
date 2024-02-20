@@ -24,18 +24,18 @@ Join us every Tuesday at 5:30 PM in Base42 as we embark on the journey of crafti
 ## List of Contributors
 ### Development
 * Veronika Gjoreva @vergjor 
-* Ilija Boshkov @boshkov 
-* Mario Stojchevski @zipwrap 
-* Vasilaki Tocili @vasilaking 
-* Gjorgi Krenkov @gjorgi.krenkov
+* Ilija Boshkov @iboshkov 
+* Mario Stojchevski @MarioStojcevski 
+* Vasilaki Tocili @VasilakiG
+* Gjorgi Krenkov @gjorgi-krenkov
 
 ### Design
-* Bojana Dimitrova @bojanadimitrova 
-* Tereza Lozanovska @terezalozanovska
+* Bojana Dimitrova
+* Tereza Lozanovska
 
 ### Organization
-* Martin Dinev @casper9539
-* Pavlina Buchevska @pavlinab
+* Martin Dinev @martin-dinev
+* Pavlina Buchevska
 
 ## License
 Colosseum is [MIT Licensed](https://github.com/42dotmk/colosseum/blob/main/LICENSE)
