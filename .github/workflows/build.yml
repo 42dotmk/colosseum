@@ -42,6 +42,7 @@ jobs:
           contains(github.ref, '
             refs/heads/development
             refs/heads/main
+            refs/heads/COLOS-19-frontend-ci
           ')
         with:
           context: ./senatus
@@ -54,6 +55,7 @@ jobs:
           contains(github.ref, '
             refs/heads/development
             refs/heads/main
+            refs/heads/COLOS-19-frontend-ci
           ')
         with:
           context: ./client
