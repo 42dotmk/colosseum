@@ -1,5 +1,13 @@
 # Documentation 
 
+## Automagical way
+
+Run:
+
+`./setup-husky.sh`
+
+It will install husky and set up the pre-commit hooks automagically.
+
 ## Setup Husky
 
 `npm i -g husky`
