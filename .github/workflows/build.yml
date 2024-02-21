@@ -28,8 +28,8 @@ jobs:
           fetch-depth: 0
         
       - run: |
-          export senatus=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^senatus/')
-          export client=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^client/')
+          export senatus=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^senatus/' && echo "true" || echo "false")
+          export client=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^client/' && echo "true" || echo "false")
           echo senatus has changes $senatus
           echo client has changes $client
         
