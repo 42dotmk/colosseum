@@ -1,18 +1,12 @@
 name: Colosseum CI pipeline
 
 on:
+  workflow_dispatch:
   pull_request:
-    paths:
-      - '**/senatus/**'
-      - '**/client/**'
-
   push:
     branches:
-      - development
-      - main
-    paths:
-      - '**/senatus/**'
-      - '**/client/**'
+      - 'development'
+      - 'main'
 
 jobs:
   build_senatus_image:
@@ -24,7 +18,11 @@ jobs:
       packages: write
 
     steps:
-      - run: echo ${{ github.event.pull_request.files }}
+      - run: |
+          export senatus=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^senatus/')
+          export client=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^client/')
+          echo senatus has changes $senatus
+          echo client has changes $client
       
       - name: Checkout repository
         uses: actions/checkout@v4
