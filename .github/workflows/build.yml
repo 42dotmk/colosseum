@@ -16,7 +16,7 @@ on:
 
 jobs:
   build_senatus_image:
-    if: github.event_name == 'pull_request' && contains(github.event.pull_request.files, 'senatus/')
+    if: github.event_name == 'pull_request'
     name: Build Senatus docker image
     runs-on: ubuntu-latest
     permissions:
@@ -37,7 +37,7 @@ jobs:
           tags: ghcr.io/42dotmk/colosseum-senatus:latest
 
   build_client_image:
-    if: github.event_name == 'pull_request' && contains(github.event.pull_request.files, 'client/')
+    if: github.event_name == 'pull_request'
     name: Build Client docker image
     runs-on: ubuntu-latest
     permissions:
@@ -57,7 +57,7 @@ jobs:
 
   push_senatus_image:
     name: Push Senatus docker image
-    if: github.event_name == 'push' && contains(github.event.pull_request.files, 'senatus/')
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -85,7 +85,7 @@ jobs:
 
   push_client_image:
     name: Push Client docker image
-    if: github.event_name == 'push' && contains(github.event.pull_request.files, 'client/')
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
       contents: read
