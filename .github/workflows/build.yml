@@ -8,6 +8,10 @@ on:
       - 'development'
       - 'main'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref }}
+  cancel-in-progress: true
+
 jobs:
   build_senatus_image:
     if: github.event_name == 'pull_request'
@@ -18,14 +22,16 @@ jobs:
       packages: write
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+        
       - run: |
           export senatus=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^senatus/')
           export client=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^client/')
           echo senatus has changes $senatus
           echo client has changes $client
-      
-      - name: Checkout repository
-        uses: actions/checkout@v4
         
       - name: Build Senatus image
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
