@@ -3,16 +3,16 @@ name: Colosseum CI pipeline
 on:
   pull_request:
     paths:
-      - 'senatus/**'
-      - 'client/**'
+      - '**/senatus/**'
+      - '**/client/**'
 
   push:
     branches:
       - development
       - main
     paths:
-      - 'senatus/**'
-      - 'client/**'
+      - '**/senatus/**'
+      - '**/client/**'
 
 jobs:
   build_senatus_image:
