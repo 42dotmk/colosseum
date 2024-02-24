@@ -53,3 +53,20 @@ jobs:
           push: true
           file: ./client/Dockerfile
           tags: ghcr.io/42dotmk/colosseum-client-prod:latest
+      # --- Build
+      - name: Build Executioner image
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          context: ./
+          file: ./executioner/Dockerfile
+          tags: ghcr.io/42dotmk/colosseum-executioner:latest
+
+      # --- Push
+      - name: Push Executioner image
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        if: github.ref == 'refs/heads/development' || github.ref == 'refs/heads/main'
+        with:
+          context: ./
+          push: true
+          file: ./executioner/Dockerfile
+          tags: ghcr.io/42dotmk/colosseum-executioner:latest

@@ -1,3 +1,6 @@
+import { connect } from '@colosseum/queue/amqp'
+import { Strapi } from '@strapi/strapi';
+
 export default {
   /**
    * An asynchronous register function that runs before
@@ -14,5 +17,17 @@ export default {
    * This gives you an opportunity to set up your data model,
    * run jobs, or perform some special logic.
    */
-  bootstrap(/*{ strapi }*/) {},
+  async bootstrap({ strapi }: { strapi: Strapi }) {
+    console.log("Senatus is bootstrapping");
+    console.log(strapi.config.get("server.app.rabbitUrl"));
+    const { 
+      subscribe,
+      publish,
+    } = await connect(strapi.config.get("server.app.rabbitUrl"));
+    console.log("Connected to RabbitMQ");
+
+    await subscribe("results", async (msg) => {
+      console.log("Received:", msg);
+    });
+  },
 };
