@@ -1,6 +1,7 @@
 import { AMQPChannel, AMQPClient } from '@cloudamqp/amqp-client'
 
 const MAX_RECONNECT_ATTEMPTS = parseInt(process.env["MAX_RECONNECT_ATTEMPTS"] ?? "5");
+const MAX_PARALLEL_PROCESSSES = parseInt(process.env["MAX_PARALLEL_PROCESSSES"] ?? "1");
 
 type SubscriptionFn = (msg: string) => Promise<void>;
 
@@ -40,7 +41,7 @@ export const connect = async (url: string) => {
   const subscribe = async (queue: string, fn?: SubscriptionFn, tag?: string) => {
     const ch = await ensureConnection();
     const q = await ch.queue(queue);
-    await ch.prefetch(1);
+    await ch.prefetch(MAX_PARALLEL_PROCESSSES);
     await q.subscribe({ noAck: false, tag }, async (msg) => {
       const str = msg.bodyToString();
       if (!str) {
