@@ -25,7 +25,7 @@ jobs:
       - name: Build Senatus image
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
         with:
-          context: ./senatus
+          context: ./
           file: ./senatus/Dockerfile
           tags: ghcr.io/42dotmk/colosseum-senatus:latest
 
@@ -40,7 +40,7 @@ jobs:
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
         if: github.ref == 'refs/heads/development' || github.ref == 'refs/heads/main'
         with:
-          context: ./senatus
+          context: ./
           push: true
           file: ./senatus/Dockerfile
           tags: ghcr.io/42dotmk/colosseum-senatus:latest
