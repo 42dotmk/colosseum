@@ -15,6 +15,9 @@ concurrency:
 jobs:
   find_modified_files:
     runs-on: ubuntu-latest
+    outputs:
+      client-changes: ${{ steps.modified-files.outputs.client }}
+      senatus-changes: ${{ steps.modified-files.outputs.senatus }}
 
     steps:
       - name: Checkout repository
@@ -23,14 +26,24 @@ jobs:
           fetch-depth: 0
 
       - name: Check modified files
+        id: modified-files
         run: |
-          git diff --name-only ${{ github.base_ref }} ${{ github.head_ref }} | grep -q "^senatus/"
-          git diff --name-only ${{ github.base_ref }} ${{ github.head_ref }} | grep -q "^client/"
-          git diff --name-only ${{ github.base_ref }} ${{ github.head_ref }} | grep -q "^judge/"
-
+          directories="senatus client"
+          for dir in $directories; do
+            changes=$(git diff --name-only ${{ github.base_ref }} ${{ github.head_ref }} | grep "^$dir/")
+            if [ -z "$changes" ]; then
+              echo "No files were modified in $dir"
+              echo "$dir=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "Changes detected in $dir"
+              echo "$dir=true" >> "$GITHUB_OUTPUT"
+            fi
+          done
+  
   build_senatus:
     needs: find_modified_files
     uses: ./.github/workflows/build-push-image.yml
+    if: needs.find_modified_files.outputs.senatus-changes == 'true'
     with:
       docker-context: ./senatus
       docker-file-path: ./senatus/Dockerfile
@@ -39,6 +52,7 @@ jobs:
   build_client:
     needs: find_modified_files
     uses: ./.github/workflows/build-push-image.yml
+    if: needs.find_modified_files.outputs.client-changes == 'true'
     with:
       docker-context: ./client
       docker-file-path: ./client/Dockerfile
