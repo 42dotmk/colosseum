@@ -29,8 +29,10 @@ jobs:
         id: modified-files
         run: |
           directories="senatus client"
+          commit_id=$(git rev-parse --short HEAD)
+          
           for dir in $directories; do
-            changes=$(git diff --name-only ${{ github.sha }} origin/${{ github.base_ref }} | grep "^$dir/")
+            changes=$(git diff --name-only $commit_id `git merge-base $commit_id origin/${{ github.base_ref }}` | grep "^$dir/")
             echo changes $changes
             if [ -z "$changes" ]; then
               echo "No files were modified in $dir"
