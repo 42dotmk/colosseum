@@ -13,7 +13,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  find_modified_files:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check modified files
+        run: |
+          git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q "^senatus/"
+          git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q "^client/"
+          git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q "^judge/"
+
   build_senatus:
+    needs: find_modified_files
     uses: ./.github/workflows/build-push-image.yml
     with:
       docker-context: ./senatus
@@ -21,6 +32,7 @@ jobs:
       docker-tags: ghcr.io/42dotmk/colosseum-senatus:latest
 
   build_client:
+    needs: find_modified_files
     uses: ./.github/workflows/build-push-image.yml
     with:
       docker-context: ./client

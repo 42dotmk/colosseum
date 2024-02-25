@@ -54,7 +54,6 @@ jobs:
 
       - name: Push production image
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
-        if: 
         with:
           context: ${{ inputs.docker-context }}
           file: ${{ inputs.docker-file-path }}
