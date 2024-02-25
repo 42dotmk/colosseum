@@ -14,14 +14,14 @@ concurrency:
 
 jobs:
   build_senatus:
-    uses: ./.github/workflows/build-push-image.yml@testing-pipeline
+    uses: ./.github/workflows/build-push-image.yml
     with:
       docker-context: ./senatus
       docker-file-path: ./senatus/Dockerfile
       docker-tags: ghcr.io/42dotmk/colosseum-senatus:latest
 
   build_client:
-    uses: ./.github/workflows/build-push-image.yml@testing-pipeline
+    uses: ./.github/workflows/build-push-image.yml
     with:
       docker-context: ./client
       docker-file-path: ./client/Dockerfile
