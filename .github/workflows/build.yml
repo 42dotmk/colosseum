@@ -32,8 +32,8 @@ jobs:
           commit_id=$(git rev-parse --short HEAD)
           
           for dir in $directories; do
-            changes=$(git diff --name-only $commit_id `git merge-base $commit_id origin/${{ github.base_ref }}` | grep "^$dir/")
-            echo changes $changes
+            changes=$(git diff --name-only $commit_id $(git merge-base $commit_id origin/development) | grep "^$dir/")
+            echo "Changes in $dir: $changes"
             if [ -z "$changes" ]; then
               echo "No files were modified in $dir"
               echo "$dir=false" >> "$GITHUB_OUTPUT"
@@ -42,6 +42,7 @@ jobs:
               echo "$dir=true" >> "$GITHUB_OUTPUT"
             fi
           done
+        
   
   build_senatus:
     needs: find_modified_files
