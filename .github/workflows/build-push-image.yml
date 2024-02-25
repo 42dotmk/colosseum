@@ -19,8 +19,8 @@ jobs:
     name: Build docker image
     runs-on: ubuntu-latest
     permissions:
-      contents: read
       packages: write
+      contents: read
 
     steps:
       - name: Checkout repository
@@ -40,8 +40,9 @@ jobs:
     if: github.event_name == 'push' && (github.head_ref == 'development' || github.head_ref == 'main')
     runs-on: ubuntu-latest
     permissions:
-      contents: read
       packages: write
+      contents: read
+      
 
     steps:
       - name: Checkout repository
