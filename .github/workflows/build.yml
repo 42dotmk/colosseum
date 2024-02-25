@@ -32,15 +32,15 @@ jobs:
           commit_id=$(git rev-parse --short HEAD)
           
           for dir in $directories; do
-            changes=$(git diff --name-only $commit_id $(git merge-base $commit_id origin/development) | grep -q "^$dir/")
-            
-            if [ -z "$changes" ]; then
-              echo "No files were modified in $dir"
-              echo "$dir=false" >> "$GITHUB_OUTPUT"
-            else
-              echo "Changes detected in $dir"
-              echo "$dir=true" >> "$GITHUB_OUTPUT"
-            fi
+            changes=$(git diff --name-only $commit_id origin/${{ github.base_ref }} | grep "^$dir/")
+            echo changes $changes
+            # if [ -z "$changes" ]; then
+            #   echo "No files were modified in $dir"
+            #   echo "$dir=false" >> "$GITHUB_OUTPUT"
+            # else
+            #   echo "Changes detected in $dir"
+            #   echo "$dir=true" >> "$GITHUB_OUTPUT"
+            # fi
           done
         
   
