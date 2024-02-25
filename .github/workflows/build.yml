@@ -24,9 +24,9 @@ jobs:
 
       - name: Check modified files
         run: |
-          git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q "^senatus/"
-          git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q "^client/"
-          git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q "^judge/"
+          git diff --name-only ${{ github.base_ref }} ${{ github.head_ref }} | grep -q "^senatus/"
+          git diff --name-only ${{ github.base_ref }} ${{ github.head_ref }} | grep -q "^client/"
+          git diff --name-only ${{ github.base_ref }} ${{ github.head_ref }} | grep -q "^judge/"
 
   build_senatus:
     needs: find_modified_files
