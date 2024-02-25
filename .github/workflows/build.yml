@@ -32,6 +32,8 @@ jobs:
           commit_id=$(git rev-parse --short HEAD)
           
           for dir in $directories; do
+            git diff --name-only $commit_id $(git merge-base $commit_id origin/development)
+            git diff --name-only $commit_id $(git merge-base $commit_id origin/development) | grep "^$dir/"
             changes=$(git diff --name-only $commit_id $(git merge-base $commit_id origin/development) | grep "^$dir/")
             echo "Changes in $dir: $changes"
             if [ -z "$changes" ]; then
