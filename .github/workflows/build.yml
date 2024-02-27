@@ -106,3 +106,21 @@ jobs:
           push: true
           file: ./executioner/runtimes/languages/nodejs/Dockerfile
           tags: ghcr.io/42dotmk/colosseum-executioner-nodejs:latest
+
+      # --- Build
+      - name: Build Python Executioner image
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          context: ./executioner/runtimes/languages/python/
+          file: ./executioner/runtimes/languages/python/Dockerfile
+          tags: ghcr.io/42dotmk/colosseum-executioner-python:latest
+
+      # --- Push
+      - name: Push Python Executioner image
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        if: github.ref == 'refs/heads/development' || github.ref == 'refs/heads/main'
+        with:
+          context: ./executioner/runtimes/languages/python/
+          push: true
+          file: ./executioner/runtimes/languages/python/Dockerfile
+          tags: ghcr.io/42dotmk/colosseum-executioner-python:latest

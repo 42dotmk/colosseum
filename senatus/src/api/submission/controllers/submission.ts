@@ -4,7 +4,6 @@
 
 import { connect } from '@colosseum/queue/amqp';
 import { factories } from '@strapi/strapi'
-import { ApiExecutionExecution, ApiTestCaseTestCase } from '../../../../types/generated/contentTypes';
 
 export default factories.createCoreController('api::submission.submission', ({ strapi }) => ({
   async submit(ctx) {
@@ -53,7 +52,7 @@ export default factories.createCoreController('api::submission.submission', ({ s
       const qPayload = {
         sources: [
           {
-            filename: "main.cpp",
+            filename: entry.language.entrypoint,
             content: entry.code,
           }
         ],
