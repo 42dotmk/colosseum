@@ -2,6 +2,9 @@
   "name": "executioner",
   "module": "index.ts",
   "type": "module",
+  "scripts": {
+    "start": "tsx index.ts"
+  },
   "devDependencies": {
     "@types/dockerode": "^3.3.24",
     "@types/uuid": "^9.0.8",

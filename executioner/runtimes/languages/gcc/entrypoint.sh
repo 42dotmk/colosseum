@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Compile the source code
-ERROR=$(gcc -O2 -static src/main.cpp -o ./main 2>&1)
+ERROR=$(g++ -O2 -static src/main.cpp -o ./main 2>&1)
 
 echo "ERR| $ERROR /ERR";
 

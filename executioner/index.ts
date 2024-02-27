@@ -14,7 +14,10 @@ async function run() {
     console.log("Received msg");
     const parsed = JSON.parse(msg);
     const result = await execute(parsed.sources, parsed.input, parsed.options);
-    await publish("results", JSON.stringify(result));
+    await publish("results", JSON.stringify({
+      result,
+      metadata: parsed?.metadata,
+    }));
   });
 }
 

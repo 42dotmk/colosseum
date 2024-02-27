@@ -1,14 +1,21 @@
 import { AMQPChannel, AMQPClient } from '@cloudamqp/amqp-client'
 
 const MAX_RECONNECT_ATTEMPTS = parseInt(process.env["MAX_RECONNECT_ATTEMPTS"] ?? "5");
-const MAX_PARALLEL_PROCESSSES = parseInt(process.env["MAX_PARALLEL_PROCESSSES"] ?? "1");
+const MAX_PARALLEL_PROCESSSES = parseInt(process.env["MAX_PARALLEL_PROCESSSES"] ?? "100");
 
 type SubscriptionFn = (msg: string) => Promise<void>;
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export const connect = async (url: string) => {
-  let channel: AMQPChannel;
+  let channel: AMQPChannel | null;
+
+  const disconnect = async () => {
+    if (channel) {
+      await channel.close();
+      channel = null;
+    }
+  }
 
   const ensureConnection = async (attempt = 0): Promise<AMQPChannel> => {
     if (channel) {
@@ -51,6 +58,7 @@ export const connect = async (url: string) => {
         await fn?.(str);
         await msg.ack();
       } catch (e: any) {
+        await msg.nack(true);
         console.error("Error in subscription", e);
       }
     });
@@ -75,6 +83,7 @@ export const connect = async (url: string) => {
     subscribe,
     unsubscribe,
     publish,
+    disconnect,
   };
 }
 

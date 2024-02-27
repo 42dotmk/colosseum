@@ -15,6 +15,7 @@ type File = {
   id?: string;
   filename: string;
   content: string;
+  metadata?: any;
 };
 
 const IMAGE_BASE = 'ghcr.io/42dotmk/executioner-';
@@ -150,6 +151,7 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
             stdout: stdout.toString(),
             stderr: stderr.toString(),
             time: parsedTime,
+            metadata: inp.metadata,
           });
         }
 
@@ -162,7 +164,7 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
     console.error(e);
   } finally {
     if (fs.existsSync(subWorkspace)) {
-      fs.rmSync(subWorkspace, { recursive: true });
+      // fs.rmSync(subWorkspace, { recursive: true });
     }
   }
 };

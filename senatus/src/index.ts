@@ -24,10 +24,26 @@ export default {
       subscribe,
       publish,
     } = await connect(strapi.config.get("server.app.rabbitUrl"));
-    console.log("Connected to RabbitMQ");
-
+    console.log("Connected to RabbitMQ!");
     await subscribe("results", async (msg) => {
-      console.log("Received:", msg);
+      const parsed = JSON.parse(msg);
+      const submission = await strapi.entityService.findOne('api::submission.submission', parsed.metadata.submissionId, {
+        populate: ['user', 'problem', 'language'],
+      });
+
+      for (const result of parsed.result) {
+        console.log("Updating execution", result.metadata.executionId);
+        const execution = await strapi.entityService.update('api::execution.execution', result.metadata.executionId, {
+          data: {
+            stdout: result.stdout,
+            stderr: result.stderr,
+            executionTime: result.time,
+            processed: true,
+            processedAt: new Date(),
+            publishedAt: new Date(),
+          }
+        });
+      }
     });
   },
 };

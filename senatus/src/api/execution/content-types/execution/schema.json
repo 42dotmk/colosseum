@@ -38,6 +38,9 @@
     },
     "executionTime": {
       "type": "float"
+    },
+    "processedAt": {
+      "type": "datetime"
     }
   }
 }
