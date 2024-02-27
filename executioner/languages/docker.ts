@@ -18,7 +18,7 @@ type File = {
   metadata?: any;
 };
 
-const IMAGE_BASE = 'ghcr.io/42dotmk/executioner-';
+const IMAGE_BASE = 'ghcr.io/42dotmk/colosseum-executioner-';
 const WORKDIR = process.env.WORKDIR || '_work';
 
 if (!fs.existsSync(WORKDIR)) {

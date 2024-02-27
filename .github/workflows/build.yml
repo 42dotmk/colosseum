@@ -70,3 +70,39 @@ jobs:
           push: true
           file: ./executioner/Dockerfile
           tags: ghcr.io/42dotmk/colosseum-executioner:latest
+
+      # --- Build
+      - name: Build GCC Executioner image
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          context: ./executioner/runtimes/languages/gcc/
+          file: ./executioner/runtimes/languages/gcc/Dockerfile
+          tags: ghcr.io/42dotmk/colosseum-executioner-gcc:latest
+
+      # --- Push
+      - name: Push GCC Executioner image
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        if: github.ref == 'refs/heads/development' || github.ref == 'refs/heads/main'
+        with:
+          context: ./executioner/runtimes/languages/gcc/
+          push: true
+          file: ./executioner/runtimes/languages/gcc/Dockerfile
+          tags: ghcr.io/42dotmk/colosseum-executioner-gcc:latest
+
+      # --- Build
+      - name: Build NodeJS Executioner image
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          context: ./executioner/runtimes/languages/nodejs/
+          file: ./executioner/runtimes/languages/nodejs/Dockerfile
+          tags: ghcr.io/42dotmk/colosseum-executioner-nodejs:latest
+
+      # --- Push
+      - name: Push NodeJS Executioner image
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        if: github.ref == 'refs/heads/development' || github.ref == 'refs/heads/main'
+        with:
+          context: ./executioner/runtimes/languages/nodejs/
+          push: true
+          file: ./executioner/runtimes/languages/nodejs/Dockerfile
+          tags: ghcr.io/42dotmk/colosseum-executioner-nodejs:latest
