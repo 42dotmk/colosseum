@@ -28,6 +28,10 @@ services:
       - db
     volumes:
       - strapi_uploads:/app/public/uploads
+  client:
+    image: ghcr.io/42dotmk/colosseum-client-prod:latest
+    ports:
+      - 3333:80
 
 volumes:
   postgres_data:
