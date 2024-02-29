@@ -41,6 +41,7 @@ export default factories.createCoreController('api::submission.submission', ({ s
             submission: entry.id,
             processed: false,
             publishedAt: new Date(),
+            code: entry.code,
           }
         });
         executionsToQueue.push({

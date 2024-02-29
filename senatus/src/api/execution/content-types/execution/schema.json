@@ -41,6 +41,9 @@
     },
     "processedAt": {
       "type": "datetime"
+    },
+    "code": {
+      "type": "text"
     }
   }
 }

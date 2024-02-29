@@ -788,6 +788,7 @@ export interface ApiExecutionExecution extends Schema.CollectionType {
     processed: Attribute.Boolean;
     executionTime: Attribute.Float;
     processedAt: Attribute.DateTime;
+    code: Attribute.Text;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;
@@ -951,6 +952,7 @@ export interface ApiSubmissionSubmission extends Schema.CollectionType {
     >;
     triggeredAt: Attribute.DateTime;
     finishedAt: Attribute.DateTime;
+    metadata: Attribute.JSON;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;

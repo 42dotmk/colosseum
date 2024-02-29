@@ -40,6 +40,9 @@
     },
     "finishedAt": {
       "type": "datetime"
+    },
+    "metadata": {
+      "type": "json"
     }
   }
 }
