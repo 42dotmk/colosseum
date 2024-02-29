@@ -8,6 +8,7 @@ on:
     branches:
       - 'development'
       - 'main'
+      - 'dummy-development'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref }}
@@ -40,7 +41,7 @@ jobs:
   build_senatus:
     needs: find_modified_files
     uses: ./.github/workflows/build-push-docker-image.yml
-    if: needs.find_modified_files.outputs.senatus == 'true'
+    # if: needs.find_modified_files.outputs.senatus == 'true'
     with:
       docker-context: ./senatus
       docker-file-path: ./senatus/Dockerfile
