@@ -19,8 +19,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check event name
-        run: echo ${{ github.event_name }}
+      - name: Check if full request has been merged
+        run: echo ${{ github.event.pull_request.merged }}
       
       - name: Check head_ref name
         run: echo ${{ github.head_ref }}
@@ -47,7 +47,7 @@ jobs:
 
   push_image:
     name: Push docker image
-    if: github.event.pull_request.merged == true && (github.head_ref == 'development' || github.head_ref == 'main')
+    if: github.event.pull_request.merged == true && (github.head_ref == 'dummy-development' || github.head_ref == 'main')
     runs-on: ubuntu-latest
     permissions:
       contents: read
