@@ -19,8 +19,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check event name
-        run: echo ${{ github.event_name }}
+      - name: Check if full request has been merged
+        run: echo ${{ github.event.pull_request.merged }}
       
       - name: Check head_ref name
         run: echo ${{ github.head_ref }}
@@ -47,7 +47,7 @@ jobs:
 
   push_image:
     name: Push docker image
-    if: github.event.pull_request.merged == true && (github.head_ref == 'development' || github.head_ref == 'main')
+    if: github.event.pull_request.merged == true && (github.head_ref == 'dummy-development' || github.head_ref == 'main')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -56,17 +56,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Login to ghcr.io
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Login to ghcr.io
+      #   uses: docker/login-action@v3
+      #   with:
+      #     registry: ghcr.io
+      #     username: ${{ github.actor }}
+      #     password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push production image
-        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
-        with:
-          context: ${{ inputs.docker-context }}
-          file: ${{ inputs.docker-file-path }}
-          tags: ${{ inputs.docker-tags }}
-          push: true
+      # - name: Push production image
+      #   uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+      #   with:
+      #     context: ${{ inputs.docker-context }}
+      #     file: ${{ inputs.docker-file-path }}
+      #     tags: ${{ inputs.docker-tags }}
+      #     push: true
