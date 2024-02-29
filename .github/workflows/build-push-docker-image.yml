@@ -14,6 +14,17 @@ on:
         type: string
 
 jobs:
+  check_event:
+    name: Checking event
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check event name
+        run: echo ${{ github.event_name }}
+      
+      - name: Check head_ref name
+        run: echo ${{ github.head_ref }}
+
   build_image:
     if: github.event_name == 'pull_request'
     name: Build docker image
