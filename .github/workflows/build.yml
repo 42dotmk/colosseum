@@ -55,7 +55,7 @@ jobs:
     uses: ./.github/workflows/build-push-docker-image.yml
     if: needs.find_modified_files.outputs.senatus == 'true'
     with:
-      docker-context: ./senatus
+      docker-context: ./
       docker-file-path: ./senatus/Dockerfile
       docker-tags: ghcr.io/42dotmk/colosseum-senatus:latest
 
@@ -75,7 +75,7 @@ jobs:
     uses: ./.github/workflows/build-push-docker-image.yml
     if: needs.find_modified_files.outputs.executioner == 'true'
     with:
-      docker-context: ./executioner
+      docker-context: ./
       docker-file-path: ./executioner/Dockerfile
       docker-tags: ghcr.io/42dotmk/colosseum-executioner:latest
 
