@@ -36,7 +36,7 @@ jobs:
 
   push_image:
     name: Push docker image
-    if: github.event.pull_request.merged == true && (github.head_ref == 'development' || github.head_ref == 'main')
+    if: true
     runs-on: ubuntu-latest
     permissions:
       contents: read
