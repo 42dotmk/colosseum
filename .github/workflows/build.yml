@@ -12,6 +12,10 @@ on:
     branches:
       - 'development'
       - 'main'
+    paths:
+      - 'client/**'
+      - 'senatus/**'
+      - 'executioner/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref }}
