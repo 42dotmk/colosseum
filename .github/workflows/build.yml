@@ -4,6 +4,10 @@ on:
   workflow_dispatch:
   pull_request:
     types: [opened, synchronize, reopened]
+    paths:
+      - 'client/**'
+      - 'senatus/**'
+      - 'executioner/**'
   push:
     branches:
       - 'development'
@@ -50,6 +54,7 @@ jobs:
               - 'executioner/**/python/**'        
       
   senatus:
+    name: Senatus
     needs: find_modified_files
     uses: ./.github/workflows/build-push-docker-image.yml
     if: needs.find_modified_files.outputs.senatus == 'true'
@@ -59,6 +64,7 @@ jobs:
       docker-tags: ghcr.io/42dotmk/colosseum-senatus:latest
 
   client:
+    name: Client
     needs: find_modified_files
     uses: ./.github/workflows/build-push-docker-image.yml
     if: needs.find_modified_files.outputs.client == 'true'
@@ -68,6 +74,7 @@ jobs:
       docker-tags: ghcr.io/42dotmk/colosseum-client-prod:latest
 
   executioner:
+    name: Executioner
     needs: find_modified_files
     uses: ./.github/workflows/build-push-docker-image.yml
     if: needs.find_modified_files.outputs.executioner == 'true'
@@ -77,6 +84,7 @@ jobs:
       docker-tags: ghcr.io/42dotmk/colosseum-executioner:latest
 
   gcc_executioner:
+    name: GCC executioner
     needs: find_modified_files
     uses: ./.github/workflows/build-push-docker-image.yml
     if: needs.find_modified_files.outputs.gcc_executioner == 'true'
@@ -86,6 +94,7 @@ jobs:
       docker-tags: ghcr.io/42dotmk/colosseum-executioner-gcc:latest
 
   node_executioner:
+    name: NodeJS executioner
     needs: find_modified_files
     uses: ./.github/workflows/build-push-docker-image.yml
     if: needs.find_modified_files.outputs.node_executioner == 'true'
@@ -95,6 +104,7 @@ jobs:
       docker-tags: ghcr.io/42dotmk/colosseum-executioner-nodejs:latest
 
   python_executioner:
+    name: Python executioner
     needs: find_modified_files
     uses: ./.github/workflows/build-push-docker-image.yml
     if: needs.find_modified_files.outputs.python_executioner == 'true'
