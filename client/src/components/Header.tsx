@@ -20,7 +20,7 @@ const Header = () => {
       >
         <Toolbar sx={{ backgroundColor: "background.default" }}>
           <Box flexGrow={1} display={"inline-flex"} marginLeft={5}>
-            <Link to="/" style={{ display: "flex" }}>
+            <Link to="/" style={{ display: "flex", textDecoration: "none" }}>
               <img src="/logo.svg" alt="logo" />
               <Typography color="primary" variant="h6" textTransform="uppercase" marginX={1}>
                 Colosseum
