@@ -1,5 +1,5 @@
 import PageLayout from "../../components/PageLayout";
-import CompeteTabs from "./Tabs";
+import CompeteTabs from "./CompeteTabs";
 
 const CompetePage = () => {
   return (
