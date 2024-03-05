@@ -4,7 +4,6 @@ import {
   IconButton,
   Tooltip,
   Typography,
-  Zoom,
 } from "@mui/material";
 import { useState } from "react";
 import Paper from "../../components/Paper";
@@ -60,12 +59,7 @@ const ProblemPane = () => {
             }}
           >
             <Grid item xs={1}>
-              <Tooltip
-                disableTouchListener
-                disableFocusListener
-                TransitionComponent={Zoom}
-                title={tooltipMessage}
-              >
+              <Tooltip title={tooltipMessage} key={paneWidth}>
                 <IconButton onClick={handleResize}>
                   {paneWidth === 53 ? (
                     <KeyboardDoubleArrowRight />
