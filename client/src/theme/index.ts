@@ -108,7 +108,7 @@ const themeOptions: ThemeOptions = createTheme({
       textTransform: 'uppercase',
     },
     subtitle1: {
-      color: '#CCC',
+      color: '#EEEEEE',
       fontSize: '16px',
       fontStyle: 'normal',
       fontWeight: 400,
@@ -116,7 +116,7 @@ const themeOptions: ThemeOptions = createTheme({
       letterSpacing: '0.15px',
     },
     subtitle2: {
-      color: '#CCC',
+      color: '#EEEEEE',
       fontSize: '14px',
       fontStyle: 'normal',
       fontWeight: 500,
