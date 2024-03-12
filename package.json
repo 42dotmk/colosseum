@@ -1,0 +1,11 @@
+{
+  "name": "colosseum",
+  "version": "1.0.0",
+  "devDependencies": {
+    "husky": "^9.0.10"
+  },
+  "scripts": {
+    "prepareClientHusky": "husky client/.husky",
+    "prepareSenatusHusky": "husky senatus/.husky"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "kind": "collectionType",
+  "collectionName": "executions",
+  "info": {
+    "singularName": "execution",
+    "pluralName": "executions",
+    "displayName": "Execution",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "stdout": {
+      "type": "text"
+    },
+    "stderr": {
+      "type": "text"
+    },
+    "testCase": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::test-case.test-case",
+      "private": true
+    },
+    "submission": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::submission.submission"
+    },
+    "passed": {
+      "type": "boolean",
+      "private": true
+    },
+    "processed": {
+      "type": "boolean"
+    },
+    "executionTime": {
+      "type": "float"
+    }
+  }
+}

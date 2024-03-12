@@ -1,13 +1,9 @@
-import { Grid } from "@mui/material";
+import { Grid } from '@mui/material';
 
-const HomePage = () => {
-  return (
-    <Grid container>
-      <Grid item height={"100vh"} width={"100vw"}>
-
-      </Grid>
-    </Grid>
-  );
-};
+const HomePage = () => (
+  <Grid container>
+    <Grid item height="100vh" />
+  </Grid>
+);
 
 export default HomePage;
