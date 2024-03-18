@@ -1,9 +1,7 @@
-FROM node:20
+FROM mcr.microsoft.com/dotnet/sdk:8.0
 
 WORKDIR /exc/
 
 ADD . .
-
-RUN npm i -g tsx
 
 ENTRYPOINT /exc/entrypoint.sh

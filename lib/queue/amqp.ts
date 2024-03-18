@@ -8,18 +8,23 @@ type SubscriptionFn = (msg: string) => Promise<void>;
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export const connect = async (url: string) => {
-  let channel: AMQPChannel | null;
+  let pubChannel: AMQPChannel | null;
+  let subChannel: AMQPChannel | null;
 
   const disconnect = async () => {
-    if (channel) {
-      await channel.close();
-      channel = null;
+    if (pubChannel) {
+      await pubChannel.close();
+      pubChannel = null;
+    }
+    if (subChannel) {
+      await subChannel.close();
+      subChannel = null;
     }
   }
 
-  const ensureConnection = async (attempt = 0): Promise<AMQPChannel> => {
-    if (channel) {
-      return channel;
+  const ensureConnection = async (attempt = 0): Promise<{ pubChannel: AMQPChannel, subChannel: AMQPChannel }> => {
+    if (subChannel && pubChannel) {
+      return { pubChannel, subChannel };
     }
 
     if (attempt >= MAX_RECONNECT_ATTEMPTS) {
@@ -29,12 +34,13 @@ export const connect = async (url: string) => {
     try {
       const amqp = new AMQPClient(url);
       const connection = await amqp.connect();
-      channel = await connection.channel();
+      subChannel = await connection.channel();
+      pubChannel = await connection.channel();
       connection.onerror = (e) => {
         console.error("Connection error", e);
         connection.close();
       };
-      return channel;
+      return { subChannel, pubChannel };
     } catch (e: any) {
       console.error("ERROR", e)
       e.connection.close()
@@ -46,7 +52,7 @@ export const connect = async (url: string) => {
   await ensureConnection();
 
   const subscribe = async (queue: string, fn?: SubscriptionFn, tag?: string) => {
-    const ch = await ensureConnection();
+    const { subChannel: ch } = await ensureConnection();
     const q = await ch.queue(queue);
     await ch.prefetch(MAX_PARALLEL_PROCESSSES);
     await q.subscribe({ noAck: false, tag }, async (msg) => {
@@ -65,14 +71,14 @@ export const connect = async (url: string) => {
   }
 
   const unsubscribe = async (queue: string, tag: string) => {
-    const ch = await ensureConnection();
+    const { subChannel: ch } = await ensureConnection();
     const q = await ch.queue(queue);
     q.unsubscribe(tag);
   };
 
   const publish = async (queue: string, msg: string, deliveryMode = 2) => {
-    const ch = await ensureConnection();
-    const q = await ch.queue(queue);
+    const { pubChannel } = await ensureConnection();
+    const q = await pubChannel.queue(queue);
   
     q.publish(msg, { 
       deliveryMode,

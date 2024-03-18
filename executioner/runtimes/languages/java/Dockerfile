@@ -1,9 +1,7 @@
-FROM node:20
+FROM eclipse-temurin:21
 
 WORKDIR /exc/
 
 ADD . .
-
-RUN npm i -g tsx
 
 ENTRYPOINT /exc/entrypoint.sh

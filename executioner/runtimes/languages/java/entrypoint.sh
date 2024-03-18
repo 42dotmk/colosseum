@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Compile the source code
-ERROR=$(g++ -O2 -static src/main.cpp -o ./main 2>&1)
+ERROR=$(javac src/Program.java 2>&1)
 TIMEOUT=${EXECUTION_TIMEOUT:-10}
 
 files=($(find input -type f -mindepth 1))
@@ -14,7 +14,7 @@ for inputFile in "${files[@]}"; do
     echo "Compilation error:\n $ERROR" > "output/$filename.stderr"
     break;
   fi
-  { time (cat $inputFile | timeout ${TIMEOUT} ./main 1> "output/$filename.stdout" 2> "output/$filename.stderr") ; } 2> "output/$filename.time"
+  { time (cat $inputFile | timeout ${TIMEOUT} java -cp src Program 1> "output/$filename.stdout" 2> "output/$filename.stderr") ; } 2> "output/$filename.time"
   EXIT_CODE=$?
   echo "Run resulted in $EXIT_CODE"
   if [ $EXIT_CODE -eq 124 ]; then

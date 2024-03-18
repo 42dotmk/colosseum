@@ -18,6 +18,7 @@ type File = {
   metadata?: any;
 };
 
+const DEFAULT_EXECUTION_TIMEOUT = parseInt(process.env.DEFAULT_EXECUTION_TIMEOUT || '60');
 const IMAGE_BASE = process.env.IMAGE_BASE || 'ghcr.io/42dotmk/colosseum-executioner-';
 const WORKDIR = process.env.WORKDIR || '_work';
 
@@ -33,6 +34,13 @@ function parseDuration(duration: string) {
   const seconds = Number(match[2]);
 
   return minutes * 60 + seconds;
+}
+
+const readIfExists = async (path: string) => {
+  if (fs.existsSync(path)) {
+    return (await readFile(path)).toString();
+  }
+  return '';
 }
 
 export const execute = async (files: File[], input: File[], options: LanguageOptions) => {
@@ -74,6 +82,7 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
 
   for (const file of files) {
     const filePath = path.resolve(path.join(srcDir, file.filename));
+    console.log(`Writing file to ${filePath}`)
     await writeFile(filePath, file.content);
   }
 
@@ -108,12 +117,15 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
         "-v",
         `${compileStdoutPath}:/exc/${compileStdoutFilename}`,
         "-v",
+        // `/Users/user/git/colosseum/executioner/runtimes/languages/gcc/entrypoint.sh:/exc/entrypoint.sh`,
+        // "-v",
         `${compileStderrPath}:/exc/${compileStderrFilename}`,
         "-i",
         `${IMAGE_BASE}${lang}`
       ];
 
       const child = cp.spawn('docker', args);
+      console.log(child.spawnargs.join(' '))
 
       let stdout = '';
       let stderr = '';
@@ -139,12 +151,17 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
           const stdoutPath = path.resolve(path.join(outputDir, `${inp.filename}.stdout`));
           const stderrPath = path.resolve(path.join(outputDir, `${inp.filename}.stderr`));
           const timePath = path.resolve(path.join(outputDir, `${inp.filename}.time`));
-          const stdout = (await readFile(stdoutPath)).toString();
-          const stderr = (await readFile(stderrPath)).toString();
-          const time = (await readFile(timePath)).toString();
-          const timeSplits = time.split("\n").map((t) => t.trim()).filter(x => x).map(x => x.split("\t"));
-          const [ realTime ] = timeSplits;
-          const parsedTime = parseDuration(realTime[1]);
+          const stdout = await readIfExists(stdoutPath);
+          
+          const stderr = await readIfExists(stderrPath);
+          const time = await readIfExists(timePath);
+
+          let parsedTime = null;
+          if (time) {
+            const timeSplits = time.split("\n").map((t) => t.trim()).filter(x => x).map(x => x.split("\t"));
+            const [ realTime ] = timeSplits;
+            parsedTime = parseDuration(realTime[1]);
+          }
 
           output.push({
             id: inp.id,
