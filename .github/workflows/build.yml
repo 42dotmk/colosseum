@@ -30,6 +30,7 @@ jobs:
       python_executioner: ${{ steps.changes.outputs.python_executioner }}
       java_executioner: ${{ steps.changes.outputs.java_executioner }}
       csharp_executioner: ${{ steps.changes.outputs.csharp_executioner }}
+      rust_executioner: ${{ steps.changes.outputs.rust_executioner }}
 
     steps:
       - name: Checkout repository
@@ -57,6 +58,8 @@ jobs:
             java_executioner:
               - 'executioner/**/java/**'
             csharp_executioner:
+              - 'executioner/**/csharp/**'
+            rust_executioner:
               - 'executioner/**/csharp/**'
       
   senatus:
@@ -138,3 +141,14 @@ jobs:
       docker-context: ./executioner/runtimes/languages/csharp/
       docker-file-path: ./executioner/runtimes/languages/csharp/Dockerfile
       docker-tags: ghcr.io/42dotmk/colosseum-executioner-csharp:latest
+
+  rust_executioner:
+    name: Rust executioner
+    needs: find_modified_files
+    uses: ./.github/workflows/build-push-docker-image.yml
+    if: needs.find_modified_files.outputs.rust_executioner == 'true'
+    with:
+      docker-context: ./executioner/runtimes/languages/rust/
+      docker-file-path: ./executioner/runtimes/languages/rust/Dockerfile
+      docker-tags: ghcr.io/42dotmk/colosseum-executioner-rust:latest
+    
