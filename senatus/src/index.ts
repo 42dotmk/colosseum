@@ -33,12 +33,16 @@ export default {
 
       for (const result of parsed.result) {
         console.log("Updating execution", result.metadata.executionId);
+        const existing = await strapi.entityService.findOne('api::execution.execution', result.metadata.executionId, {
+          populate: ['testCase'],
+        });
         const execution = await strapi.entityService.update('api::execution.execution', result.metadata.executionId, {
           data: {
             stdout: result.stdout,
             stderr: result.stderr,
             executionTime: result.time,
             processed: true,
+            passed: existing.testCase.output === result.stdout,
             processedAt: new Date(),
             publishedAt: new Date(),
           }
