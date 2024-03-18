@@ -2,7 +2,7 @@
 export default  {
   routes: [
     {
-      method: 'GET',
+      method: 'POST',
       path: '/submissions/submit',
       handler: 'submission.submit',
       config: {
