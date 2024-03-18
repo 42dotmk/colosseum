@@ -28,6 +28,8 @@ jobs:
       gcc_executioner: ${{ steps.changes.outputs.gcc_executioner }}
       node_executioner: ${{ steps.changes.outputs.node_executioner }}
       python_executioner: ${{ steps.changes.outputs.python_executioner }}
+      java_executioner: ${{ steps.changes.outputs.java_executioner }}
+      csharp_executioner: ${{ steps.changes.outputs.csharp_executioner }}
 
     steps:
       - name: Checkout repository
@@ -112,3 +114,23 @@ jobs:
       docker-context: ./executioner/runtimes/languages/python/
       docker-file-path: ./executioner/runtimes/languages/python/Dockerfile
       docker-tags: ghcr.io/42dotmk/colosseum-executioner-python:latest
+
+  java_executioner:
+    name: Java executioner
+    needs: find_modified_files
+    uses: ./.github/workflows/build-push-docker-image.yml
+    if: needs.find_modified_files.outputs.java_executioner == 'true'
+    with:
+      docker-context: ./executioner/runtimes/languages/java/
+      docker-file-path: ./executioner/runtimes/languages/java/Dockerfile
+      docker-tags: ghcr.io/42dotmk/colosseum-executioner-java:latest
+
+  csharp_executioner:
+    name: C# executioner
+    needs: find_modified_files
+    uses: ./.github/workflows/build-push-docker-image.yml
+    if: needs.find_modified_files.outputs.csharp_executioner == 'true'
+    with:
+      docker-context: ./executioner/runtimes/languages/csharp/
+      docker-file-path: ./executioner/runtimes/languages/csharp/Dockerfile
+      docker-tags: ghcr.io/42dotmk/colosseum-executioner-csharp:latest
