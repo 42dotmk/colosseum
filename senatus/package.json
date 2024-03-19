@@ -10,6 +10,8 @@
     "strapi": "strapi"
   },
   "dependencies": {
+    "@cloudamqp/amqp-client": "^3.1.1",
+    "@colosseum/queue": "file:../lib/queue",
     "@strapi/plugin-cloud": "4.15.5",
     "@strapi/plugin-graphql": "^4.15.5",
     "@strapi/plugin-i18n": "4.15.5",

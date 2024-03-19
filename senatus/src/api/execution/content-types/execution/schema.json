@@ -38,6 +38,12 @@
     },
     "executionTime": {
       "type": "float"
+    },
+    "processedAt": {
+      "type": "datetime"
+    },
+    "code": {
+      "type": "text"
     }
   }
 }
