@@ -1,7 +1,7 @@
 #!/bin/bash
 TIMEOUT=${EXECUTION_TIMEOUT:-10}
 
-files=($(find input -type f -mindepth 1))
+files=($(find input -type f -maxdepth 1))
 for inputFile in "${files[@]}"; do
   filename="${inputFile:6}"
   echo "Running $inputFile"

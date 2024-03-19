@@ -4,6 +4,8 @@ WORKDIR /exc/
 
 ADD . .
 
-RUN npm i -g tsx
+RUN npm install
+
+RUN npm install -g typescript
 
 ENTRYPOINT /exc/entrypoint.sh

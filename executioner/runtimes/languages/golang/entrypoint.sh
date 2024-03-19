@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Compile the source code
-ERROR=$(rustc src/main.rs 2>&1)
+ERROR=$(cd src && go build -o ../main main.go 2>&1)
 TIMEOUT=${EXECUTION_TIMEOUT:-10}
 
 files=($(find input -type f -maxdepth 1))
