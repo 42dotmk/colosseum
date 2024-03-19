@@ -16,8 +16,8 @@ export type Event = z.infer<typeof EventSchema>;
 export const TestCaseSchema = z.object({
   input: z.string(),
   output: z.string(),
-  locked: z.boolean(),
-  hidden: z.boolean(),
+  locked: z.boolean().nullable(),
+  hidden: z.boolean().nullable(),
   explanation: z.string().nullable(),
   id: z.string(),
 });
