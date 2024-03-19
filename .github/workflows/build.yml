@@ -31,6 +31,7 @@ jobs:
       java_executioner: ${{ steps.changes.outputs.java_executioner }}
       csharp_executioner: ${{ steps.changes.outputs.csharp_executioner }}
       rust_executioner: ${{ steps.changes.outputs.rust_executioner }}
+      golang_executioner: ${{ steps.changes.outputs.golang_executioner }}
 
     steps:
       - name: Checkout repository
@@ -60,7 +61,9 @@ jobs:
             csharp_executioner:
               - 'executioner/**/csharp/**'
             rust_executioner:
-              - 'executioner/**/csharp/**'
+              - 'executioner/**/rust/**'
+            golang_executioner:
+              - 'executioner/**/golang/**'
       
   senatus:
     name: Senatus
@@ -151,4 +154,15 @@ jobs:
       docker-context: ./executioner/runtimes/languages/rust/
       docker-file-path: ./executioner/runtimes/languages/rust/Dockerfile
       docker-tags: ghcr.io/42dotmk/colosseum-executioner-rust:latest
+    
+
+  golang_executioner:
+    name: Golang executioner
+    needs: find_modified_files
+    uses: ./.github/workflows/build-push-docker-image.yml
+    if: needs.find_modified_files.outputs.golang_executioner == 'true'
+    with:
+      docker-context: ./executioner/runtimes/languages/golang/
+      docker-file-path: ./executioner/runtimes/languages/golang/Dockerfile
+      docker-tags: ghcr.io/42dotmk/colosseum-executioner-golang:latest
     
