@@ -787,6 +787,8 @@ export interface ApiExecutionExecution extends Schema.CollectionType {
     passed: Attribute.Boolean & Attribute.Private;
     processed: Attribute.Boolean;
     executionTime: Attribute.Float;
+    processedAt: Attribute.DateTime;
+    code: Attribute.Text;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;
@@ -820,6 +822,8 @@ export interface ApiLanguageLanguage extends Schema.CollectionType {
     name: Attribute.String;
     defaultMaxCpuTime: Attribute.Float;
     defaultMaxMemory: Attribute.Integer;
+    codeName: Attribute.String;
+    entrypoint: Attribute.String;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;
@@ -948,6 +952,7 @@ export interface ApiSubmissionSubmission extends Schema.CollectionType {
     >;
     triggeredAt: Attribute.DateTime;
     finishedAt: Attribute.DateTime;
+    metadata: Attribute.JSON;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;

@@ -20,6 +20,12 @@
     },
     "defaultMaxMemory": {
       "type": "integer"
+    },
+    "codeName": {
+      "type": "string"
+    },
+    "entrypoint": {
+      "type": "string"
     }
   }
 }
