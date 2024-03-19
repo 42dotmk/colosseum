@@ -18,23 +18,16 @@ import {
 
 const ProblemPane = () => {
   const { problem } = useGetProblemBySlug();
-  const [descriptionPaneSize, setDescriptionPaneSize] = useState(7);
-  const [editorPaneSize, setEditorPaneSize] = useState(3);
-  const [paneWidth, setPaneWidth] = useState(30);
-  const [tooltipMessage, setTooltipMessage] = useState("Maximize code editor");
+  
+  const [isExpanded, setIsExpanded] = useState(false);
+  const editorPaneSize = isExpanded ? 9 : 5;
+  const descriptionPaneSize = 12 - editorPaneSize;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleResize = (event: any) => {
+  const tooltipMessage = isExpanded ? "Minimize code editor" : "Maximize code editor";
+
+  const handleResize = (event: React.MouseEvent) => {
     event.preventDefault();
-
-    setDescriptionPaneSize((previousPaneSize) =>
-      previousPaneSize === 7 ? 3 : 7
-    );
-    setEditorPaneSize((previousPaneSize) => (previousPaneSize === 9 ? 3 : 9));
-    setPaneWidth((previousPaneWidth) => (previousPaneWidth === 53 ? 30 : 53));
-    setTooltipMessage(() =>
-      paneWidth === 53 ? "Maximize code editor" : "Minimize code editor"
-    );
+    setIsExpanded(!isExpanded);
   };
 
   return (
@@ -50,18 +43,23 @@ const ProblemPane = () => {
         </Paper>
       </Grid>
       <Grid item xs={editorPaneSize} height="inherit">
-        <Paper height={"75vh"} width={`${paneWidth}vw`}>
+        <Paper height={"75vh"} width={`100%`} 
+          sx={{
+            paddingLeft: 0,
+          }}
+        >
           <Grid
             container
             sx={{
               justifyContent: "center",
               alignItems: "center",
+              height: "100%",
             }}
           >
             <Grid item xs={1}>
-              <Tooltip title={tooltipMessage} key={paneWidth}>
+              <Tooltip title={tooltipMessage} key={isExpanded ? "true" : "false"}>
                 <IconButton onClick={handleResize}>
-                  {paneWidth === 53 ? (
+                  {isExpanded ? (
                     <KeyboardDoubleArrowRight />
                   ) : (
                     <KeyboardDoubleArrowLeft />
@@ -69,7 +67,7 @@ const ProblemPane = () => {
                 </IconButton>
               </Tooltip>
             </Grid>
-            <Grid item xs={11}>
+            <Grid item xs={11} sx={{height: '100%'}}>
               <CodeEditorPane />
             </Grid>
           </Grid>

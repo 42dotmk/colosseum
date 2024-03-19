@@ -1,4 +1,4 @@
-import { FormControl, Grid, MenuItem, Select, SelectChangeEvent, Typography } from "@mui/material";
+import { Box, FormControl, MenuItem, Select, SelectChangeEvent, Tooltip, Typography } from "@mui/material";
 import { useState } from 'react';
 
 type Props = {
@@ -9,29 +9,29 @@ const LanguageSelect = ({ languages }: Props) => {
   const [currentLanguage, setCurrentLanguage] = useState(languages[0]);
 
   const handleLanguageChange = (event: SelectChangeEvent) => {
-    const { target: { value }} = event;
+    const { target: { value } } = event;
     setCurrentLanguage(value);
   }
 
   return (
-    <Grid
-      container
-      sx={{
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      <Grid item xs={6}>
-        <Typography
-          color="typography.subtitle2"
-          variant="subtitle2"
-          align="left"
-        >
-          SELECT LANGUAGE:
-        </Typography>
-      </Grid>
-      <Grid item xs={6} style={{ textAlign: "right" }}>
-        <FormControl sx={{ width: "10vw", textAlign: "center" }} size="small">
+    <Box sx={{
+      display: "flex",
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    }}>
+      <Typography
+        color="typography.subtitle2"
+        variant="subtitle2"
+        align="left"
+        sx={{
+          marginLeft: 2,
+        }}
+      >
+        SELECT LANGUAGE:
+      </Typography>
+      <FormControl sx={{ width: "150px" }} size="small">
+        <Tooltip title={currentLanguage} key={currentLanguage}>
           <Select
             value={currentLanguage}
             onChange={handleLanguageChange}
@@ -42,9 +42,9 @@ const LanguageSelect = ({ languages }: Props) => {
               <MenuItem value={language}>{language}</MenuItem>
             ))}
           </Select>
-        </FormControl>
-      </Grid>
-    </Grid>
+        </Tooltip>
+      </FormControl>
+    </Box>
   );
 };
 export default LanguageSelect;

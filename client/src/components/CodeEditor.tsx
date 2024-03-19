@@ -23,13 +23,13 @@ const CodeEditor = ({ language, code, readOnly }: Props) => {
     <Box
       sx={{
         backgroundColor: "#282A36",
-        minWidth: "20vw",
         width: "inherit",
-        height: "55vh",
+        height: '100%',
         border: 1,
         borderColor: "divider",
         borderRadius: "12px",
         justifyItems: "flex-end",
+        marginLeft: 2,
         paddingTop: 2,
         paddingBottom: 2,
       }}
@@ -50,6 +50,7 @@ const CodeEditor = ({ language, code, readOnly }: Props) => {
             scrollbar: {
               horizontalSliderSize: 4,
               verticalSliderSize: 8,
+              alwaysConsumeMouseWheel: false,
             },
             scrollBeyondLastLine: false,
             minimap: {
