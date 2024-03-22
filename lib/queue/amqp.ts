@@ -36,7 +36,9 @@ export const connect = async (url: string) => {
           await fn?.(str);
           await ack();
         } catch (e: any) {
-          await nack();
+          await nack({
+            requeue: false
+          });
           console.error("Error in subscription", e);
         }
       }, { noAck: false });
