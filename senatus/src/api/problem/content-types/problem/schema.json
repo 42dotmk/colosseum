@@ -16,14 +16,6 @@
     }
   },
   "attributes": {
-    "title": {
-      "pluginOptions": {
-        "i18n": {
-          "localized": true
-        }
-      },
-      "type": "richtext"
-    },
     "description": {
       "pluginOptions": {
         "i18n": {
@@ -31,17 +23,6 @@
         }
       },
       "type": "richtext"
-    },
-    "testCases": {
-      "displayName": "Test Cases",
-      "type": "component",
-      "repeatable": true,
-      "pluginOptions": {
-        "i18n": {
-          "localized": true
-        }
-      },
-      "component": "tests.test-cases"
     },
     "starterCodes": {
       "type": "component",
@@ -52,6 +33,35 @@
         }
       },
       "component": "problem.starter-code"
+    },
+    "testCases": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::test-case.test-case",
+      "mappedBy": "problem"
+    },
+    "title": {
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "type": "string"
+    },
+    "slug": {
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "type": "uid",
+      "targetField": "title"
+    },
+    "events": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::event.event",
+      "mappedBy": "problem"
     }
   }
 }

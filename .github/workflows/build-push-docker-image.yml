@@ -1,0 +1,62 @@
+on:
+  workflow_call:
+    inputs:
+      docker-context:
+        required: true
+        type: string
+
+      docker-file-path:
+        required: true
+        type: string
+
+      docker-tags:
+        required: true
+        type: string
+
+jobs:
+  build_image:
+    if: github.event_name == 'pull_request'
+    name: Build docker image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build image
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          context: ${{ inputs.docker-context }}
+          file: ${{ inputs.docker-file-path }}
+          tags: ${{ inputs.docker-tags }}
+
+  push_image:
+    name: Push docker image
+    if: true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push production image
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          context: ${{ inputs.docker-context }}
+          file: ${{ inputs.docker-file-path }}
+          tags: ${{ inputs.docker-tags }}
+          push: true

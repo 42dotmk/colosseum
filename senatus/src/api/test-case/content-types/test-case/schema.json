@@ -1,0 +1,40 @@
+{
+  "kind": "collectionType",
+  "collectionName": "test_cases",
+  "info": {
+    "singularName": "test-case",
+    "pluralName": "test-cases",
+    "displayName": "TestCase",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "input": {
+      "type": "text"
+    },
+    "output": {
+      "type": "text"
+    },
+    "hidden": {
+      "type": "boolean"
+    },
+    "locked": {
+      "type": "boolean"
+    },
+    "weight": {
+      "type": "float"
+    },
+    "problem": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::problem.problem",
+      "inversedBy": "testCases"
+    },
+    "explanation": {
+      "type": "richtext"
+    }
+  }
+}

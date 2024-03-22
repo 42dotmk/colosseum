@@ -1,0 +1,23 @@
+{
+  "name": "executioner",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "start": "tsx index.ts"
+  },
+  "devDependencies": {
+    "@types/dockerode": "^3.3.24",
+    "@types/uuid": "^9.0.8",
+    "bun-types": "latest",
+    "tsx": "^4.7.1"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@colosseum/queue": "file:../lib/queue",
+    "dockernode": "^0.1.0",
+    "dockerode": "^4.0.2",
+    "uuid": "^9.0.1"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@colosseum/queue",
+  "module": "index.ts",
+  "scripts": {
+    "build": "tsc amqp.ts",
+    "watch": "tsc amqp.ts -w"
+  },
+  "devDependencies": {
+    "@types/jackrabbit": "^4.3.7",
+    "bun-types": "latest"
+  },
+  "dependencies": {
+    "@cloudamqp/amqp-client": "^3.1.1",
+    "@pager/jackrabbit": "^5.4.4"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

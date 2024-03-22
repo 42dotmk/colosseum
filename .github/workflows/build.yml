@@ -1,0 +1,168 @@
+name: Colosseum CI pipeline
+
+permissions:
+  contents: read
+  packages: write
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    paths:
+      - 'client/**'
+      - 'senatus/**'
+      - 'executioner/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  find_modified_files:
+    name: Find modified files
+    runs-on: ubuntu-latest
+    outputs:
+      client: ${{ steps.changes.outputs.client }}
+      senatus: ${{ steps.changes.outputs.senatus }}
+      executioner: ${{ steps.changes.outputs.executioner }}
+      gcc_executioner: ${{ steps.changes.outputs.gcc_executioner }}
+      node_executioner: ${{ steps.changes.outputs.node_executioner }}
+      python_executioner: ${{ steps.changes.outputs.python_executioner }}
+      java_executioner: ${{ steps.changes.outputs.java_executioner }}
+      csharp_executioner: ${{ steps.changes.outputs.csharp_executioner }}
+      rust_executioner: ${{ steps.changes.outputs.rust_executioner }}
+      golang_executioner: ${{ steps.changes.outputs.golang_executioner }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Find modified files
+        id: changes
+        uses: dorny/paths-filter@v3.0.1
+        with:
+          filters: |
+            client:
+              - 'client/**'
+            senatus:
+              - 'senatus/**'
+            executioner:
+              - 'executioner/**'
+            gcc_executioner:
+              - 'executioner/**/gcc/**'
+            node_executioner:
+              - 'executioner/**/nodejs/**'
+            python_executioner:
+              - 'executioner/**/python/**'
+            java_executioner:
+              - 'executioner/**/java/**'
+            csharp_executioner:
+              - 'executioner/**/csharp/**'
+            rust_executioner:
+              - 'executioner/**/rust/**'
+            golang_executioner:
+              - 'executioner/**/golang/**'
+      
+  senatus:
+    name: Senatus
+    needs: find_modified_files
+    uses: ./.github/workflows/build-push-docker-image.yml
+    if: needs.find_modified_files.outputs.senatus == 'true'
+    with:
+      docker-context: ./
+      docker-file-path: ./senatus/Dockerfile
+      docker-tags: ghcr.io/42dotmk/colosseum-senatus:latest
+
+  client:
+    name: Client
+    needs: find_modified_files
+    uses: ./.github/workflows/build-push-docker-image.yml
+    if: needs.find_modified_files.outputs.client == 'true'
+    with:
+      docker-context: ./client
+      docker-file-path: ./client/Dockerfile
+      docker-tags: ghcr.io/42dotmk/colosseum-client-prod:latest
+
+  executioner:
+    name: Executioner
+    needs: find_modified_files
+    uses: ./.github/workflows/build-push-docker-image.yml
+    if: needs.find_modified_files.outputs.executioner == 'true'
+    with:
+      docker-context: ./
+      docker-file-path: ./executioner/Dockerfile
+      docker-tags: ghcr.io/42dotmk/colosseum-executioner:latest
+
+  gcc_executioner:
+    name: GCC executioner
+    needs: find_modified_files
+    uses: ./.github/workflows/build-push-docker-image.yml
+    if: needs.find_modified_files.outputs.gcc_executioner == 'true'
+    with:
+      docker-context: ./executioner/runtimes/languages/gcc/
+      docker-file-path: ./executioner/runtimes/languages/gcc/Dockerfile
+      docker-tags: ghcr.io/42dotmk/colosseum-executioner-gcc:latest
+
+  node_executioner:
+    name: NodeJS executioner
+    needs: find_modified_files
+    uses: ./.github/workflows/build-push-docker-image.yml
+    if: needs.find_modified_files.outputs.node_executioner == 'true'
+    with:
+      docker-context: ./executioner/runtimes/languages/nodejs/
+      docker-file-path: ./executioner/runtimes/languages/nodejs/Dockerfile
+      docker-tags: ghcr.io/42dotmk/colosseum-executioner-nodejs:latest
+
+  python_executioner:
+    name: Python executioner
+    needs: find_modified_files
+    uses: ./.github/workflows/build-push-docker-image.yml
+    if: needs.find_modified_files.outputs.python_executioner == 'true'
+    with:
+      docker-context: ./executioner/runtimes/languages/python/
+      docker-file-path: ./executioner/runtimes/languages/python/Dockerfile
+      docker-tags: ghcr.io/42dotmk/colosseum-executioner-python:latest
+
+  java_executioner:
+    name: Java executioner
+    needs: find_modified_files
+    uses: ./.github/workflows/build-push-docker-image.yml
+    if: needs.find_modified_files.outputs.java_executioner == 'true'
+    with:
+      docker-context: ./executioner/runtimes/languages/java/
+      docker-file-path: ./executioner/runtimes/languages/java/Dockerfile
+      docker-tags: ghcr.io/42dotmk/colosseum-executioner-java:latest
+
+  csharp_executioner:
+    name: C# executioner
+    needs: find_modified_files
+    uses: ./.github/workflows/build-push-docker-image.yml
+    if: needs.find_modified_files.outputs.csharp_executioner == 'true'
+    with:
+      docker-context: ./executioner/runtimes/languages/csharp/
+      docker-file-path: ./executioner/runtimes/languages/csharp/Dockerfile
+      docker-tags: ghcr.io/42dotmk/colosseum-executioner-csharp:latest
+
+  rust_executioner:
+    name: Rust executioner
+    needs: find_modified_files
+    uses: ./.github/workflows/build-push-docker-image.yml
+    if: needs.find_modified_files.outputs.rust_executioner == 'true'
+    with:
+      docker-context: ./executioner/runtimes/languages/rust/
+      docker-file-path: ./executioner/runtimes/languages/rust/Dockerfile
+      docker-tags: ghcr.io/42dotmk/colosseum-executioner-rust:latest
+    
+
+  golang_executioner:
+    name: Golang executioner
+    needs: find_modified_files
+    uses: ./.github/workflows/build-push-docker-image.yml
+    if: needs.find_modified_files.outputs.golang_executioner == 'true'
+    with:
+      docker-context: ./executioner/runtimes/languages/golang/
+      docker-file-path: ./executioner/runtimes/languages/golang/Dockerfile
+      docker-tags: ghcr.io/42dotmk/colosseum-executioner-golang:latest
+    

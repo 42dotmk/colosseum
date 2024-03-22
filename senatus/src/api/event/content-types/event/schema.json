@@ -25,14 +25,6 @@
       "type": "datetime",
       "required": true
     },
-    "title": {
-      "pluginOptions": {
-        "i18n": {
-          "localized": true
-        }
-      },
-      "type": "richtext"
-    },
     "description": {
       "pluginOptions": {
         "i18n": {
@@ -49,15 +41,33 @@
       },
       "type": "datetime"
     },
-    "problems": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "api::problem.problem"
-    },
     "supportedLanguages": {
       "type": "relation",
       "relation": "oneToMany",
       "target": "api::language.language"
+    },
+    "title": {
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "type": "string"
+    },
+    "slug": {
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      },
+      "type": "uid",
+      "targetField": "title"
+    },
+    "problem": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::problem.problem",
+      "inversedBy": "events"
     }
   }
 }
