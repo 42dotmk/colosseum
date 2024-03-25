@@ -11,6 +11,16 @@ To run the RabbitMQ in Docker for development, just run:
 docker-compose -f docker-compose.q.yml up -d
 ```
 
+### Queue Library
+
+Build the queue library before continuing.
+
+```
+cd lib/queue;
+npm install;
+npm run build;
+```
+
 ### Executioner
 
 There's no additional setup required, it will automatically connec to `amqp://localhost` (RabbitMQ on port `5672`).
