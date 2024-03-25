@@ -5,10 +5,30 @@
 
 > Required to run the Executioner/code execution engine.
 
-To run the RabbitMQ in Docker for development, just run:
+To run the RabbitMQ and PostgreSQL in Docker for development, just run:
 
 ```bash
 docker-compose -f docker-compose.q.yml up -d
+```
+
+### Queue Library
+
+Build the queue library before continuing.
+
+```
+cd lib/queue;
+npm install;
+npm run build;
+```
+
+### Client / Frontend
+
+To start the frontend
+
+```
+cd client;
+npm install;
+npm run dev;
 ```
 
 ### Executioner
