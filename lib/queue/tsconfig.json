@@ -1,26 +1,20 @@
 {
-  "files": ["amqp.ts"],
   "compilerOptions": {
-    "lib": ["ESNext"],
-    "outDir": "dist",
-    "rootDir": ".",
-    "module": "esnext",
-    "target": "esnext",
-    "moduleResolution": "bundler",
-    "moduleDetection": "force",
-    "allowImportingTsExtensions": true,
-    "noEmit": true,
-    "composite": true,
+    "moduleResolution": "node",
+    "target": "ES2015",
+    "module":"CommonJS",
+    "lib": ["es2015", "es2016", "es2017", "dom"],
     "strict": true,
-    "downlevelIteration": true,
-    "skipLibCheck": true,
-    "jsx": "preserve",
+    "declaration": true,
     "allowSyntheticDefaultImports": true,
-    "forceConsistentCasingInFileNames": true,
-    "allowJs": true,
-    "types": [
-      "bun-types" // add Bun global
-    ]
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "outDir": "dist",
   },
-  "include": ["./**/*"]
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules/",
+  ]
 }

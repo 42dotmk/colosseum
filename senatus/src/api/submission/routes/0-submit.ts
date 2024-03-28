@@ -9,5 +9,13 @@ export default  {
         auth: false,
       },
     },
+    {
+      method: 'GET',
+      path: '/submissions/submit',
+      handler: 'submission.submit',
+      config: {
+        auth: false,
+      },
+    },
   ],
 };

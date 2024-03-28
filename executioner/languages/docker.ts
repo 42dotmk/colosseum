@@ -18,7 +18,7 @@ type File = {
   metadata?: any;
 };
 
-const DEFAULT_EXECUTION_TIMEOUT = parseInt(process.env.DEFAULT_EXECUTION_TIMEOUT || '60');
+const CPU_LIMIT_PER_EXECUTION = process.env.CPU_LIMIT_PER_EXECUTION;
 const IMAGE_BASE = process.env.IMAGE_BASE || 'ghcr.io/42dotmk/colosseum-executioner-';
 const WORKDIR = process.env.WORKDIR || '_work';
 
@@ -99,6 +99,12 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
       await writeFile(compileStdoutPath, "");
       await writeFile(compileStderrPath, "");
 
+      const extraArgs = [];
+
+      if (CPU_LIMIT_PER_EXECUTION) {
+        extraArgs.push(`--cpus=${CPU_LIMIT_PER_EXECUTION}`);
+      }
+
       const args = [
         'run',
         "--rm",
@@ -117,9 +123,8 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
         "-v",
         `${compileStdoutPath}:/exc/${compileStdoutFilename}`,
         "-v",
-        // `/Users/user/git/colosseum/executioner/runtimes/languages/gcc/entrypoint.sh:/exc/entrypoint.sh`,
-        // "-v",
         `${compileStderrPath}:/exc/${compileStderrFilename}`,
+        ...extraArgs,
         "-i",
         `${IMAGE_BASE}${lang}`
       ];
@@ -142,8 +147,6 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
 
       child.on('close', async (code) => {
         console.log(`child process exited with code ${code}`);
-
-        const outputs = fs.readdirSync(outputDir);
 
         const output = [];
 
