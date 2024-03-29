@@ -94,5 +94,5 @@ export default factories.createCoreController('api::submission.submission', ({ s
       console.log(err);
       ctx.body = err;
     }
-  },
+  }
 }));
