@@ -21,8 +21,7 @@
     "testCase": {
       "type": "relation",
       "relation": "oneToOne",
-      "target": "api::test-case.test-case",
-      "private": true
+      "target": "api::test-case.test-case"
     },
     "submission": {
       "type": "relation",
