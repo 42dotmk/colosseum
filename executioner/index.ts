@@ -14,11 +14,18 @@ async function run() {
   subscribe("execution", async (msg) => {
     console.log("Received msg");
     const parsed = JSON.parse(msg);
-    const result = await execute(parsed.sources, parsed.input, parsed.options);
-    await publish("results", JSON.stringify({
-      result,
-      metadata: parsed?.metadata,
-    }));
+    try {
+      const result = await execute(parsed.sources, parsed.input, parsed.options)
+      await publish("results", JSON.stringify({
+        result,
+        metadata: parsed?.metadata,
+      }));
+    } catch(err) {
+      console.error(err);
+      await publish("results", JSON.stringify({
+        error: "Unknown error",
+      }));
+    }
   }, PREFETCH_COUNT);
 }
 
