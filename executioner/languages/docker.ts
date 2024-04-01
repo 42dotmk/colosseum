@@ -19,6 +19,8 @@ type File = {
 };
 
 const CPU_LIMIT_PER_EXECUTION = process.env.CPU_LIMIT_PER_EXECUTION;
+const MEMORY_LIMIT_PER_EXECUTION = process.env.MEMORY_LIMIT_PER_EXECUTION ?? '1G';
+const ENABLE_NETWORK_IN_EXECUTION = process.env.ENABLE_NETWORK_IN_EXECUTION === 'true';
 const IMAGE_BASE = process.env.IMAGE_BASE || 'ghcr.io/42dotmk/colosseum-executioner-';
 const WORKDIR = process.env.WORKDIR || '_work';
 
@@ -107,6 +109,14 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
 
       if (CPU_LIMIT_PER_EXECUTION) {
         extraArgs.push(`--cpus=${CPU_LIMIT_PER_EXECUTION}`);
+      }
+
+      if (MEMORY_LIMIT_PER_EXECUTION) {
+        extraArgs.push(`--memory=${MEMORY_LIMIT_PER_EXECUTION}`);
+      }
+
+      if (!ENABLE_NETWORK_IN_EXECUTION) {
+        extraArgs.push("--network=none");
       }
 
       const args = [
