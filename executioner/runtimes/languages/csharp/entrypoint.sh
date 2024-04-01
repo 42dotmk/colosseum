@@ -11,7 +11,7 @@ for inputFile in "${files[@]}"; do
   echo "Running $inputFile"
   echo "output/$filename.stdout"
   # If there's an error in $ERROR pipe it into the stderr
-  if [ -n "$ERROR" ]; then
+  if [ $ERROR != 0 ]; then
     echo "Compilation error:\\n $ERROR" > "output/$filename.stderr"
     continue;
   fi
