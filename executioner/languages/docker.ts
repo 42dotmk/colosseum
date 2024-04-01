@@ -27,6 +27,10 @@ if (!fs.existsSync(WORKDIR)) {
 }
 
 function parseDuration(duration: string) {
+  if (!duration) {
+    console.error(`Received invalid duration '${duration}'`);
+    return null;
+  }
   const match = duration.match(/(\d+)m(\d+(?:\.\d+)?)s/);
   if (!match) return null;
 
@@ -164,6 +168,9 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
             const timeSplits = time.split("\n").map((t) => t.trim()).filter(x => x).map(x => x.split("\t"));
             const [ realTime ] = timeSplits;
             parsedTime = parseDuration(realTime[1]);
+            if (!parsedTime) {
+              console.error(`Failed to parse time from ${time}`);
+            }
           }
 
           output.push({
