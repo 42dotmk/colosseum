@@ -12,7 +12,7 @@ for inputFile in "${files[@]}"; do
   echo "output/$filename.stdout"
   # If there's an error in $ERROR pipe it into the stderr
   if [ $ERROR != 0 ]; then
-    echo "Compilation error:\\n $ERROR" > "output/$filename.stderr"
+    echo "Compilation error:\\n $BUILD_OUTPUT" > "output/$filename.stderr"
     continue;
   fi
   { time (cat $inputFile | timeout ${TIMEOUT} ./out/csharp 1> "output/$filename.stdout" 2> "output/$filename.stderr") ; } 2> "output/$filename.time"
