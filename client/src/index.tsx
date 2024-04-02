@@ -8,13 +8,12 @@ import React from "react";
 import themeOptions from "./theme/index.ts";
 import { GQL_URL } from "./config.ts";
 import CssBaseline from '@mui/material/CssBaseline';
+import './index.css';
 
 const client = new ApolloClient({
   uri: GQL_URL,
   cache: new InMemoryCache(),
 });
-
-console.log(GQL_URL);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <ApolloProvider client={client}>
