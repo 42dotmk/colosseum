@@ -80,7 +80,7 @@ jobs:
     with:
       docker-context: ./
       docker-file-path: ./senatus/Dockerfile
-      docker-tags: ghcr.io/42dotmk/colosseum-senatus-${{ env.TAG_SUFFIX }}:latest
+      docker-tags: ghcr.io/42dotmk/colosseum-senatus-$TAG_SUFFIX:latest
 
   client:
     name: Client
@@ -90,7 +90,7 @@ jobs:
     with:
       docker-context: ./client
       docker-file-path: ./client/Dockerfile
-      docker-tags: ghcr.io/42dotmk/colosseum-client-${{ env.TAG_SUFFIX }}:latest
+      docker-tags: ghcr.io/42dotmk/colosseum-client-$TAG_SUFFIX:latest
 
   executioner:
     name: Executioner
@@ -100,7 +100,7 @@ jobs:
     with:
       docker-context: ./
       docker-file-path: ./executioner/Dockerfile
-      docker-tags: ghcr.io/42dotmk/colosseum-executioner-${{ env.TAG_SUFFIX }}:latest
+      docker-tags: ghcr.io/42dotmk/colosseum-executioner-$TAG_SUFFIX:latest
 
   gcc_executioner:
     name: GCC executioner
@@ -110,7 +110,7 @@ jobs:
     with:
       docker-context: ./executioner/runtimes/languages/gcc/
       docker-file-path: ./executioner/runtimes/languages/gcc/Dockerfile
-      docker-tags: ghcr.io/42dotmk/colosseum-executioner-gcc-${{ env.TAG_SUFFIX }}:latest
+      docker-tags: ghcr.io/42dotmk/colosseum-executioner-gcc-$TAG_SUFFIX:latest
 
   node_executioner:
     name: NodeJS executioner
@@ -120,7 +120,7 @@ jobs:
     with:
       docker-context: ./executioner/runtimes/languages/nodejs/
       docker-file-path: ./executioner/runtimes/languages/nodejs/Dockerfile
-      docker-tags: ghcr.io/42dotmk/colosseum-executioner-nodejs-${{ env.TAG_SUFFIX }}:latest
+      docker-tags: ghcr.io/42dotmk/colosseum-executioner-nodejs-$TAG_SUFFIX:latest
 
   python_executioner:
     name: Python executioner
@@ -130,7 +130,7 @@ jobs:
     with:
       docker-context: ./executioner/runtimes/languages/python/
       docker-file-path: ./executioner/runtimes/languages/python/Dockerfile
-      docker-tags: ghcr.io/42dotmk/colosseum-executioner-python-${{ env.TAG_SUFFIX }}:latest
+      docker-tags: ghcr.io/42dotmk/colosseum-executioner-python-$TAG_SUFFIX:latest
 
   java_executioner:
     name: Java executioner
@@ -140,7 +140,7 @@ jobs:
     with:
       docker-context: ./executioner/runtimes/languages/java/
       docker-file-path: ./executioner/runtimes/languages/java/Dockerfile
-      docker-tags: ghcr.io/42dotmk/colosseum-executioner-java-${{ env.TAG_SUFFIX }}:latest
+      docker-tags: ghcr.io/42dotmk/colosseum-executioner-java-$TAG_SUFFIX:latest
 
   csharp_executioner:
     name: C# executioner
@@ -150,7 +150,7 @@ jobs:
     with:
       docker-context: ./executioner/runtimes/languages/csharp/
       docker-file-path: ./executioner/runtimes/languages/csharp/Dockerfile
-      docker-tags: ghcr.io/42dotmk/colosseum-executioner-csharp-${{ env.TAG_SUFFIX }}:latest
+      docker-tags: ghcr.io/42dotmk/colosseum-executioner-csharp-$TAG_SUFFIX:latest
 
   rust_executioner:
     name: Rust executioner
@@ -160,7 +160,7 @@ jobs:
     with:
       docker-context: ./executioner/runtimes/languages/rust/
       docker-file-path: ./executioner/runtimes/languages/rust/Dockerfile
-      docker-tags: ghcr.io/42dotmk/colosseum-executioner-rust-${{ env.TAG_SUFFIX }}:latest
+      docker-tags: ghcr.io/42dotmk/colosseum-executioner-rust-$TAG_SUFFIX:latest
     
 
   golang_executioner:
@@ -171,5 +171,5 @@ jobs:
     with:
       docker-context: ./executioner/runtimes/languages/golang/
       docker-file-path: ./executioner/runtimes/languages/golang/Dockerfile
-      docker-tags: ghcr.io/42dotmk/colosseum-executioner-golang-${{ env.TAG_SUFFIX }}:latest
+      docker-tags: ghcr.io/42dotmk/colosseum-executioner-golang-$TAG_SUFFIX:latest
     
