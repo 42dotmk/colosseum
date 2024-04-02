@@ -10,7 +10,7 @@ const CompeteTabs = () => {
   };
 
   return (
-    <Box sx={{ margin: 5 }}>
+    <Box sx={{ margin: 2 }}>
       <Tabs value={value} onChange={handleChange} aria-label="basic tabs example" sx={{ width: "100%" }}>
         <Tab label="Problem" />
         <Tab label="Submissions (0)" />

@@ -7,7 +7,7 @@ import { ApolloClient, ApolloProvider, InMemoryCache } from "@apollo/client";
 import React from "react";
 import themeOptions from "./theme/index.ts";
 import { GQL_URL } from "./config.ts";
-import './index.css';
+import CssBaseline from '@mui/material/CssBaseline';
 
 const client = new ApolloClient({
   uri: GQL_URL,
@@ -21,6 +21,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <Provider store={store}>
       <React.StrictMode>
         <ThemeProvider theme={themeOptions}>
+          <CssBaseline />
           <App />
         </ThemeProvider>
       </React.StrictMode>
