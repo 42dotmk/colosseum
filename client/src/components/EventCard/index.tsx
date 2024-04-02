@@ -1,7 +1,7 @@
 import { Card, CardActionArea, CardContent} from "@mui/material";
 import ProgrammingLanguages from "./ProgrammingLanguages";
 import Buttons from "./Buttons";
-import HeadingDatesAndIcons from "./HeadingDatesAndIcons";
+import EventMetadata from "./EventMetadata";
 import SponsoredBy from "./SponsoredBy";
 
 const EventCard = () => {
@@ -21,7 +21,7 @@ const EventCard = () => {
                 <CardContent
                     sx={{ display: "flex", width: "100%", }}
                 >
-                    <HeadingDatesAndIcons />
+                    <EventMetadata />
                     
                     <ProgrammingLanguages languages={["NodeJS", "NodeJS", "NodeJS", "NodeJS", "NodeJS", "NodeJS"]} />
 
