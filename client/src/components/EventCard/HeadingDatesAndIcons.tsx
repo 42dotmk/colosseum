@@ -8,7 +8,7 @@ const CompetitionDate = "JAN 13, 2024";
 const CompetitionTime = "19:00";
 const CompetitionPlace = "BASE42";
 
-const HeadingDatesAndIcons = () => {
+const EventMetadata = () => {
 
     return (
         <Box
