@@ -29,8 +29,7 @@
       "target": "api::submission.submission"
     },
     "passed": {
-      "type": "boolean",
-      "private": true
+      "type": "boolean"
     },
     "processed": {
       "type": "boolean"
