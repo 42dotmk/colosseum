@@ -11,8 +11,8 @@ for inputFile in "${files[@]}"; do
   echo "output/$filename.stdout"
   # If there's an error in $ERROR pipe it into the stderr
   if [ -n "$ERROR" ]; then
-    echo "Compilation error:\n $ERROR" > "output/$filename.stderr"
-    break;
+    echo "Compilation error:\\n $ERROR" > "output/$filename.stderr"
+    continue;
   fi
   { time (cat $inputFile | timeout ${TIMEOUT} node src/index.js 1> "output/$filename.stdout" 2> "output/$filename.stderr") ; } 2> "output/$filename.time"
   EXIT_CODE=$?

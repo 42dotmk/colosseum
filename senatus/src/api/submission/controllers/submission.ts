@@ -2,14 +2,13 @@
  * submission controller
  */
 
-import { connect } from '@colosseum/queue/amqp';
+import { connect } from '@colosseum/queue';
 import { factories } from '@strapi/strapi'
 
 export default factories.createCoreController('api::submission.submission', ({ strapi }) => ({
   async submit(ctx) {
     try {
       ctx.body = ctx.request.query;
-
       const id = parseInt(ctx.request.query.id as string);
       if (!id) {
         ctx.body = 'Please provide an id';
@@ -74,6 +73,8 @@ export default factories.createCoreController('api::submission.submission', ({ s
         }
       };
 
+      const msg = JSON.stringify(qPayload);
+
       const { 
         publish,
         disconnect,
@@ -81,7 +82,7 @@ export default factories.createCoreController('api::submission.submission', ({ s
       
       console.log("Connected to RabbitMQ");
 
-      await publish("execution", JSON.stringify(qPayload));
+      await publish("execution", msg);
 
       await disconnect();
 
@@ -93,5 +94,5 @@ export default factories.createCoreController('api::submission.submission', ({ s
       console.log(err);
       ctx.body = err;
     }
-  },
+  }
 }));

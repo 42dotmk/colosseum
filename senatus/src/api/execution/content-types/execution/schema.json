@@ -21,8 +21,7 @@
     "testCase": {
       "type": "relation",
       "relation": "oneToOne",
-      "target": "api::test-case.test-case",
-      "private": true
+      "target": "api::test-case.test-case"
     },
     "submission": {
       "type": "relation",
@@ -30,8 +29,7 @@
       "target": "api::submission.submission"
     },
     "passed": {
-      "type": "boolean",
-      "private": true
+      "type": "boolean"
     },
     "processed": {
       "type": "boolean"

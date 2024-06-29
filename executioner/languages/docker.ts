@@ -18,7 +18,9 @@ type File = {
   metadata?: any;
 };
 
-const DEFAULT_EXECUTION_TIMEOUT = parseInt(process.env.DEFAULT_EXECUTION_TIMEOUT || '60');
+const CPU_LIMIT_PER_EXECUTION = process.env.CPU_LIMIT_PER_EXECUTION;
+const MEMORY_LIMIT_PER_EXECUTION = process.env.MEMORY_LIMIT_PER_EXECUTION ?? '1G';
+const ENABLE_NETWORK_IN_EXECUTION = process.env.ENABLE_NETWORK_IN_EXECUTION === 'true';
 const IMAGE_BASE = process.env.IMAGE_BASE || 'ghcr.io/42dotmk/colosseum-executioner-';
 const WORKDIR = process.env.WORKDIR || '_work';
 
@@ -27,6 +29,10 @@ if (!fs.existsSync(WORKDIR)) {
 }
 
 function parseDuration(duration: string) {
+  if (!duration) {
+    console.error(`Received invalid duration '${duration}'`);
+    return null;
+  }
   const match = duration.match(/(\d+)m(\d+(?:\.\d+)?)s/);
   if (!match) return null;
 
@@ -99,6 +105,20 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
       await writeFile(compileStdoutPath, "");
       await writeFile(compileStderrPath, "");
 
+      const extraArgs = [];
+
+      if (CPU_LIMIT_PER_EXECUTION) {
+        extraArgs.push(`--cpus=${CPU_LIMIT_PER_EXECUTION}`);
+      }
+
+      if (MEMORY_LIMIT_PER_EXECUTION) {
+        extraArgs.push(`--memory=${MEMORY_LIMIT_PER_EXECUTION}`);
+      }
+
+      if (!ENABLE_NETWORK_IN_EXECUTION) {
+        extraArgs.push("--network=none");
+      }
+
       const args = [
         'run',
         "--rm",
@@ -117,9 +137,8 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
         "-v",
         `${compileStdoutPath}:/exc/${compileStdoutFilename}`,
         "-v",
-        // `/Users/user/git/colosseum/executioner/runtimes/languages/gcc/entrypoint.sh:/exc/entrypoint.sh`,
-        // "-v",
         `${compileStderrPath}:/exc/${compileStderrFilename}`,
+        ...extraArgs,
         "-i",
         `${IMAGE_BASE}${lang}`
       ];
@@ -143,8 +162,6 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
       child.on('close', async (code) => {
         console.log(`child process exited with code ${code}`);
 
-        const outputs = fs.readdirSync(outputDir);
-
         const output = [];
 
         for (const inp of input) {
@@ -161,6 +178,9 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
             const timeSplits = time.split("\n").map((t) => t.trim()).filter(x => x).map(x => x.split("\t"));
             const [ realTime ] = timeSplits;
             parsedTime = parseDuration(realTime[1]);
+            if (!parsedTime) {
+              console.error(`Failed to parse time from ${time}`);
+            }
           }
 
           output.push({
