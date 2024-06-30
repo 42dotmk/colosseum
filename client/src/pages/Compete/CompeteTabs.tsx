@@ -1,6 +1,7 @@
 import { Box, Tab, Tabs } from "@mui/material";
 import { SyntheticEvent, useState } from "react";
-import ProblemPane from "./Problem";
+import ProblemTab from './Problem';
+import SubmissionsTab from './Submissions';
 
 const CompeteTabs = () => {
   const [value, setValue] = useState(0);
@@ -10,13 +11,15 @@ const CompeteTabs = () => {
   };
 
   return (
-    <Box sx={{ margin: 2 }}>
-      <Tabs value={value} onChange={handleChange} aria-label="basic tabs example" sx={{ width: "100%" }}>
+    <Box sx={{ margin: 2, marginTop: 20 }}>
+      <Tabs value={value} onChange={handleChange} sx={{ width: "100%", marginBottom: 3 }}>
         <Tab label="Problem" />
         <Tab label="Submissions (0)" />
-        <Tab label="Discussion" />
+        <Tab label="Discussion" disabled />
       </Tabs>
-      {value === 0 && (<ProblemPane />)}
+
+      {value === 0 && (<ProblemTab />)}
+      {value === 1 && (<SubmissionsTab />)}
     </Box>
   );
 };
