@@ -64,10 +64,11 @@ const SubmissionPreview = ({ language, code }: Props) => {
               border: 1,
               borderRadius: 1.5,
               borderColor: "text.disabled",
-              color: copyButton.label === 'COPIED' ? "green" : "text.secondary",
+              color: copyButton.label === 'COPIED' ? "green" : "text.primary",
               "&:hover": {
                 border: 1,
                 borderRadius: 1.5,
+                borderColor: "text.disabled",
                 bgcolor: "text.disabled",
                 color: copyButton.label === 'COPIED' ? "green" : "primary.main",
               }
