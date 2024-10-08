@@ -10,11 +10,12 @@
     "strapi": "strapi"
   },
   "dependencies": {
-    "@strapi/plugin-cloud": "4.15.5",
-    "@strapi/plugin-graphql": "^4.15.5",
-    "@strapi/plugin-i18n": "4.15.5",
-    "@strapi/plugin-users-permissions": "4.15.5",
-    "@strapi/strapi": "4.15.5",
+    "@colosseum/queue": "file:../lib/queue",
+    "@strapi/plugin-cloud": "4.21.0",
+    "@strapi/plugin-graphql": "^4.21.0",
+    "@strapi/plugin-i18n": "4.21.0",
+    "@strapi/plugin-users-permissions": "4.21.0",
+    "@strapi/strapi": "4.21.0",
     "pg": "8.8.0",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",

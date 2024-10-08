@@ -1,0 +1,25 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: 'rabbitmq'
+    ports:
+        - 5672:5672
+        - 15672:15672
+    volumes:
+        - rabbit_data:/var/lib/rabbitmq/
+        - rabbit_log:/var/log/rabbitmq
+  db:
+    image: postgres:16
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+    env_file: .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+volumes:
+  rabbit_data:
+  rabbit_log:
+  postgres_data:

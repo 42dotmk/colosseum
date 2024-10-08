@@ -1,25 +1,27 @@
-import { useState } from "react";
-import "./App.css";
+import {
+  Route, Routes, BrowserRouter, Navigate,
+} from 'react-router-dom';
+import { Grid } from '@mui/material';
+import HomePage from './pages/Home';
+import CompetePage from './pages/Compete';
+import Header from './components/Header';
 
-function App() {
-  const [count, setCount] = useState(0);
+const App = () => (
+  <BrowserRouter>
+    <Grid container>
+      <Grid item xs>
+        <Header />
+      </Grid>
 
-  return (
-    <>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  );
-}
+      <Grid container bgcolor="background.default">
+        <Routes>
+          <Route index element={<Navigate to="/home" />} />
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/compete" element={<CompetePage />} />
+        </Routes>
+      </Grid>
+    </Grid>
+  </BrowserRouter>
+);
 
 export default App;

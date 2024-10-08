@@ -403,9 +403,12 @@ export interface PluginUploadFile extends Schema.CollectionType {
     folderPath: Attribute.String &
       Attribute.Required &
       Attribute.Private &
-      Attribute.SetMinMax<{
-        min: 1;
-      }>;
+      Attribute.SetMinMax<
+        {
+          min: 1;
+        },
+        number
+      >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     createdBy: Attribute.Relation<
@@ -441,9 +444,12 @@ export interface PluginUploadFolder extends Schema.CollectionType {
   attributes: {
     name: Attribute.String &
       Attribute.Required &
-      Attribute.SetMinMax<{
-        min: 1;
-      }>;
+      Attribute.SetMinMax<
+        {
+          min: 1;
+        },
+        number
+      >;
     pathId: Attribute.Integer & Attribute.Required & Attribute.Unique;
     parent: Attribute.Relation<
       'plugin::upload.folder',
@@ -462,9 +468,12 @@ export interface PluginUploadFolder extends Schema.CollectionType {
     >;
     path: Attribute.String &
       Attribute.Required &
-      Attribute.SetMinMax<{
-        min: 1;
-      }>;
+      Attribute.SetMinMax<
+        {
+          min: 1;
+        },
+        number
+      >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     createdBy: Attribute.Relation<
@@ -475,6 +484,105 @@ export interface PluginUploadFolder extends Schema.CollectionType {
       Attribute.Private;
     updatedBy: Attribute.Relation<
       'plugin::upload.folder',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
+export interface PluginContentReleasesRelease extends Schema.CollectionType {
+  collectionName: 'strapi_releases';
+  info: {
+    singularName: 'release';
+    pluralName: 'releases';
+    displayName: 'Release';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+    'content-type-builder': {
+      visible: false;
+    };
+  };
+  attributes: {
+    name: Attribute.String & Attribute.Required;
+    releasedAt: Attribute.DateTime;
+    scheduledAt: Attribute.DateTime;
+    timezone: Attribute.String;
+    status: Attribute.Enumeration<
+      ['ready', 'blocked', 'failed', 'done', 'empty']
+    > &
+      Attribute.Required;
+    actions: Attribute.Relation<
+      'plugin::content-releases.release',
+      'oneToMany',
+      'plugin::content-releases.release-action'
+    >;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'plugin::content-releases.release',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'plugin::content-releases.release',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
+export interface PluginContentReleasesReleaseAction
+  extends Schema.CollectionType {
+  collectionName: 'strapi_release_actions';
+  info: {
+    singularName: 'release-action';
+    pluralName: 'release-actions';
+    displayName: 'Release Action';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: false;
+    };
+    'content-type-builder': {
+      visible: false;
+    };
+  };
+  attributes: {
+    type: Attribute.Enumeration<['publish', 'unpublish']> & Attribute.Required;
+    entry: Attribute.Relation<
+      'plugin::content-releases.release-action',
+      'morphToOne'
+    >;
+    contentType: Attribute.String & Attribute.Required;
+    locale: Attribute.String;
+    release: Attribute.Relation<
+      'plugin::content-releases.release-action',
+      'manyToOne',
+      'plugin::content-releases.release'
+    >;
+    isEntryValid: Attribute.Boolean;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'plugin::content-releases.release-action',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'plugin::content-releases.release-action',
       'oneToOne',
       'admin::user'
     > &
@@ -504,10 +612,13 @@ export interface PluginI18NLocale extends Schema.CollectionType {
   };
   attributes: {
     name: Attribute.String &
-      Attribute.SetMinMax<{
-        min: 1;
-        max: 50;
-      }>;
+      Attribute.SetMinMax<
+        {
+          min: 1;
+          max: 50;
+        },
+        number
+      >;
     code: Attribute.String & Attribute.Unique;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
@@ -701,12 +812,6 @@ export interface ApiEventEvent extends Schema.CollectionType {
           localized: true;
         };
       }>;
-    title: Attribute.RichText &
-      Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
     description: Attribute.RichText &
       Attribute.SetPluginOptions<{
         i18n: {
@@ -719,15 +824,27 @@ export interface ApiEventEvent extends Schema.CollectionType {
           localized: true;
         };
       }>;
-    problems: Attribute.Relation<
-      'api::event.event',
-      'oneToMany',
-      'api::problem.problem'
-    >;
     supportedLanguages: Attribute.Relation<
       'api::event.event',
       'oneToMany',
       'api::language.language'
+    >;
+    title: Attribute.String &
+      Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    slug: Attribute.UID<'api::event.event', 'title'> &
+      Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    problem: Attribute.Relation<
+      'api::event.event',
+      'manyToOne',
+      'api::problem.problem'
     >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
@@ -753,6 +870,53 @@ export interface ApiEventEvent extends Schema.CollectionType {
   };
 }
 
+export interface ApiExecutionExecution extends Schema.CollectionType {
+  collectionName: 'executions';
+  info: {
+    singularName: 'execution';
+    pluralName: 'executions';
+    displayName: 'Execution';
+    description: '';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    stdout: Attribute.Text;
+    stderr: Attribute.Text;
+    testCase: Attribute.Relation<
+      'api::execution.execution',
+      'oneToOne',
+      'api::test-case.test-case'
+    >;
+    submission: Attribute.Relation<
+      'api::execution.execution',
+      'oneToOne',
+      'api::submission.submission'
+    >;
+    passed: Attribute.Boolean;
+    processed: Attribute.Boolean;
+    executionTime: Attribute.Float;
+    processedAt: Attribute.DateTime;
+    code: Attribute.Text;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    publishedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::execution.execution',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'api::execution.execution',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
 export interface ApiLanguageLanguage extends Schema.CollectionType {
   collectionName: 'languages';
   info: {
@@ -768,6 +932,8 @@ export interface ApiLanguageLanguage extends Schema.CollectionType {
     name: Attribute.String;
     defaultMaxCpuTime: Attribute.Float;
     defaultMaxMemory: Attribute.Integer;
+    codeName: Attribute.String;
+    entrypoint: Attribute.String;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;
@@ -803,19 +969,7 @@ export interface ApiProblemProblem extends Schema.CollectionType {
     };
   };
   attributes: {
-    title: Attribute.RichText &
-      Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
     description: Attribute.RichText &
-      Attribute.SetPluginOptions<{
-        i18n: {
-          localized: true;
-        };
-      }>;
-    testCases: Attribute.Component<'tests.test-cases', true> &
       Attribute.SetPluginOptions<{
         i18n: {
           localized: true;
@@ -827,6 +981,28 @@ export interface ApiProblemProblem extends Schema.CollectionType {
           localized: true;
         };
       }>;
+    testCases: Attribute.Relation<
+      'api::problem.problem',
+      'oneToMany',
+      'api::test-case.test-case'
+    >;
+    title: Attribute.String &
+      Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    slug: Attribute.UID<'api::problem.problem', 'title'> &
+      Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true;
+        };
+      }>;
+    events: Attribute.Relation<
+      'api::problem.problem',
+      'oneToMany',
+      'api::event.event'
+    >;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;
@@ -851,6 +1027,101 @@ export interface ApiProblemProblem extends Schema.CollectionType {
   };
 }
 
+export interface ApiSubmissionSubmission extends Schema.CollectionType {
+  collectionName: 'submissions';
+  info: {
+    singularName: 'submission';
+    pluralName: 'submissions';
+    displayName: 'Submission';
+    description: '';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    event: Attribute.Relation<
+      'api::submission.submission',
+      'oneToOne',
+      'api::event.event'
+    >;
+    problem: Attribute.Relation<
+      'api::submission.submission',
+      'oneToOne',
+      'api::problem.problem'
+    >;
+    user: Attribute.Relation<
+      'api::submission.submission',
+      'oneToOne',
+      'plugin::users-permissions.user'
+    >;
+    code: Attribute.Text;
+    language: Attribute.Relation<
+      'api::submission.submission',
+      'oneToOne',
+      'api::language.language'
+    >;
+    triggeredAt: Attribute.DateTime;
+    finishedAt: Attribute.DateTime;
+    metadata: Attribute.JSON;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    publishedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::submission.submission',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'api::submission.submission',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
+export interface ApiTestCaseTestCase extends Schema.CollectionType {
+  collectionName: 'test_cases';
+  info: {
+    singularName: 'test-case';
+    pluralName: 'test-cases';
+    displayName: 'TestCase';
+    description: '';
+  };
+  options: {
+    draftAndPublish: true;
+  };
+  attributes: {
+    input: Attribute.Text;
+    output: Attribute.Text;
+    hidden: Attribute.Boolean;
+    locked: Attribute.Boolean;
+    weight: Attribute.Float;
+    problem: Attribute.Relation<
+      'api::test-case.test-case',
+      'manyToOne',
+      'api::problem.problem'
+    >;
+    explanation: Attribute.RichText;
+    createdAt: Attribute.DateTime;
+    updatedAt: Attribute.DateTime;
+    publishedAt: Attribute.DateTime;
+    createdBy: Attribute.Relation<
+      'api::test-case.test-case',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+    updatedBy: Attribute.Relation<
+      'api::test-case.test-case',
+      'oneToOne',
+      'admin::user'
+    > &
+      Attribute.Private;
+  };
+}
+
 declare module '@strapi/types' {
   export module Shared {
     export interface ContentTypes {
@@ -863,13 +1134,18 @@ declare module '@strapi/types' {
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'plugin::upload.file': PluginUploadFile;
       'plugin::upload.folder': PluginUploadFolder;
+      'plugin::content-releases.release': PluginContentReleasesRelease;
+      'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
       'plugin::i18n.locale': PluginI18NLocale;
       'plugin::users-permissions.permission': PluginUsersPermissionsPermission;
       'plugin::users-permissions.role': PluginUsersPermissionsRole;
       'plugin::users-permissions.user': PluginUsersPermissionsUser;
       'api::event.event': ApiEventEvent;
+      'api::execution.execution': ApiExecutionExecution;
       'api::language.language': ApiLanguageLanguage;
       'api::problem.problem': ApiProblemProblem;
+      'api::submission.submission': ApiSubmissionSubmission;
+      'api::test-case.test-case': ApiTestCaseTestCase;
     }
   }
 }

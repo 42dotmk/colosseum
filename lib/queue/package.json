@@ -1,0 +1,16 @@
+{
+  "name": "@colosseum/queue",
+  "main": "dist/amqp.js",
+  "types": "dist/amqp.d.ts",
+  "scripts": {
+    "build": "tsc -p .",
+    "watch": "tsc -p . -w"
+  },
+  "dependencies": {
+    "rabbitmq-client": "^4.5.2"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/node": "^20.11.30"
+  }
+}
