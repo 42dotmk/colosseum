@@ -18,8 +18,8 @@ const PageLayout = ({
       <Grid item xs={3} sx={{ borderLeft: 1, borderColor: 'divider', height: '100vh' }}>
         {rightGridChildren}
       </Grid>
-  </Grid>
-);
+    </Grid>
+  );
 }
 
 export default PageLayout;

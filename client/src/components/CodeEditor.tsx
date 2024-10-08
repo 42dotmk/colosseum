@@ -22,16 +22,13 @@ const CodeEditor = ({ language, code, readOnly }: Props) => {
   return (
     <Box
       sx={{
-        backgroundColor: "#282A36",
+        backgroundColor: "editor.background",
         width: "inherit",
         height: '100%',
         border: 1,
         borderColor: "divider",
         borderRadius: "12px",
         justifyItems: "flex-end",
-        marginLeft: 2,
-        paddingTop: 2,
-        paddingBottom: 2,
       }}
     >
         <Editor

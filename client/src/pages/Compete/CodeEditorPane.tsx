@@ -17,7 +17,7 @@ const CodeEditorPane = () => (
       language="typescript"
       code={[
         "const message: string = 'Hello, World!';",
-        "console.log(messxage);",
+        "console.log(message);",
       ]}
     />
     <Grid container justifyContent="flex-end">

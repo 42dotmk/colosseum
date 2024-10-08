@@ -1,4 +1,4 @@
-import { Box, FormControl, MenuItem, Select, SelectChangeEvent, Tooltip, Typography } from "@mui/material";
+import { Box, FormControl, MenuItem, Select, SelectChangeEvent, Tooltip } from "@mui/material";
 import { useState } from 'react';
 
 type Props = {
@@ -17,21 +17,11 @@ const LanguageSelect = ({ languages }: Props) => {
     <Box sx={{
       display: "flex",
       flexDirection: "row",
-      justifyContent: "space-between",
+      justifyContent: "flex-end",
       alignItems: "center",
     }}>
-      <Typography
-        color="typography.subtitle2"
-        variant="subtitle2"
-        align="left"
-        sx={{
-          marginLeft: 2,
-        }}
-      >
-        SELECT LANGUAGE:
-      </Typography>
       <FormControl sx={{ width: "150px" }} size="small">
-        <Tooltip title={currentLanguage} key={currentLanguage}>
+        <Tooltip title={currentLanguage} placement="right" key={currentLanguage}>
           <Select
             value={currentLanguage}
             onChange={handleLanguageChange}
