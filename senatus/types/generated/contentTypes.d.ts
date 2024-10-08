@@ -894,7 +894,7 @@ export interface ApiExecutionExecution extends Schema.CollectionType {
       'oneToOne',
       'api::submission.submission'
     >;
-    passed: Attribute.Boolean & Attribute.Private;
+    passed: Attribute.Boolean;
     processed: Attribute.Boolean;
     executionTime: Attribute.Float;
     processedAt: Attribute.DateTime;
