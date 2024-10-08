@@ -1,22 +1,6 @@
-import type { Schema, Attribute } from '@strapi/strapi';
+import type { Struct, Schema } from '@strapi/strapi';
 
-export interface ProblemStarterCode extends Schema.Component {
-  collectionName: 'components_problem_starter_codes';
-  info: {
-    displayName: 'Starter Code';
-    icon: 'alien';
-  };
-  attributes: {
-    code: Attribute.Text;
-    language: Attribute.Relation<
-      'problem.starter-code',
-      'oneToOne',
-      'api::language.language'
-    >;
-  };
-}
-
-export interface TestsTestCases extends Schema.Component {
+export interface TestsTestCases extends Struct.ComponentSchema {
   collectionName: 'components_tests_test_cases';
   info: {
     displayName: 'Test Cases';
@@ -24,19 +8,31 @@ export interface TestsTestCases extends Schema.Component {
     description: '';
   };
   attributes: {
-    input: Attribute.Text;
-    output: Attribute.Text;
-    hidden: Attribute.Boolean;
-    locked: Attribute.Boolean;
-    weight: Attribute.Float & Attribute.Private;
+    input: Schema.Attribute.Text;
+    output: Schema.Attribute.Text;
+    hidden: Schema.Attribute.Boolean;
+    locked: Schema.Attribute.Boolean;
+    weight: Schema.Attribute.Float & Schema.Attribute.Private;
   };
 }
 
-declare module '@strapi/types' {
-  export module Shared {
-    export interface Components {
-      'problem.starter-code': ProblemStarterCode;
+export interface ProblemStarterCode extends Struct.ComponentSchema {
+  collectionName: 'components_problem_starter_codes';
+  info: {
+    displayName: 'Starter Code';
+    icon: 'alien';
+  };
+  attributes: {
+    code: Schema.Attribute.Text;
+    language: Schema.Attribute.Relation<'oneToOne', 'api::language.language'>;
+  };
+}
+
+declare module '@strapi/strapi' {
+  export module Public {
+    export interface ComponentSchemas {
       'tests.test-cases': TestsTestCases;
+      'problem.starter-code': ProblemStarterCode;
     }
   }
 }

@@ -15,11 +15,12 @@ export default factories.createCoreController('api::submission.submission', ({ s
         ctx.body = 'Please provide an id';
         return;
       }
-      const entry = await strapi.entityService.findOne('api::submission.submission', id, {
-        populate: ['user', 'problem', 'language'],
+      const entry = await strapi.documents('api::submission.submission').findOne({
+        documentId: "__TODO__",
+        populate: ['user', 'problem', 'language']
       });
 
-      const testCases = await strapi.entityService.findMany('api::test-case.test-case', {
+      const testCases = await strapi.documents('api::test-case.test-case').findMany({
         filters: {
           problem: entry.problem.id as any,
         }
@@ -32,7 +33,7 @@ export default factories.createCoreController('api::submission.submission', ({ s
 
       const executionsToQueue: { testCase: any, execution: any }[] = [];
       for (const testCase of testCases) {
-        const execution = await strapi.entityService.create('api::execution.execution', {
+        const execution = await strapi.documents('api::execution.execution').create({
           data: {
             stdout: '',
             stderr: '',
