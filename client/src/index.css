@@ -1,5 +1,6 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+code {
+  background: #121212;
+  color: white;
+  border-radius: 2px;
+  padding: 2px 4px;
 }

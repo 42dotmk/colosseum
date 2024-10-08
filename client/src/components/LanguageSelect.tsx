@@ -1,50 +1,70 @@
-import { Box, FormControl, MenuItem, Select, SelectChangeEvent, Tooltip, Typography } from "@mui/material";
-import { useState } from 'react';
+import { Box, FormControl, MenuItem, Select, Typography } from "@mui/material";
 
 type Props = {
+  currentLanguage: string;
   languages: string[];
+  setCurrentLanguage: (language: string) => void;
 };
 
-const LanguageSelect = ({ languages }: Props) => {
-  const [currentLanguage, setCurrentLanguage] = useState(languages[0]);
-
-  const handleLanguageChange = (event: SelectChangeEvent) => {
-    const { target: { value } } = event;
-    setCurrentLanguage(value);
-  }
-
-  return (
-    <Box sx={{
+const LanguageSelect = ({
+  currentLanguage,
+  languages,
+  setCurrentLanguage,
+}: Props) => (
+  <Box
+    sx={{
       display: "flex",
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-    }}>
-      <Typography
-        color="typography.subtitle2"
-        variant="subtitle2"
-        align="left"
+    }}
+  >
+    <Typography color="typography.subtitle2" variant="subtitle2" align="left">
+      SELECT LANGUAGE:
+    </Typography>
+    <FormControl sx={{ width: "150px" }} size="small">
+      <Select
+        size="small"
+        value={currentLanguage}
+        onChange={(e) => setCurrentLanguage(e.target.value)}
+        displayEmpty
+        inputProps={{ "aria-label": "Without label" }}
         sx={{
-          marginLeft: 2,
+          "& .MuiOutlinedInput-notchedOutline": {
+            border: 1,
+            borderRadius: 1.5,
+            borderColor: "text.disabled",
+          },
+          "&:hover .MuiOutlinedInput-notchedOutline": {
+            border: 1,
+            borderRadius: 1.5,
+            borderColor: "text.disabled",
+          },
+          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+            border: 1,
+            borderRadius: 1.5,
+            borderColor: "text.disabled",
+          },
         }}
       >
-        SELECT LANGUAGE:
-      </Typography>
-      <FormControl sx={{ width: "150px" }} size="small">
-        <Tooltip title={currentLanguage} key={currentLanguage}>
-          <Select
-            value={currentLanguage}
-            onChange={handleLanguageChange}
-            displayEmpty
-            inputProps={{ "aria-label": "Without label" }}
+        {languages.map((language) => (
+          <MenuItem
+            key={language}
+            value={language}
+            sx={{
+              "&:hover .Mui-selected": {
+                backgroundColor: "text.disabled",
+              },
+              "&.Mui-selected": {
+                backgroundColor: "text.disabled",
+              },
+            }}
           >
-            {languages.map((language) => (
-              <MenuItem value={language}>{language}</MenuItem>
-            ))}
-          </Select>
-        </Tooltip>
-      </FormControl>
-    </Box>
-  );
-};
+            {language}
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
+  </Box>
+);
 export default LanguageSelect;
