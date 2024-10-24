@@ -1,6 +1,6 @@
 import { Share } from "@mui/icons-material";
 import { Box, Button, CardContent } from "@mui/material";
-
+import { FULL_WIDTH, FULL_HEIGHT } from "../../theme";
 
 const Buttons = () => {
 
@@ -8,37 +8,37 @@ const Buttons = () => {
         <CardContent
             sx={{
                 display: "flex",
-                width: "100%",
+                width: FULL_WIDTH,
             }}
         >
             <Box
                 sx={{
-                    width: "100%",
+                    width: FULL_WIDTH,
                     display: "flex",
                     alignItems: "flex-start",
                     justifyContent: "flex-start",
                 }}
             >
-                <Button 
-                    variant="contained" 
+                <Button
+                    variant="contained"
                     color="primary"
                     sx={{
-                        height: "100%",
-                        fontSize: "1.1rem",
-                        marginRight: "2%",
-                        borderRadius: "7px",
+                        height: FULL_HEIGHT,
+                        fontSize: 19,
+                        marginRight: 2,
+                        borderRadius: 2,
                     }}
                 >
                     REGISTER NOW
                 </Button>
-                <Button 
+                <Button
                     variant="outlined"
                     color="secondary"
                     sx={{
-                        height: "100%",
-                        fontSize: "1.1rem",
-                        marginRight: "2%",
-                        borderRadius: "7px",
+                        height: FULL_HEIGHT,
+                        fontSize: 17.5,
+                        marginRight: 2,
+                        borderRadius: 2,
                     }}
                 >
                     PREVIEW COMPETITION
@@ -47,11 +47,11 @@ const Buttons = () => {
                     variant="outlined"
                     color="secondary"
                     sx={{
-                        height: "100%",
+                        height: FULL_HEIGHT,
                         justifyContent: "center",
                         alignContent: "center",
-                        padding: "1%",
-                        borderRadius: "7px",
+                        padding: 2,
+                        borderRadius: 2,
                     }}
                 >
                     <Share />

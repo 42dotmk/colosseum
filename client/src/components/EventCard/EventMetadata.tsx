@@ -1,7 +1,7 @@
 import { Box, Typography } from "@mui/material";
 import IconLabels from "./IconLabel";
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
-
+import { FULL_WIDTH } from "../../theme";
 
 const CardHeading = "The Lost Beginning";
 const CompetitionDate = "JAN 13, 2024";
@@ -13,25 +13,26 @@ const EventMetadata = () => {
     return (
         <Box
             sx={{
-                width: "70%",
+                marginLeft: 2.5,
+                marginRight: 20,
                 display: "flex",
                 flexDirection: "column",
-                alignItems: "flex-start",
                 justifyContent: "center",
+                width: FULL_WIDTH,
             }}
         >
-            <Typography gutterBottom variant="h4" component="div" width={"70%"}>
+            <Typography gutterBottom variant="h4" component="div">
                 {CardHeading}
             </Typography>
 
             <Typography variant="body1" color="text.secondary">
                 {CompetitionDate} | {CompetitionTime} | {CompetitionPlace}
             </Typography>
-            
-            <IconLabels  iconLabels={[
-                {icon: <LocalFireDepartmentIcon/>, label: "75", containerSx:undefined},
-                {icon: <LocalFireDepartmentIcon/>, label: "224", containerSx:undefined}, 
-            ]}/>
+
+            <IconLabels iconLabels={[
+                { icon: <LocalFireDepartmentIcon />, label: "75", containerSx: undefined },
+                { icon: <LocalFireDepartmentIcon />, label: "224", containerSx: undefined },
+            ]} />
         </Box>
     );
 };

@@ -1,5 +1,8 @@
 import { ThemeOptions, createTheme } from '@mui/material/styles';
 
+export const FULL_WIDTH = 1;
+export const FULL_HEIGHT = 1;
+
 const themeOptions: ThemeOptions = createTheme({
   palette: {
     mode: 'dark',
