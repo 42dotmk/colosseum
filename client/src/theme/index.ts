@@ -1,5 +1,8 @@
 import { ThemeOptions, createTheme } from '@mui/material/styles';
 
+export const FULL_WIDTH = 1;
+export const FULL_HEIGHT = 1;
+
 const themeOptions: ThemeOptions = createTheme({
   palette: {
     mode: 'dark',
@@ -140,6 +143,33 @@ const themeOptions: ThemeOptions = createTheme({
       letterSpacing: '0.17px',
     },
   },
+  shadows: [
+    "none",
+    "0px 0px 1.5px 0px #fff",
+    "none",
+    "none",
+    "none",
+    "none",
+    "none",
+    "none",
+    "none",
+    "none",
+    "none",
+    "none",
+    "none",
+    "none",
+    "none",
+    "none",
+    "none",
+    "none",
+    "none",
+    "none",
+    "none",
+    "none",
+    "none",
+    "none",
+    "none",
+  ],
   spacing: (factor: number) => factor * 8,
 });
 
