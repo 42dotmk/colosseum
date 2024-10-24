@@ -1,5 +1,5 @@
 import { Share } from "@mui/icons-material";
-import { Box, Button, CardContent } from "@mui/material";
+import { Box, Button, CardContent, Typography } from "@mui/material";
 import { FULL_WIDTH, FULL_HEIGHT } from "../../theme";
 
 const Buttons = () => {
@@ -27,9 +27,17 @@ const Buttons = () => {
                         fontSize: 19,
                         marginRight: 2,
                         borderRadius: 2,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
                     }}
                 >
-                    REGISTER NOW
+                    <Typography
+                        color="black"
+                        noWrap
+                        sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}
+                    >
+                        REGISTER NOW
+                    </Typography>
                 </Button>
                 <Button
                     variant="outlined"
@@ -39,9 +47,16 @@ const Buttons = () => {
                         fontSize: 17.5,
                         marginRight: 2,
                         borderRadius: 2,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
                     }}
                 >
-                    PREVIEW COMPETITION
+                    <Typography
+                        noWrap
+                        sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}
+                    >
+                        PREVIEW COMPETITION
+                    </Typography>
                 </Button>
                 <Button
                     variant="outlined"
@@ -52,12 +67,14 @@ const Buttons = () => {
                         alignContent: "center",
                         padding: 2,
                         borderRadius: 2,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis'
                     }}
                 >
                     <Share />
                 </Button>
             </Box>
-        </CardContent>
+        </CardContent >
     );
 };
 

@@ -15,7 +15,12 @@ const SponsoredBy = () => {
                 padding: 1,
             }}
         >
-            <Typography variant="body1" color="text.secondary">
+            <Typography
+                variant="body1"
+                color="text.secondary"
+                noWrap
+                sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}
+            >
                 Sponsored by:
             </Typography>
             <Box

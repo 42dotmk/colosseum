@@ -30,7 +30,12 @@ const EventMetadata = () => {
                 {CardHeading}
             </Typography>
 
-            <Typography variant="body1" color="text.secondary">
+            <Typography
+                variant="body1"
+                color="text.secondary"
+                noWrap
+                sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}
+            >
                 {CompetitionDate} | {CompetitionTime} | {CompetitionPlace}
             </Typography>
 
