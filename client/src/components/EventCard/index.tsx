@@ -3,6 +3,7 @@ import ProgrammingLanguages from "./ProgrammingLanguages";
 import Buttons from "./Buttons";
 import EventMetadata from "./EventMetadata";
 import SponsoredBy from "./SponsoredBy";
+import themeOptions from "../../theme";
 
 const EventCard = () => {
     return (
@@ -10,7 +11,7 @@ const EventCard = () => {
             sx={{
                 borderRadius: 2,
                 marginX: 16,
-                boxShadow: "0px 0px 1.5px 0px #fff",
+                boxShadow: themeOptions.shadows?.[1],
             }}
         >
             <CardActionArea

@@ -25,9 +25,9 @@ const ProgrammingLanguage = ({ language }: { language: Language }) => {
                 alignItems: "flex-end",
                 justifyContent: "flex-end",
                 backgroundColor: "text.disabled",
-                padding: 0.5,
+                padding: 1.5,
                 borderRadius: 1,
-                marginRight: 0.5,
+                marginRight: 1,
                 boxShadow: 1,
             }}
             alt={language}

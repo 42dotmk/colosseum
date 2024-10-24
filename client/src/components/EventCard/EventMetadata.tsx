@@ -21,7 +21,12 @@ const EventMetadata = () => {
                 width: FULL_WIDTH,
             }}
         >
-            <Typography gutterBottom variant="h4" component="div">
+            <Typography
+                gutterBottom variant="h4"
+                component="div"
+                noWrap
+                sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}
+            >
                 {CardHeading}
             </Typography>
 
