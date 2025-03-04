@@ -1,9 +1,10 @@
-package executioner
+package main
 
 import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/42dotmk/colosseum/languages/docker"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
@@ -33,7 +34,6 @@ func main(){
 	msgs, err := ch.Consume("execution", "", false, false, false, false, nil)
 	fmt.Println("Channel opened")
 
-	pub, err := ch.QueueDeclare("results", false, false, false, false, nil)
 
 	go func(){
 		for d := range msgs {
@@ -49,9 +49,23 @@ func main(){
 				fmt.Errorf("Failed to execute: %s", err)
 			}
 			fmt.Println("Execution result:", result)
-			err = pub.Publish(json.Marshal(result), "results", false, false, amqp.Publishing)
-			if err != nil {}
-			fmt.Errorf("Failed to publish result: %s", err)
+			body, err := json.Marshal(result)
+			if err != nil {
+				fmt.Errorf("Failed to marshal result: %s", err)
+				continue
+			}
+			err = ch.Publish(
+				"",
+				"results",
+				false,  
+				false,  
+				amqp.Publishing{
+					ContentType: "application/json",
+					Body:        body,
+				})
+			if err != nil {
+				fmt.Errorf("Failed to publish result: %s", err)
+			}
 		}
 	}()
 
@@ -71,8 +85,8 @@ type File struct {
 }
 
 func execute(sources []string, input string, options string) (string, error){
-
-
-	return "result", nil
+	
+	return docker.Execution(sources, input, options)
+	
 }
 

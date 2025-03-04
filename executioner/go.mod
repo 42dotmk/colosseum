@@ -1,4 +1,4 @@
-module github.com/42dotmk/colosseum/executioner
+module github.com/42dotmk/colosseum/
 
 go 1.23.6
 

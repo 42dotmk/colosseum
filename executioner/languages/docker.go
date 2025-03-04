@@ -91,7 +91,7 @@ func readIfExist(path string) (string, error) {
 	return string(content), nil
 }
 
-func execute(files []File, input string, options LanguageOptions) (string, error) {
+func execution(files []File, input string, options LanguageOptions) (string, error) {
 	id := uuid.New()
 
 	subWorkspace := filepath.Join(WORKDIR, id.String())
