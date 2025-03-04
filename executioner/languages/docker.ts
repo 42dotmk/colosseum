@@ -98,7 +98,7 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
   }
 
   try {
-    return await new Promise(async (resolve) => {
+     return await new Promise(async (resolve) => {
       await writeFile(timePath, "");
       await writeFile(stdoutPath, "");
       await writeFile(stderrPath, "");
@@ -139,8 +139,8 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
         "-v",
         `${compileStderrPath}:/exc/${compileStderrFilename}`,
         ...extraArgs,
-        "-i",
-        `${IMAGE_BASE}${lang}`
+        "-i",`
+        `${IMAGE_BASE}${lang}'
       ];
 
       const child = cp.spawn('docker', args);
