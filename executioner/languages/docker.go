@@ -14,18 +14,17 @@ import (
 	"github.com/joho/godotenv"
 )
 
-
 type LanguageOptions struct {
-	Language       string
-	EntrypointFile string
-
+	Language       string            `json:"language"`
+	EntrypointFile string            `json:"entrypointFile"`
+	Options        map[string]string `json:"options"`
 }
 
 type File struct {
-	ID       string
-	Filename string
-	Content  string
-	Metadata interface{}
+	ID       string                `json:"id,omitempty"`
+	Filename string                 `json:"filename"`
+	Content  string                 `json:"content"`
+	Metadata map[string]interface{} `json:"metadata,omitempty"`
 }
 
 var (
@@ -45,7 +44,7 @@ const (
 
 )
 
-func main (){
+func Init (){
 	err := godotenv.Load()
 	if err != nil {
 		fmt.Errorf("Failed to load env: %s", err)
@@ -91,9 +90,24 @@ func readIfExist(path string) (string, error) {
 	return string(content), nil
 }
 
-func execution(files []File, input string, options LanguageOptions) (string, error) {
+func StartCodeContainer(filePaths []string, input []string, options LanguageOptions) (string, error) {
 	id := uuid.New()
 
+	files:= []File{}
+
+	for _, path := range filePaths {
+		
+		content, err := os.ReadFile(path);
+		if err != nil {
+			return "", fmt.Errorf("Failed to read file: %s", err)
+		}
+		files = append(files, File{
+			ID:       id.String(),
+			Filename: path,
+			Content: string(content[:]),
+		})
+	}
+		
 	subWorkspace := filepath.Join(WORKDIR, id.String())
 	srcDir := filepath.Join(subWorkspace, "src") 
 	inputDir := filepath.Join(subWorkspace, "input")

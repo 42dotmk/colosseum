@@ -1,27 +1,27 @@
 package main
 
 import (
+	"colosseum/languages"
 	"encoding/json"
 	"fmt"
 
-	"github.com/42dotmk/colosseum/languages/docker"
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type RabbitMQ struct {
 	Conn *amqp.Connection
 	Channel *amqp.Channel
-
 }
 
-type parsed struct {
-	sources []string
-	input string
-	options string
+
+type ExecutionRequestContract struct {
+	Sources []string `json:"sources"`
+	Input []string	`json:"input"`
+	Options languages.LanguageOptions `json:"options"`
 }
 
 func main(){
-	conn,err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	conn,err := amqp.Dial("amqp://guest:guest@localhost")
 	if err != nil {
 		fmt.Errorf("Failed to connect to RabbitMQ: %s", err)
 	}
@@ -31,20 +31,36 @@ func main(){
 	if err != nil {
 		fmt.Errorf("Failed to open a channel: %s", err)
 	}
+
+	queueName := "execution" 
+    _, err = ch.QueueDeclare(
+        queueName, 
+        true,      
+        false,     
+        false,     
+        false,
+        nil,       
+    )
+    if err != nil {
+        fmt.Errorf("Failed to declare the queue: %s", err)
+    }
+    fmt.Println("Queue declared")
+
 	msgs, err := ch.Consume("execution", "", false, false, false, false, nil)
 	fmt.Println("Channel opened")
 
 
 	go func(){
+		fmt.Println("Waiting for messages")
 		for d := range msgs {
 			fmt.Printf("Received a message: %s\n", d.Body)
-			var p parsed
+			var p ExecutionRequestContract
 			err := json.Unmarshal(d.Body, &p)
 			if err != nil {
 				fmt.Errorf("Failed to parse message: %s", err)
 				continue
 			}
-			result, err := execute(p.sources, p.input, p.options)
+			result, err := execute(p.Sources, p.Input, p.Options)
 			if err != nil {
 				fmt.Errorf("Failed to execute: %s", err)
 			}
@@ -68,25 +84,14 @@ func main(){
 			}
 		}
 	}()
-
+	select {}
 }
 
-type LanguageOptions struct {
-	Language       string            `json:"language"`
-	EntrypointFile string            `json:"entrypointFile"`
-	Options        map[string]string `json:"options"`
-}
-
-type File struct {
-	ID       *string                `json:"id,omitempty"`
-	Filename string                 `json:"filename"`
-	Content  string                 `json:"content"`
-	Metadata map[string]interface{} `json:"metadata,omitempty"`
-}
-
-func execute(sources []string, input string, options string) (string, error){
+func execute(sources []string, input []string, options languages.LanguageOptions) (string, error){
 	
-	return docker.Execution(sources, input, options)
+	languages.Init()
+
+	return languages.StartCodeContainer(sources, input, options)
 	
 }
 
