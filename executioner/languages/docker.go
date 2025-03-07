@@ -3,6 +3,7 @@ package languages
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -90,29 +91,17 @@ func readIfExist(path string) (string, error) {
 	return string(content), nil
 }
 
-func StartCodeContainer(filePaths []string, input []string, options LanguageOptions) (string, error) {
+func StartCodeContainer(sources []File, input []File, options LanguageOptions) (string, error) {
 	id := uuid.New()
 
 	files:= []File{}
-
-	for _, path := range filePaths {
-		
-		content, err := os.ReadFile(path);
-		if err != nil {
-			return "", fmt.Errorf("Failed to read file: %s", err)
-		}
-		files = append(files, File{
-			ID:       id.String(),
-			Filename: path,
-			Content: string(content[:]),
-		})
-	}
-		
+			
 	subWorkspace := filepath.Join(WORKDIR, id.String())
 	srcDir := filepath.Join(subWorkspace, "src") 
 	inputDir := filepath.Join(subWorkspace, "input")
 	outputDir := filepath.Join(subWorkspace, "output")
 	lang := options.Language
+
 
 	_, err := os.ReadDir(subWorkspace)
 	if err != nil {
@@ -143,28 +132,65 @@ func StartCodeContainer(filePaths []string, input []string, options LanguageOpti
 		}
 	}
 
-	_,timePath := os.ReadDir(filepath.Join(subWorkspace, timeFilename))
-	_,stdoutPath := os.ReadDir(filepath.Join(subWorkspace, stdoutFilename))
-	_,stderrPath := os.ReadDir(filepath.Join(subWorkspace, StderrFilename))
-	_,compileStdoutPath := os.ReadDir(filepath.Join(subWorkspace, compileStdoutFilename))
-	_,compileStderrPath := os.ReadDir(filepath.Join(subWorkspace, compileStderrFilename))
-	
-
-	for _, file := range files {
-		filePath := filepath.Join(srcDir, file.Filename)
-		err := os.WriteFile(filePath, []byte(file.Content), 0777)
+	for _, source := range sources {
+		
+		content := source.Content
+		err := os.WriteFile(filepath.Join(srcDir, source.Filename), []byte(content), 0777)
 		if err != nil {
 			return "", fmt.Errorf("Failed to write file: %s", err)
 		}
+		files = append(files, File{
+			ID:       id.String(),
+			Filename: source.Filename,
+			Content: string(content[:]),
+		})
 	}
-
-	for _, file := range files {
-		filePath := filepath.Join(inputDir, file.Filename)
-		err := os.WriteFile(filePath, []byte(file.Content), 0777)
+	for _ , inp := range input {
+		content := inp.Content
+		err := os.WriteFile(filepath.Join(inputDir, inp.Filename), []byte(content), 0777)
 		if err != nil {
 			return "", fmt.Errorf("Failed to write file: %s", err)
 		}
+		files = append(files, File{
+			ID:       id.String(),
+			Filename: inp.Filename,
+			Content: string(content[:]),
+		})
 	}
+	// for _, file := range files {
+	// 	filePath := filepath.Join(srcDir, file.Filename)
+	// 	err := os.WriteFile(filePath, []byte(file.Content), 0777)
+	// 	if err != nil {
+	// 		return "", fmt.Errorf("Failed to write file: %s", err)
+	// 	}
+	// }
+
+	// for _, file := range files {
+	// 	filePath := filepath.Join(inputDir, file.Filename)
+	// 	err := os.WriteFile(filePath, []byte(file.Content), 0777)
+	// 	if err != nil {
+	// 		return "", fmt.Errorf("Failed to write file: %s", err)
+	// 	}
+	// }
+
+	timePath := filepath.Join(subWorkspace, timeFilename)
+	stdoutPath := filepath.Join(subWorkspace, stdoutFilename)
+	stderrPath := filepath.Join(subWorkspace, StderrFilename)
+	compileStdoutPath := filepath.Join(subWorkspace, compileStdoutFilename)
+	compileStderrPath := filepath.Join(subWorkspace, compileStderrFilename)
+
+	// Create the necessary files if they don't exist
+	filesToCreate := []string{timePath, stdoutPath, stderrPath, compileStdoutPath, compileStderrPath}
+	for _, filePath := range filesToCreate {
+		_, err := os.Stat(filePath)
+		if os.IsNotExist(err) {
+			err = os.WriteFile(filePath, []byte(""), 0644)
+			if err != nil {
+				return "", fmt.Errorf("Failed to create file %s: %s", filePath, err)
+			}
+		}
+	}
+
 
 	var extraArgs []string
 
@@ -196,10 +222,8 @@ func StartCodeContainer(filePaths []string, input []string, options LanguageOpti
 
 	cmdDocker := exec.Command("docker", args...)
 
-	err = cmdDocker.Start()
-	if err != nil {
-		return "", fmt.Errorf("Failed to start docker: %s", err)
-	}
+	fmt.Printf("Command: %s\n", cmdDocker.String())
+
 	stdout,err:= cmdDocker.StdoutPipe()
 	if err != nil {
 		return "", fmt.Errorf("Failed to get stdout pipe: %s", err)
@@ -210,6 +234,32 @@ func StartCodeContainer(filePaths []string, input []string, options LanguageOpti
 		return "", fmt.Errorf("Failed to get stderr pipe: %s", err)
 	}
 	fmt.Println(stderr)
+	err = cmdDocker.Start()
+
+	if err != nil {
+		return "", fmt.Errorf("Failed to start docker: %s", err)
+	}
+	
+	// read stdout and stderr into string
+
+	stdoutput, err := io.ReadAll(stdout)
+	if err != nil {
+		return "", fmt.Errorf("Failed to read stdout: %s", err)
+	}
+
+	errOutput, err := io.ReadAll(stderr)
+	if err != nil {
+		return "", fmt.Errorf("Failed to read stderr: %s", err)
+	}
+
+	if len(errOutput) > 0 {
+		return "", fmt.Errorf("Failed to execute: %s", string(errOutput))
+	}
+
+	fmt.Printf("Stdout: %s\n", string(stdoutput))
+	fmt.Printf("Stderr: %s\n", string(errOutput))
+
+
 	err = cmdDocker.Wait()
 	if err != nil {
 		return "", fmt.Errorf("Failed to wait for docker: %s", err)

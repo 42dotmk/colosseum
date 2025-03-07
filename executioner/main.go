@@ -15,10 +15,11 @@ type RabbitMQ struct {
 
 
 type ExecutionRequestContract struct {
-	Sources []string `json:"sources"`
-	Input []string	`json:"input"`
+	Sources []languages.File `json:"sources"`
+	Input []languages.File	`json:"input"`
 	Options languages.LanguageOptions `json:"options"`
 }
+
 
 func main(){
 	conn,err := amqp.Dial("amqp://guest:guest@localhost")
@@ -50,44 +51,78 @@ func main(){
 	fmt.Println("Channel opened")
 
 
-	go func(){
-		fmt.Println("Waiting for messages")
-		for d := range msgs {
-			fmt.Printf("Received a message: %s\n", d.Body)
+	// go func(){
+	// 	fmt.Println("Waiting for messages")
+	// 	for d := range msgs {
+	// 		fmt.Printf("Received a message: %s\n", d.Body)
+	// 		var p ExecutionRequestContract
+	// 		err := json.Unmarshal(d.Body, &p)
+	// 		if err != nil {
+	// 			fmt.Errorf("Failed to parse message: %s", err)
+	// 			continue 
+	// 		}
+	// 		result, err := execute(p.Sources, p.Input, p.Options)
+	// 		if err != nil {
+	// 			fmt.Errorf("Failed to execute: %s", err)
+	// 		}
+	// 		fmt.Println("Execution result:", result)
+	// 		body, err := json.Marshal(result)
+	// 		if err != nil {
+	// 			fmt.Errorf("Failed to marshal result: %s", err)
+	// 			continue
+	// 		}
+
+	// 		d.Ack(false)
+
+	// 		err = ch.Publish(
+	// 			"",
+	// 			"results",
+	// 			false,  
+	// 			false,  
+	// 			amqp.Publishing{
+	// 				ContentType: "application/json",
+	// 				Body:        body,
+	// 			})
+	// 		if err != nil {
+	// 			fmt.Errorf("Failed to publish result: %s", err)
+	// 		}
+	// 	}
+	// }()
+
+	for d:= range msgs{
+		fmt.Printf("Received a message: %s\n", d.Body)
+		go func(msg amqp.Delivery){
 			var p ExecutionRequestContract
-			err := json.Unmarshal(d.Body, &p)
+			err := json.Unmarshal(msg.Body, &p)
 			if err != nil {
 				fmt.Errorf("Failed to parse message: %s", err)
-				continue
+				return
 			}
 			result, err := execute(p.Sources, p.Input, p.Options)
 			if err != nil {
 				fmt.Errorf("Failed to execute: %s", err)
+				
 			}
-			fmt.Println("Execution result:", result)
-			body, err := json.Marshal(result)
-			if err != nil {
-				fmt.Errorf("Failed to marshal result: %s", err)
-				continue
-			}
+			d.Ack(false)
 			err = ch.Publish(
 				"",
 				"results",
-				false,  
-				false,  
+				false,
+				false,
 				amqp.Publishing{
 					ContentType: "application/json",
-					Body:        body,
+					Body: []byte(result),
 				})
 			if err != nil {
 				fmt.Errorf("Failed to publish result: %s", err)
 			}
-		}
-	}()
+			fmt.Println("Execution result:", result)
+		}(d)
+	}
 	select {}
 }
 
-func execute(sources []string, input []string, options languages.LanguageOptions) (string, error){
+func execute(sources []languages.File, input []languages.File, options languages.LanguageOptions) (string, error){
 	
 	languages.Init()
 
