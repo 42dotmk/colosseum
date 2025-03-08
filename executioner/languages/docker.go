@@ -27,7 +27,13 @@ type File struct {
 	Content  string                 `json:"content"`
 	Metadata map[string]interface{} `json:"metadata,omitempty"`
 }
-
+type ExecutionResult struct{
+	ID string `json:"id"`
+	Stdout string `json:"stdout"`
+	Stderr string `json:"stderr"`
+	Time int `json:"time"`
+	Metadata map[string]interface{} `json:"metadata"`
+}
 var (
 	CPU_LIMIT_PER_EXECUTION string
 	MEMORY_LIMIT_PER_EXECUTION string
@@ -48,7 +54,7 @@ const (
 func Init (){
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Errorf("Failed to load env: %s", err)
+		fmt.Printf("Failed to load env: %s\n", err)
 	}
 	CPU_LIMIT_PER_EXECUTION = os.Getenv("CPU_LIMIT_PER_EXECUTION")
 	MEMORY_LIMIT_PER_EXECUTION = os.Getenv("MEMORY_LIMIT_PER_EXECUTION")
@@ -135,7 +141,7 @@ func StartCodeContainer(sources []File, input []File, options LanguageOptions) (
 	for _, source := range sources {
 		
 		content := source.Content
-		err := os.WriteFile(filepath.Join(srcDir, source.Filename), []byte(content), 0777)
+		err := writeFileToDir(srcDir, source)
 		if err != nil {
 			return "", fmt.Errorf("Failed to write file: %s", err)
 		}
@@ -147,7 +153,7 @@ func StartCodeContainer(sources []File, input []File, options LanguageOptions) (
 	}
 	for _ , inp := range input {
 		content := inp.Content
-		err := os.WriteFile(filepath.Join(inputDir, inp.Filename), []byte(content), 0777)
+		err := writeFileToDir(inputDir, inp)
 		if err != nil {
 			return "", fmt.Errorf("Failed to write file: %s", err)
 		}
@@ -155,31 +161,16 @@ func StartCodeContainer(sources []File, input []File, options LanguageOptions) (
 			ID:       id.String(),
 			Filename: inp.Filename,
 			Content: string(content[:]),
+			Metadata: inp.Metadata,
 		})
 	}
-	// for _, file := range files {
-	// 	filePath := filepath.Join(srcDir, file.Filename)
-	// 	err := os.WriteFile(filePath, []byte(file.Content), 0777)
-	// 	if err != nil {
-	// 		return "", fmt.Errorf("Failed to write file: %s", err)
-	// 	}
-	// }
 
-	// for _, file := range files {
-	// 	filePath := filepath.Join(inputDir, file.Filename)
-	// 	err := os.WriteFile(filePath, []byte(file.Content), 0777)
-	// 	if err != nil {
-	// 		return "", fmt.Errorf("Failed to write file: %s", err)
-	// 	}
-	// }
-
-	timePath := filepath.Join(subWorkspace, timeFilename)
+	timePath := filepath.Join(subWorkspace,timeFilename)
 	stdoutPath := filepath.Join(subWorkspace, stdoutFilename)
 	stderrPath := filepath.Join(subWorkspace, StderrFilename)
 	compileStdoutPath := filepath.Join(subWorkspace, compileStdoutFilename)
 	compileStderrPath := filepath.Join(subWorkspace, compileStderrFilename)
 
-	// Create the necessary files if they don't exist
 	filesToCreate := []string{timePath, stdoutPath, stderrPath, compileStdoutPath, compileStderrPath}
 	for _, filePath := range filesToCreate {
 		_, err := os.Stat(filePath)
@@ -190,7 +181,6 @@ func StartCodeContainer(sources []File, input []File, options LanguageOptions) (
 			}
 		}
 	}
-
 
 	var extraArgs []string
 
@@ -256,6 +246,26 @@ func StartCodeContainer(sources []File, input []File, options LanguageOptions) (
 		return "", fmt.Errorf("Failed to execute: %s", string(errOutput))
 	}
 
+
+	stdFiles := []File{}
+	suffixes := []string{".stdout", ".stderr", ".time"}
+	for _, inp := range input {
+		for _, suffix := range suffixes {
+			filePath := filepath.Join(outputDir, inp.Filename+suffix)
+			content, err := os.ReadFile(filePath)
+			if err != nil {
+				return "", fmt.Errorf("Failed to read file %s: %s", filePath, err)
+			}
+			stdFiles = append(stdFiles, File{
+				ID:       id.String(),
+				Filename: filepath.Base(filePath),
+				Content:  string(content),
+				Metadata: inp.Metadata,
+			})
+		}
+	}
+
+
 	fmt.Printf("Stdout: %s\n", string(stdoutput))
 	fmt.Printf("Stderr: %s\n", string(errOutput))
 
@@ -264,66 +274,96 @@ func StartCodeContainer(sources []File, input []File, options LanguageOptions) (
 	if err != nil {
 		return "", fmt.Errorf("Failed to wait for docker: %s", err)
 	}
-	
-	output,err := processOutput(files)
+		
+	output,err := processOutput(stdFiles)
 	if err != nil{
 		return "", fmt.Errorf("Failed to process output: %s", err)
 	}
 	return output, nil
 }
 
-func processOutput(input []File) (string, error) {
-	
-	var output []map[string]interface{}
-	for _, inp := range input {
-		stdoutPath := filepath.Join(WORKDIR, inp.Filename, stdoutFilename)
-		stdout, err := readIfExist(stdoutPath)
-		if err != nil {
-			return "", fmt.Errorf("Failed to read stdout: %s", err)
+
+func processOutput(stdFiles []File) (string, error) {
+
+	grouped := make(map[string]map[string]File)
+	for _, file := range stdFiles {
+		ext := filepath.Ext(file.Filename)
+		baseName := strings.TrimSuffix(file.Filename, ext)
+		if grouped[baseName] == nil {
+			grouped[baseName] = make(map[string]File)
 		}
-		stderrPath := filepath.Join(WORKDIR, inp.Filename, StderrFilename)
-		stderr, err := readIfExist(stderrPath)
-		if err != nil {
-			return "", fmt.Errorf("Failed to read stderr: %s", err)
+		grouped[baseName][ext] = file
+	}
+
+	var results []ExecutionResult
+	for base, filesMap := range grouped {
+		stdout := ""
+		stderr := ""
+		timeContent := ""
+
+		if file, ok := filesMap[".stdout"]; ok {
+			stdout = file.Content
+		} else {
+			return "", fmt.Errorf("Missing stdout for %s", base)
 		}
-		timePath := filepath.Join(WORKDIR, inp.Filename, timeFilename)
-		time, err := readIfExist(timePath)
-		if err != nil {
-			return "", fmt.Errorf("Failed to read time: %s", err)
+		if file, ok := filesMap[".stderr"]; ok {
+			stderr = file.Content
+		} else {
+			return "", fmt.Errorf("Missing stderr for %s", base)
+		}
+		if file, ok := filesMap[".time"]; ok {
+			timeContent = file.Content
+		} else {
+			return "", fmt.Errorf("Missing time for %s", base)
 		}
 
-		var parsedTime int = 0
-
-		if time != "" {
-			timeSplits := [][]string{}
-			for _, t := range regexp.MustCompile(`\r?\n`).Split(time, -1) {
+		parsedTime := 0
+		if timeContent != "" {
+			var timeSplits [][]string
+			for _, t := range regexp.MustCompile(`\r?\n`).Split(timeContent, -1) {
 				trimmed := strings.TrimSpace(t)
 				if trimmed != "" {
 					timeSplits = append(timeSplits, strings.Split(trimmed, "\t"))
 				}
 			}
-			realTime := timeSplits[0]
-			parsedTime, err = parseDuration(realTime[1])
-			if err != nil {
-				return "", fmt.Errorf("Failed to parse duration: %s", err)
+			if len(timeSplits) > 0 && len(timeSplits[0]) > 1 {
+				var err error
+				parsedTime, err = parseDuration(timeSplits[0][1])
+				if err != nil {
+					return "", fmt.Errorf("Failed to parse duration for %s: %s", base, err)
+				}
 			}
 		}
-		output = append(output, map[string]interface{}{
-            "id":       inp.ID,
-            "stdout":   stdout,
-            "stderr":   stderr,
-            "time":     parsedTime,
-            "metadata": inp.Metadata,
-        })
 
-		jsonOutput, err := json.Marshal(output)
-		if err != nil {
-			return "", fmt.Errorf("Failed to marshal output: %s", err)
+		var fileID string
+		var metadata map[string]interface{}
+		if file, ok := filesMap[".stdout"]; ok {
+			fileID = file.ID
+			metadata = file.Metadata
 		}
-		return string(jsonOutput), nil
 
+		result := ExecutionResult{
+			ID:       fileID,
+			Stdout:   strings.TrimSpace(stdout),
+			Stderr:   strings.TrimSpace(stderr),
+			Time:     parsedTime,
+			Metadata: metadata,
+		}
+		results = append(results, result)
 	}
 
-	return "", nil
+	jsonOutput, err := json.Marshal(results)
+	if err != nil {
+		return "", fmt.Errorf("Failed to marshal output: %s", err)
+	}
+	return string(jsonOutput), nil
+}
 
+
+func writeFileToDir(path string, input File) error {
+	err := os.WriteFile(filepath.Join(path, input.Filename), []byte(input.Content), 0777)
+	if err != nil {
+		return fmt.Errorf("Failed to write file: %s", err)
+	}
+	return nil
 }
