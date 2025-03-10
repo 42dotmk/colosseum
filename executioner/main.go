@@ -18,10 +18,16 @@ import (
 		Sources []languages.File `json:"sources"`
 		Input []languages.File	`json:"input"`
 		Options languages.LanguageOptions `json:"options"`
-		Metadata map[string]interface{} `json:"metadata"`
+		Metadata Metadata `json:"metadata"`
 	}
 
-
+	type Response struct{
+		Result []languages.ExecutionResult `json:"result"`
+		Metadata Metadata `json:"metadata"`
+	}
+	type Metadata struct {
+		SubmissionId int `json:"submissionId"`
+	}
 
 	func main(){
 		conn,err := amqp.Dial("amqp://guest:guest@localhost")
@@ -57,7 +63,6 @@ import (
 			go func(msg amqp.Delivery){
 				var p ExecutionRequestContract
 				err := json.Unmarshal(msg.Body, &p)
-				metadata := p.Metadata
 				if err != nil {
 					fmt.Errorf("Failed to parse message: %s", err)
 					return
@@ -68,12 +73,15 @@ import (
 					
 				}
 				d.Ack(false)
-				metadataJSON, err := json.Marshal(metadata)
-				if err != nil {
-					fmt.Errorf("Failed to marshal metadata: %s", err)
-					return
+				response := Response{
+					Result:   result, 
+					Metadata: p.Metadata,
 				}
-				resMsg := fmt.Sprintf(`{"results": "%s", "metadata": %s}`, result, metadataJSON)
+				fmt.Println(result)
+				resMsg, err := json.Marshal(response)
+				if err != nil {
+					fmt.Errorf("Failed to marshal response: %s", err)
+				}
 				fmt.Println(resMsg)
 				err = ch.Publish(
 					"",
@@ -81,9 +89,10 @@ import (
 					false,
 					false,
 					amqp.Publishing{
-						ContentType: "application/json",
-						Body: []byte(resMsg),
-					})
+						// ContentType: "application/json",
+						Body: resMsg,
+					},
+				)
 				if err != nil {
 					fmt.Errorf("Failed to publish result: %s", err)
 				}
@@ -93,7 +102,7 @@ import (
 		select {}
 	}
 
-func execute(sources []languages.File, input []languages.File, options languages.LanguageOptions) (string, error){
+func execute(sources []languages.File, input []languages.File, options languages.LanguageOptions) ([]languages.ExecutionResult, error){
 	
 	languages.Init()
 

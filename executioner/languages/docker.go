@@ -1,7 +1,6 @@
 package languages
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -25,14 +24,20 @@ type File struct {
 	ID       string                `json:"id,omitempty"`
 	Filename string                 `json:"filename"`
 	Content  string                 `json:"content"`
-	Metadata map[string]interface{} `json:"metadata,omitempty"`
+	Metadata struct {
+		ExecutionId int `json:"executionId"`
+		TestCaseId  int `json:"testCaseId"`
+	} `json:"metadata"`
 }
 type ExecutionResult struct{
 	ID string `json:"id"`
 	Stdout string `json:"stdout"`
 	Stderr string `json:"stderr"`
 	Time int `json:"time"`
-	Metadata map[string]interface{} `json:"metadata"`
+	Metadata  struct {
+		ExecutionId int `json:"executionId"`
+		TestCaseId  int `json:"testCaseId"`
+	} `json:"metadata"`
 }
 var (
 	CPU_LIMIT_PER_EXECUTION string
@@ -97,7 +102,7 @@ func readIfExist(path string) (string, error) {
 	return string(content), nil
 }
 
-func StartCodeContainer(sources []File, input []File, options LanguageOptions) (string, error) {
+func StartCodeContainer(sources []File, input []File, options LanguageOptions) ([]ExecutionResult, error) {
 	id := uuid.New()
 
 	files:= []File{}
@@ -113,28 +118,28 @@ func StartCodeContainer(sources []File, input []File, options LanguageOptions) (
 	if err != nil {
 		err := os.MkdirAll(subWorkspace, 0777)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 	}
 	_, err = os.ReadDir(srcDir)
 	if err != nil {
 		err := os.MkdirAll(srcDir, 0777)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 	}
 	_, err = os.ReadDir(inputDir)
 	if err != nil {
 		err := os.MkdirAll(inputDir, 0777)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 	}
 	_, err = os.ReadDir(outputDir)
 	if err != nil {
 		err := os.MkdirAll(outputDir, 0777)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 	}
 
@@ -143,7 +148,7 @@ func StartCodeContainer(sources []File, input []File, options LanguageOptions) (
 		content := source.Content
 		err := writeFileToDir(srcDir, source)
 		if err != nil {
-			return "", fmt.Errorf("Failed to write file: %s", err)
+			return nil, fmt.Errorf("Failed to write file: %s", err)
 		}
 		files = append(files, File{
 			ID:       id.String(),
@@ -155,7 +160,7 @@ func StartCodeContainer(sources []File, input []File, options LanguageOptions) (
 		content := inp.Content
 		err := writeFileToDir(inputDir, inp)
 		if err != nil {
-			return "", fmt.Errorf("Failed to write file: %s", err)
+			return nil, fmt.Errorf("Failed to write file: %s", err)
 		}
 		files = append(files, File{
 			ID:       id.String(),
@@ -177,7 +182,7 @@ func StartCodeContainer(sources []File, input []File, options LanguageOptions) (
 		if os.IsNotExist(err) {
 			err = os.WriteFile(filePath, []byte(""), 0644)
 			if err != nil {
-				return "", fmt.Errorf("Failed to create file %s: %s", filePath, err)
+				return nil, fmt.Errorf("Failed to create file %s: %s", filePath, err)
 			}
 		}
 	}
@@ -216,34 +221,34 @@ func StartCodeContainer(sources []File, input []File, options LanguageOptions) (
 
 	stdout,err:= cmdDocker.StdoutPipe()
 	if err != nil {
-		return "", fmt.Errorf("Failed to get stdout pipe: %s", err)
+		return nil,fmt.Errorf("Failed to get stdout pipe: %s", err)
 	}
 	fmt.Println(stdout)
 	stderr,err:= cmdDocker.StderrPipe()
 	if err != nil {
-		return "", fmt.Errorf("Failed to get stderr pipe: %s", err)
+		return nil, fmt.Errorf("Failed to get stderr pipe: %s", err)
 	}
 	fmt.Println(stderr)
 	err = cmdDocker.Start()
 
 	if err != nil {
-		return "", fmt.Errorf("Failed to start docker: %s", err)
+		return nil, fmt.Errorf("Failed to start docker: %s", err)
 	}
 	
 	// read stdout and stderr into string
 
 	stdoutput, err := io.ReadAll(stdout)
 	if err != nil {
-		return "", fmt.Errorf("Failed to read stdout: %s", err)
+		return nil, fmt.Errorf("Failed to read stdout: %s", err)
 	}
 
 	errOutput, err := io.ReadAll(stderr)
 	if err != nil {
-		return "", fmt.Errorf("Failed to read stderr: %s", err)
+		return nil, fmt.Errorf("Failed to read stderr: %s", err)
 	}
 
 	if len(errOutput) > 0 {
-		return "", fmt.Errorf("Failed to execute: %s", string(errOutput))
+		return nil, fmt.Errorf("Failed to execute: %s", string(errOutput))
 	}
 
 
@@ -254,7 +259,7 @@ func StartCodeContainer(sources []File, input []File, options LanguageOptions) (
 			filePath := filepath.Join(outputDir, inp.Filename+suffix)
 			content, err := os.ReadFile(filePath)
 			if err != nil {
-				return "", fmt.Errorf("Failed to read file %s: %s", filePath, err)
+				return nil, fmt.Errorf("Failed to read file %s: %s", filePath, err)
 			}
 			stdFiles = append(stdFiles, File{
 				ID:       id.String(),
@@ -272,18 +277,18 @@ func StartCodeContainer(sources []File, input []File, options LanguageOptions) (
 
 	err = cmdDocker.Wait()
 	if err != nil {
-		return "", fmt.Errorf("Failed to wait for docker: %s", err)
+		return nil, fmt.Errorf("Failed to wait for docker: %s", err)
 	}
 		
 	output,err := processOutput(stdFiles)
 	if err != nil{
-		return "", fmt.Errorf("Failed to process output: %s", err)
+		return nil, fmt.Errorf("Failed to process output: %s", err)
 	}
 	return output, nil
 }
 
 
-func processOutput(stdFiles []File) (string, error) {
+func processOutput(stdFiles []File) ([]ExecutionResult, error) {
 
 	grouped := make(map[string]map[string]File)
 	for _, file := range stdFiles {
@@ -304,17 +309,17 @@ func processOutput(stdFiles []File) (string, error) {
 		if file, ok := filesMap[".stdout"]; ok {
 			stdout = file.Content
 		} else {
-			return "", fmt.Errorf("Missing stdout for %s", base)
+			return nil, fmt.Errorf("Missing stdout for %s", base)
 		}
 		if file, ok := filesMap[".stderr"]; ok {
 			stderr = file.Content
 		} else {
-			return "", fmt.Errorf("Missing stderr for %s", base)
+			return nil, fmt.Errorf("Missing stderr for %s", base)
 		}
 		if file, ok := filesMap[".time"]; ok {
 			timeContent = file.Content
 		} else {
-			return "", fmt.Errorf("Missing time for %s", base)
+			return nil, fmt.Errorf("Missing time for %s", base)
 		}
 
 		parsedTime := 0
@@ -330,13 +335,16 @@ func processOutput(stdFiles []File) (string, error) {
 				var err error
 				parsedTime, err = parseDuration(timeSplits[0][1])
 				if err != nil {
-					return "", fmt.Errorf("Failed to parse duration for %s: %s", base, err)
+					return nil, fmt.Errorf("Failed to parse duration for %s: %s", base, err)
 				}
 			}
 		}
 
 		var fileID string
-		var metadata map[string]interface{}
+		var metadata struct {
+			ExecutionId int `json:"executionId"`
+			TestCaseId  int `json:"testCaseId"`
+		}
 		if file, ok := filesMap[".stdout"]; ok {
 			fileID = file.ID
 			metadata = file.Metadata
@@ -352,11 +360,11 @@ func processOutput(stdFiles []File) (string, error) {
 		results = append(results, result)
 	}
 
-	jsonOutput, err := json.Marshal(results)
-	if err != nil {
-		return "", fmt.Errorf("Failed to marshal output: %s", err)
-	}
-	return string(jsonOutput), nil
+	// jsonOutput, err := json.Marshal(results)
+	// if err != nil {
+	// 	return "", fmt.Errorf("Failed to marshal output: %s", err)
+	// }
+	return results, nil
 }
 
 
