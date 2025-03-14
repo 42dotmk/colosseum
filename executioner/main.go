@@ -8,99 +8,122 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-	type RabbitMQ struct {
-		Conn *amqp.Connection
-		Channel *amqp.Channel
+type RabbitMQConn struct {
+	Conn *amqp.Connection
+	Channel *amqp.Channel
+}
+
+type ExecutionRequestContract struct {
+	Sources []languages.File `json:"sources"`
+	Input []languages.File	`json:"input"`
+	Options languages.LanguageOptions `json:"options"`
+	Metadata Metadata `json:"metadata"`
+}
+
+type Response struct{
+	Result []languages.ExecutionResult `json:"result"`
+	Metadata Metadata `json:"metadata"`
+}
+type Metadata struct {
+	SubmissionId int `json:"submissionId"`
+}
+
+func NewRabbitMQ() (*RabbitMQConn, error){
+	conn,err := amqp.Dial("amqp://guest:guest@localhost:5672")
+	if err != nil {
+		return nil, fmt.Errorf("Failed to connect to RabbitMQ: %s", err)
+	}
+	fmt.Println("Connected to RabbitMQ")
+
+	ch, err := conn.Channel()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to open a channel: %s", err)
+	}
+	return &RabbitMQConn{
+		Conn: conn,
+		Channel: ch,
+	}, nil
+}
+
+func (r *RabbitMQConn) QueueDeclare(queueName string) error{
+	_, err := r.Channel.QueueDeclare(
+		queueName, 
+		true,      
+		false,     
+		false,     
+		false,
+		nil,       
+	)
+	if err != nil {
+		return fmt.Errorf("Failed to declare the queue: %s", err)
+	}
+	fmt.Println("Queue declared")
+	return nil
+}
+
+func (r *RabbitMQConn) Publish(queueName string, message []byte) error{
+	err := r.Channel.Publish(
+		"",
+		queueName,
+		false,
+		false,
+		amqp.Publishing{
+		ContentType: "application/text",	
+		Body: message},
+	)
+	if err != nil {
+		return fmt.Errorf("Failed to publish message: %s", err)
 	}
 
+	return nil
+}
 
-	type ExecutionRequestContract struct {
-		Sources []languages.File `json:"sources"`
-		Input []languages.File	`json:"input"`
-		Options languages.LanguageOptions `json:"options"`
-		Metadata Metadata `json:"metadata"`
+func main(){
+	rabbit, err := NewRabbitMQ()
+	if err != nil {
+		fmt.Errorf("Failed to connect to RabbitMQ: %s", err)
 	}
 
-	type Response struct{
-		Result []languages.ExecutionResult `json:"result"`
-		Metadata Metadata `json:"metadata"`
+	err = rabbit.QueueDeclare("execution")
+	if err != nil {
+		fmt.Errorf("Failed to declare the queue: %s", err)
 	}
-	type Metadata struct {
-		SubmissionId int `json:"submissionId"`
-	}
+	
+	msgs, err := rabbit.Channel.Consume("execution", "", false, false, false, false, nil)
+	fmt.Println("Channel opened")
+	for d := range msgs {
 
-	func main(){
-		conn,err := amqp.Dial("amqp://guest:guest@localhost")
+	go func(msg amqp.Delivery){  
+		var request ExecutionRequestContract
+		err := json.Unmarshal(d.Body, &request)
 		if err != nil {
-			fmt.Errorf("Failed to connect to RabbitMQ: %s", err)
+			fmt.Println("Failed to unmarshal the request")
 		}
-		fmt.Println("Connected to RabbitMQ")
 
-		ch, err := conn.Channel()
+		result, err := execute(request.Sources, request.Input, request.Options)
 		if err != nil {
-			fmt.Errorf("Failed to open a channel: %s", err)
+			fmt.Println("Failed to execute the code")
 		}
 
-		queueName := "execution" 
-		_, err = ch.QueueDeclare(
-			queueName, 
-			true,      
-			false,     
-			false,     
-			false,
-			nil,       
-		)
+		response := Response{
+			Result: result,
+			Metadata: request.Metadata,
+		}
+
+		responseBytes, err := json.Marshal(response)
 		if err != nil {
-			fmt.Errorf("Failed to declare the queue: %s", err)
+			fmt.Println("Failed to marshal the response")
 		}
-		fmt.Println("Queue declared")
 
-		msgs, err := ch.Consume("execution", "", false, false, false, false, nil)
-		fmt.Println("Channel opened")
-
-		for d:= range msgs{
-			fmt.Printf("Received a message: %s\n", d.Body)
-			go func(msg amqp.Delivery){
-				var p ExecutionRequestContract
-				err := json.Unmarshal(msg.Body, &p)
-				if err != nil {
-					fmt.Errorf("Failed to parse message: %s", err)
-					return
-				}
-				result, err := execute(p.Sources, p.Input, p.Options)
-				if err != nil {
-					fmt.Errorf("Failed to execute: %s", err)
-					
-				}
-				d.Ack(false)
-				response := Response{
-					Result:   result, 
-					Metadata: p.Metadata,
-				}
-				fmt.Println(result)
-				resMsg, err := json.Marshal(response)
-				if err != nil {
-					fmt.Errorf("Failed to marshal response: %s", err)
-				}
-				fmt.Println(resMsg)
-				err = ch.Publish(
-					"",
-					"results",
-					false,
-					false,
-					amqp.Publishing{
-						// ContentType: "application/json",
-						Body: resMsg,
-					},
-				)
-				if err != nil {
-					fmt.Errorf("Failed to publish result: %s", err)
-				}
-				fmt.Println("Execution result:", result)
-			}(d)
+		err = rabbit.Publish("result", responseBytes)
+		if err != nil {
+			fmt.Println("Failed to publish the response")
 		}
-		select {}
+		d.Ack(false)
+	}(d)
+	select{}
 	}
+}
 
 func execute(sources []languages.File, input []languages.File, options languages.LanguageOptions) ([]languages.ExecutionResult, error){
 	

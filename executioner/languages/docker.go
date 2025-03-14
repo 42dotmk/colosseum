@@ -102,6 +102,17 @@ func readIfExist(path string) (string, error) {
 	return string(content), nil
 }
 
+func createFolderIfNotExist(path string) error {
+	_, err := os.ReadDir(path)
+	if err != nil {
+		err := os.MkdirAll(path, 0777)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func StartCodeContainer(sources []File, input []File, options LanguageOptions) ([]ExecutionResult, error) {
 	id := uuid.New()
 
@@ -113,36 +124,17 @@ func StartCodeContainer(sources []File, input []File, options LanguageOptions) (
 	outputDir := filepath.Join(subWorkspace, "output")
 	lang := options.Language
 
+	folders := []string{subWorkspace,srcDir, inputDir, outputDir}
 
-	_, err := os.ReadDir(subWorkspace)
-	if err != nil {
-		err := os.MkdirAll(subWorkspace, 0777)
-		if err != nil {
-			return nil, err
+	for _, folder := range folders {
+		err := createFolderIfNotExist(folder)
+		if err !=nil {
+			return nil, fmt.Errorf("Failed to create folder: %s", err)
+			
 		}
 	}
-	_, err = os.ReadDir(srcDir)
-	if err != nil {
-		err := os.MkdirAll(srcDir, 0777)
-		if err != nil {
-			return nil, err
-		}
-	}
-	_, err = os.ReadDir(inputDir)
-	if err != nil {
-		err := os.MkdirAll(inputDir, 0777)
-		if err != nil {
-			return nil, err
-		}
-	}
-	_, err = os.ReadDir(outputDir)
-	if err != nil {
-		err := os.MkdirAll(outputDir, 0777)
-		if err != nil {
-			return nil, err
-		}
-	}
-
+	
+	
 	for _, source := range sources {
 		
 		content := source.Content
@@ -217,30 +209,25 @@ func StartCodeContainer(sources []File, input []File, options LanguageOptions) (
 
 	cmdDocker := exec.Command("docker", args...)
 
-	fmt.Printf("Command: %s\n", cmdDocker.String())
-
 	stdout,err:= cmdDocker.StdoutPipe()
 	if err != nil {
 		return nil,fmt.Errorf("Failed to get stdout pipe: %s", err)
 	}
-	fmt.Println(stdout)
 	stderr,err:= cmdDocker.StderrPipe()
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get stderr pipe: %s", err)
 	}
-	fmt.Println(stderr)
 	err = cmdDocker.Start()
 
 	if err != nil {
 		return nil, fmt.Errorf("Failed to start docker: %s", err)
 	}
 	
-	// read stdout and stderr into string
-
 	stdoutput, err := io.ReadAll(stdout)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to read stdout: %s", err)
 	}
+	fmt.Print(string(stdoutput))
 
 	errOutput, err := io.ReadAll(stderr)
 	if err != nil {
@@ -269,12 +256,6 @@ func StartCodeContainer(sources []File, input []File, options LanguageOptions) (
 			})
 		}
 	}
-
-
-	fmt.Printf("Stdout: %s\n", string(stdoutput))
-	fmt.Printf("Stderr: %s\n", string(errOutput))
-
-
 	err = cmdDocker.Wait()
 	if err != nil {
 		return nil, fmt.Errorf("Failed to wait for docker: %s", err)
@@ -359,11 +340,6 @@ func processOutput(stdFiles []File) ([]ExecutionResult, error) {
 		}
 		results = append(results, result)
 	}
-
-	// jsonOutput, err := json.Marshal(results)
-	// if err != nil {
-	// 	return "", fmt.Errorf("Failed to marshal output: %s", err)
-	// }
 	return results, nil
 }
 

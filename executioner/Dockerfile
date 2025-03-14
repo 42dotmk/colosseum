@@ -1,19 +1,11 @@
-FROM node:alpine
+FROM golang:alpine
 
 RUN apk add --no-cache docker-cli
-RUN npm i -g tsx
 
 WORKDIR /app
 
-ADD executioner executioner
-ADD lib lib
+COPY colosseum colosseum
 
-WORKDIR /app/lib/queue
-RUN npm i 
+CMD [ "ls","-la" ]
 
-RUN npm run build
-
-WORKDIR /app/executioner
-RUN npm i 
-
-ENTRYPOINT [ "tsx", "index.ts" ]
+ENTRYPOINT [ "ls","-la" ]
