@@ -155,6 +155,15 @@ jobs:
       docker-file-path: ./executioner/runtimes/languages/rust/Dockerfile
       docker-tags: ghcr.io/42dotmk/colosseum-executioner-rust:latest
     
+  zig_executioner:
+    name: Zig executioner
+    needs: find_modified_files
+    uses: ./.github/workflows/build-push-docker-image.yml
+    if: needs.find_modified_files.outputs.rust_executioner == 'true'
+    with:
+      docker-context: ./executioner/runtimes/languages/zig/
+      docker-file-path: ./executioner/runtimes/languages/zig/Dockerfile
+      docker-tags: ghcr.io/42dotmk/colosseum-executioner-ziglings/ziglang
 
   golang_executioner:
     name: Golang executioner
