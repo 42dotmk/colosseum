@@ -1,4 +1,6 @@
-FROM ziglings/ziglang 
+FROM alpine 
+
+RUN apk add zig
 
 WORKDIR /exc/
 
