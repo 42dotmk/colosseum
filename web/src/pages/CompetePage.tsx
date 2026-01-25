@@ -69,7 +69,7 @@ export default function CompetePage() {
   const [error, setError] = useState<string | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [activeTab, setActiveTab] = useState('description');
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const initialCodeLoadedRef = useRef(false);
 
   // Fetch submissions from API

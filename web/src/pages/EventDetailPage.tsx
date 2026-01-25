@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Clock, CheckCircle2, Circle, ChevronRight, FileText, Trophy } from 'lucide-react';
+import { ArrowLeft, Circle, ChevronRight, FileText, Trophy } from 'lucide-react';
 import { REST_URL } from '@/config';
 import Markdown from '@/components/Markdown';
 import { cn } from '@/lib/utils';

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Clock, Users, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { REST_URL } from '@/config';
 
