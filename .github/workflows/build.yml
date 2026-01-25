@@ -12,6 +12,7 @@ on:
       - 'client/**'
       - 'senatus/**'
       - 'executioner/**'
+      - 'web/**'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref }}
@@ -23,6 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       client: ${{ steps.changes.outputs.client }}
+      web: ${{ steps.changes.outputs.web }}
       senatus: ${{ steps.changes.outputs.senatus }}
       executioner: ${{ steps.changes.outputs.executioner }}
       gcc_executioner: ${{ steps.changes.outputs.gcc_executioner }}
@@ -46,6 +48,8 @@ jobs:
           filters: |
             client:
               - 'client/**'
+            web:
+              - 'web/**'
             senatus:
               - 'senatus/**'
             executioner:
@@ -84,6 +88,16 @@ jobs:
       docker-context: ./client
       docker-file-path: ./client/Dockerfile
       docker-tags: ghcr.io/42dotmk/colosseum-client-prod:latest
+
+  web:
+    name: Web
+    needs: find_modified_files
+    uses: ./.github/workflows/build-push-docker-image.yml
+    if: needs.find_modified_files.outputs.web == 'true'
+    with:
+      docker-context: ./web
+      docker-file-path: ./web/Dockerfile
+      docker-tags: ghcr.io/42dotmk/colosseum-web:latest
 
   executioner:
     name: Executioner
