@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Home, Trophy, Code2, LogOut, User } from 'lucide-react';
+import { Home, Trophy, Terminal, LogOut, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface LayoutProps {
@@ -31,17 +31,17 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-purple-500/20 bg-gradient-to-r from-gray-900 via-purple-900/20 to-gray-900 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between">
+      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2">
-              <Code2 className="h-8 w-8 text-purple-400" />
-              <span className="text-2xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent">
+              <Terminal className="h-6 w-6 text-primary" />
+              <span className="text-xl font-semibold tracking-tight">
                 Colosseum
               </span>
             </Link>
             
-            <nav className="hidden md:flex gap-6">
+            <nav className="hidden md:flex gap-1">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -49,10 +49,10 @@ export default function Layout({ children }: LayoutProps) {
                     key={item.name}
                     to={item.href}
                     className={cn(
-                      "flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary",
+                      "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors",
                       isActive(item.href) 
-                        ? "text-primary" 
-                        : "text-muted-foreground"
+                        ? "bg-secondary text-foreground" 
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -63,13 +63,13 @@ export default function Layout({ children }: LayoutProps) {
             </nav>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             {user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar>
-                      <AvatarFallback className="bg-primary text-primary-foreground">
+                  <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-secondary text-foreground text-xs font-medium">
                         {user.username.substring(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
@@ -102,12 +102,9 @@ export default function Layout({ children }: LayoutProps) {
       </header>
 
       {/* Main content */}
-      <main className="container py-6 min-h-[calc(100vh-4rem)]">
+      <main className="container py-8">
         {children}
       </main>
-      
-      {/* Background gradient */}
-      <div className="fixed inset-0 -z-10 bg-gradient-to-br from-gray-900 via-purple-900/10 to-gray-900" />
     </div>
   );
 }

@@ -464,7 +464,7 @@ export interface ApiEventEvent extends Struct.CollectionTypeSchema {
       }>;
     locale: Schema.Attribute.String;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::event.event'>;
-    problem: Schema.Attribute.Relation<'manyToOne', 'api::problem.problem'>;
+    problems: Schema.Attribute.Relation<'oneToMany', 'api::problem.problem'>;
     publishedAt: Schema.Attribute.DateTime;
     slug: Schema.Attribute.UID<'title'> &
       Schema.Attribute.SetPluginOptions<{
@@ -594,7 +594,7 @@ export interface ApiProblemProblem extends Struct.CollectionTypeSchema {
           localized: true;
         };
       }>;
-    events: Schema.Attribute.Relation<'oneToMany', 'api::event.event'>;
+    event: Schema.Attribute.Relation<'manyToOne', 'api::event.event'>;
     locale: Schema.Attribute.String;
     localizations: Schema.Attribute.Relation<
       'oneToMany',

@@ -1,25 +1,53 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Code, Calendar, Clock, Trophy, Play } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ArrowLeft, Clock, CheckCircle2, Circle, ChevronRight, FileText, Trophy } from 'lucide-react';
 import { REST_URL } from '@/config';
 import Markdown from '@/components/Markdown';
+import { cn } from '@/lib/utils';
+
+interface Problem {
+  documentId: string;
+  title: string;
+  description: string;
+  slug: string;
+  difficulty?: string;
+  points?: number;
+  testCases?: any[];
+}
 
 interface Event {
   title: string;
   description: string;
   start: string;
   end: string;
-  problem?: {
-    documentId: string;
-    title: string;
-    description: string;
-    slug: string;
-    testCases?: any[];
-  };
+  problems?: Problem[];
   supportedLanguages?: any[];
+}
+
+function getTimeRemaining(date: Date): string {
+  const now = new Date();
+  const diff = date.getTime() - now.getTime();
+  
+  if (diff < 0) return '0:00:00';
+  
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+  
+  return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function getDifficultyColor(difficulty?: string) {
+  switch (difficulty?.toLowerCase()) {
+    case 'easy': return 'text-emerald-500';
+    case 'medium': return 'text-amber-500';
+    case 'hard': return 'text-red-500';
+    default: return 'text-muted-foreground';
+  }
 }
 
 export default function EventDetailPage() {
@@ -27,6 +55,8 @@ export default function EventDetailPage() {
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('problems');
+  const [timeRemaining, setTimeRemaining] = useState('');
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -43,9 +73,6 @@ export default function EventDetailPage() {
         }
         
         const data = await response.json();
-        console.log('Event detail API response:', data);
-        
-        // Handle both wrapped and unwrapped responses
         const eventData = data.data || data;
         setEvent(eventData);
       } catch (err) {
@@ -58,18 +85,32 @@ export default function EventDetailPage() {
     fetchEvent();
   }, [eventId]);
 
+  // Timer effect
+  useEffect(() => {
+    if (!event) return;
+    
+    const endDate = new Date(event.end);
+    const updateTimer = () => {
+      setTimeRemaining(getTimeRemaining(endDate));
+    };
+    
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [event]);
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="flex items-center justify-center py-20">
+        <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
       </div>
     );
   }
 
   if (error || !event) {
     return (
-      <div className="text-center py-12">
-        <p className="text-destructive">Failed to load event. Please try again later.</p>
+      <div className="text-center py-20">
+        <p className="text-destructive">Failed to load event.</p>
       </div>
     );
   }
@@ -80,150 +121,176 @@ export default function EventDetailPage() {
   const isActive = now >= startDate && now <= endDate;
   const isUpcoming = startDate > now;
   const isEnded = endDate < now;
+  const problems = event.problems || [];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* Header Section */}
-      <div className="flex items-start gap-4">
-        <Button variant="ghost" size="icon" asChild className="mt-1">
-          <Link to="/">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-        </Button>
-        <div className="flex-1">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent">
-                {event.title}
-              </h1>
-              <div className="flex items-center gap-3 mt-3">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  <span>{startDate.toLocaleDateString()}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  <span>
-                    {startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {' '}
-                    {endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+    <div className="max-w-5xl mx-auto">
+      {/* Header */}
+      <div className="border-b pb-6 mb-6">
+        <Link 
+          to="/" 
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to contests
+        </Link>
+        
+        <div className="flex items-start justify-between gap-6">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-2xl font-semibold tracking-tight">{event.title}</h1>
+              {isActive && (
+                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                   </span>
-                </div>
+                  <span className="text-xs text-emerald-500 font-medium">LIVE</span>
+                </span>
+              )}
+              {isUpcoming && (
+                <Badge variant="secondary">Upcoming</Badge>
+              )}
+              {isEnded && (
+                <Badge variant="outline" className="text-muted-foreground">Ended</Badge>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span>
+                {startDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                {' · '}
+                {startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {' – '}
+                {endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
+              <span>·</span>
+              <span>{problems.length} {problems.length === 1 ? 'problem' : 'problems'}</span>
+            </div>
+          </div>
+
+          {isActive && (
+            <div className="text-right shrink-0">
+              <div className="text-xs text-muted-foreground mb-1">Time Remaining</div>
+              <div className="font-mono text-2xl font-semibold text-amber-500 tabular-nums">
+                {timeRemaining}
               </div>
             </div>
-            {isActive && !isEnded && (
-              <Badge className="bg-green-500/10 text-green-500 hover:bg-green-500/20 border-green-500/20">
-                Live Now
-              </Badge>
-            )}
-            {isUpcoming && (
-              <Badge className="bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 border-blue-500/20">
-                Upcoming
-              </Badge>
-            )}
-            {isEnded && (
-              <Badge variant="secondary">
-                Ended
-              </Badge>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
-      {/* Two Column Layout */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Left Side - Event Description */}
-        <div className="lg:col-span-1">
-          <Card className="border-purple-500/20 bg-gradient-to-br from-gray-900 to-gray-800/50 sticky top-6">
-            <CardHeader>
-              <CardTitle className="text-lg">About This Event</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="prose prose-sm prose-invert max-w-none">
-                <Markdown content={event.description?.substring(0, 500) || ''} />
-                {event.description && event.description.length > 500 && (
-                  <p className="text-xs text-muted-foreground mt-2">...</p>
-                )}
-              </div>
-              
-              {event.supportedLanguages && event.supportedLanguages.length > 0 && (
-                <div className="pt-4 border-t border-purple-500/20">
-                  <h4 className="text-sm font-semibold mb-2">Supported Languages</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {event.supportedLanguages.map((lang: any) => (
-                      <Badge key={lang.documentId} variant="secondary" className="text-xs">
-                        {lang.name}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-6">
+          <TabsTrigger value="problems">Problems</TabsTrigger>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+        </TabsList>
 
-        {/* Right Side - Problems */}
-        <div className="lg:col-span-2">
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Trophy className="h-5 w-5 text-purple-400" />
-              <h2 className="text-2xl font-bold">Challenge Problem</h2>
+        <TabsContent value="problems" className="mt-0">
+          {problems.length === 0 ? (
+            <div className="text-center py-16 border rounded-lg">
+              <FileText className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+              <h3 className="font-medium mb-1">No problems yet</h3>
+              <p className="text-sm text-muted-foreground">
+                {isUpcoming ? 'Problems will be revealed when the contest starts' : 'No problems have been added to this contest'}
+              </p>
             </div>
-
-            {!event.problem ? (
-              <Card className="border-purple-500/20">
-                <CardContent className="flex flex-col items-center justify-center py-16">
-                  <Code className="h-16 w-16 text-muted-foreground mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">No problem available yet</h3>
-                  <p className="text-muted-foreground text-center">
-                    The problem for this event will be revealed soon.<br />
-                    Check back later!
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="hover:shadow-lg hover:shadow-purple-500/20 transition-all border-purple-500/20 bg-gradient-to-br from-gray-900 to-gray-800/50">
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <CardTitle className="text-2xl mb-2">{event.problem.title}</CardTitle>
-                      <CardDescription className="text-base">
-                        {event.problem.testCases && event.problem.testCases.length > 0 && (
-                          <span className="text-muted-foreground">
-                            {event.problem.testCases.length} test cases
+          ) : (
+            <div className="border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-12 text-center">#</TableHead>
+                    <TableHead>Problem</TableHead>
+                    <TableHead className="w-24 text-center">Difficulty</TableHead>
+                    <TableHead className="w-20 text-center">Points</TableHead>
+                    <TableHead className="w-20 text-center">Status</TableHead>
+                    <TableHead className="w-12"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {problems.map((problem, index) => (
+                    <TableRow 
+                      key={problem.documentId}
+                      className="group cursor-pointer"
+                      onClick={() => window.location.href = `/compete/${problem.documentId}`}
+                    >
+                      <TableCell className="text-center font-mono text-muted-foreground">
+                        {index + 1}
+                      </TableCell>
+                      <TableCell>
+                        <Link 
+                          to={`/compete/${problem.documentId}`}
+                          className="font-medium group-hover:text-primary transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {problem.title}
+                        </Link>
+                        {problem.testCases && (
+                          <span className="text-xs text-muted-foreground ml-2">
+                            {problem.testCases.length} tests
                           </span>
                         )}
-                      </CardDescription>
-                    </div>
-                    <Button 
-                      asChild 
-                      size="lg"
-                      disabled={isEnded}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                    >
-                      <Link to={`/compete/${event.problem.documentId}`}>
-                        <Play className="mr-2 h-5 w-5" />
-                        {isEnded ? 'Event Ended' : 'Start Solving'}
-                      </Link>
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="prose prose-invert max-w-none">
-                    <Markdown content={event.problem.description?.substring(0, 800) || ''} />
-                    {event.problem.description && event.problem.description.length > 800 && (
-                      <div className="mt-4 p-4 bg-purple-500/10 rounded-lg border border-purple-500/20">
-                        <p className="text-sm text-muted-foreground m-0">
-                          Click "Start Solving" to view the full problem description and submit your solution.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <span className={cn("text-sm font-medium", getDifficultyColor(problem.difficulty))}>
+                          {problem.difficulty || '—'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-center font-mono">
+                        {problem.points || 100}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Circle className="h-4 w-4 text-muted-foreground/30 mx-auto" />
+                      </TableCell>
+                      <TableCell>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition-colors" />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="overview" className="mt-0">
+          <div className="border rounded-lg p-6">
+            {event.description ? (
+              <div className="prose prose-sm prose-invert max-w-none">
+                <Markdown content={event.description} />
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">No description provided.</p>
+            )}
+
+            {event.supportedLanguages && event.supportedLanguages.length > 0 && (
+              <div className="mt-6 pt-6 border-t">
+                <h3 className="text-sm font-medium mb-3">Supported Languages</h3>
+                <div className="flex flex-wrap gap-2">
+                  {event.supportedLanguages.map((lang: any) => (
+                    <Badge key={lang.documentId} variant="secondary" className="font-normal">
+                      {lang.name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
-        </div>
-      </div>
+        </TabsContent>
+
+        <TabsContent value="leaderboard" className="mt-0">
+          <div className="text-center py-16 border rounded-lg">
+            <Trophy className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+            <h3 className="font-medium mb-1">Leaderboard</h3>
+            <p className="text-sm text-muted-foreground">
+              Rankings will appear here once participants start solving problems
+            </p>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
