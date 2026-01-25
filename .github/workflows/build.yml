@@ -90,7 +90,7 @@ jobs:
       docker-tags: ghcr.io/42dotmk/colosseum-client-prod:latest
 
   web:
-    name: Web
+    name: Web (Production)
     needs: find_modified_files
     uses: ./.github/workflows/build-push-docker-image.yml
     if: needs.find_modified_files.outputs.web == 'true'
@@ -98,6 +98,18 @@ jobs:
       docker-context: ./web
       docker-file-path: ./web/Dockerfile
       docker-tags: ghcr.io/42dotmk/colosseum-web:latest
+      docker-build-args: VITE_SENATUS_URL=https://senatus.colosseum.dev
+
+  web_dev:
+    name: Web (Development)
+    needs: find_modified_files
+    uses: ./.github/workflows/build-push-docker-image.yml
+    if: needs.find_modified_files.outputs.web == 'true'
+    with:
+      docker-context: ./web
+      docker-file-path: ./web/Dockerfile
+      docker-tags: ghcr.io/42dotmk/colosseum-web:dev
+      docker-build-args: VITE_SENATUS_URL=https://senatus-dev.colosseum.dev
 
   executioner:
     name: Executioner

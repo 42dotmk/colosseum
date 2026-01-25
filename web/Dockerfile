@@ -1,5 +1,8 @@
 FROM node:20-alpine AS build-step
 
+ARG VITE_SENATUS_URL=https://senatus.colosseum.dev
+ENV VITE_SENATUS_URL=$VITE_SENATUS_URL
+
 WORKDIR /app
 
 COPY package.json .
