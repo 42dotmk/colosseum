@@ -17,5 +17,13 @@ export default  {
         auth: false,
       },
     },
+    {
+      method: 'GET',
+      path: '/submissions/executions',
+      handler: 'submission.getExecutions',
+      config: {
+        auth: false,
+      },
+    },
   ],
 };

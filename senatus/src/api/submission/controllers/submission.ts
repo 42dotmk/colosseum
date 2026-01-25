@@ -9,39 +9,45 @@ export default factories.createCoreController('api::submission.submission', ({ s
   async submit(ctx) {
     try {
       ctx.body = ctx.request.query;
-      const id = parseInt(ctx.request.query.id as string);
+
+      const id = ctx.request.query.id as string;
       if (!id) {
-        ctx.body = 'Please provide an id';
+        ctx.body = { error: 'No submission id provided' };
         return;
       }
-      const entry = await strapi.entityService.findOne('api::submission.submission', id, {
-        populate: ['user', 'problem', 'language'],
+      
+      const submission = await strapi.documents('api::submission.submission').findOne({
+        documentId: id,
+        populate: ['user', 'problem', 'language']
       });
 
-      const testCases = await strapi.entityService.findMany('api::test-case.test-case', {
+      console.log(submission)
+
+      const testCases = await strapi.documents('api::test-case.test-case').findMany({
         filters: {
-          problem: entry.problem.id as any,
+          problem: { documentId: submission.problem.documentId as any },
         }
       });
-
-      if (!entry) {
-        ctx.body = 'Submission not found';
+      console.log("Found test cases:", testCases.length);
+      if (!submission) {
+        ctx.body = { error: 'Submission not found' };
         return;
       }
 
       const executionsToQueue: { testCase: any, execution: any }[] = [];
       for (const testCase of testCases) {
-        const execution = await strapi.entityService.create('api::execution.execution', {
+        const execution = await strapi.documents('api::execution.execution').create({
           data: {
             stdout: '',
             stderr: '',
             executionTime: -1,
             testCase: testCase.id,
-            submission: entry.id,
+            submission: submission.id,
             processed: false,
             publishedAt: new Date(),
-            code: entry.code,
-          }
+            code: submission.code,
+          },
+          status: 'published',
         });
         executionsToQueue.push({
           testCase,
@@ -52,24 +58,24 @@ export default factories.createCoreController('api::submission.submission', ({ s
       const qPayload = {
         sources: [
           {
-            filename: entry.language.entrypoint,
-            content: entry.code,
+            filename: submission.language.entrypoint,
+            content: submission.code,
           }
         ],
         input: executionsToQueue.map(pair => ({
-          filename: pair.execution.id.toString(),
+          filename: pair.execution.documentId.toString(),
           content: pair.testCase.input,
           metadata: {
-            testCaseId: pair.testCase.id,
-            executionId: pair.execution.id,
+            testCaseId: pair.testCase.documentId,
+            executionId: pair.execution.documentId,
           }
         })),
         options: {
-          language: entry.language.codeName,
-          entrypointFile: entry.language.entrypoint,
+          language: submission.language.codeName,
+          entrypointFile: submission.language.entrypoint,
         },
         metadata: {
-          submissionId: entry.id,
+          submissionId: submission.documentId,
         }
       };
 
@@ -88,11 +94,53 @@ export default factories.createCoreController('api::submission.submission', ({ s
 
       ctx.body = {
         state: 'Queued',
-        executions: executionsToQueue.map(pair => pair.execution.id),
+        executions: executionsToQueue.map(pair => pair.execution.documentId),
       }
     } catch (err) {
       console.log(err);
       ctx.body = err;
+    }
+  },
+
+  async getExecutions(ctx) {
+    try {
+      const ids = ctx.request.query.ids as string;
+      if (!ids) {
+        ctx.body = { error: 'No execution ids provided' };
+        return;
+      }
+
+      const executionIds = ids.split(',').map(id => id.trim());
+      
+      const executions = await strapi.documents('api::execution.execution').findMany({
+        filters: {
+          documentId: { $in: executionIds }
+        },
+        populate: ['testCase']
+      });
+
+      const allProcessed = executions.every(exec => exec.processed);
+      const results = executions.map(exec => ({
+        id: exec.documentId,
+        processed: exec.processed,
+        passed: exec.passed,
+        executionTime: exec.executionTime,
+        stdout: exec.stdout,
+        stderr: exec.stderr,
+        testCase: {
+          id: exec.testCase.documentId,
+          input: exec.testCase.input,
+          output: exec.testCase.output,
+        }
+      }));
+
+      ctx.body = {
+        complete: allProcessed,
+        executions: results,
+      };
+    } catch (err) {
+      console.error(err);
+      ctx.body = { error: 'Failed to fetch executions' };
     }
   }
 }));
