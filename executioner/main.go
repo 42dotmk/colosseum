@@ -1,135 +1,155 @@
 package main
 
 import (
-	"colosseum/languages"
+	"colosseum/internal/config"
+	"colosseum/internal/executor"
+	"colosseum/internal/models"
+	"colosseum/internal/queue"
+	"context"
 	"encoding/json"
-	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
-	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/joho/godotenv"
+	"github.com/rs/zerolog"
 )
 
-type RabbitMQConn struct {
-	Conn *amqp.Connection
-	Channel *amqp.Channel
-}
-
-type ExecutionRequestContract struct {
-	Sources []languages.File `json:"sources"`
-	Input []languages.File	`json:"input"`
-	Options languages.LanguageOptions `json:"options"`
-	Metadata Metadata `json:"metadata"`
-}
-
-type Response struct{
-	Result []languages.ExecutionResult `json:"result"`
-	Metadata Metadata `json:"metadata"`
-}
-type Metadata struct {
-	SubmissionId int `json:"submissionId"`
-}
-
-func NewRabbitMQ() (*RabbitMQConn, error){
-	conn,err := amqp.Dial("amqp://guest:guest@localhost:5672")
-	if err != nil {
-		return nil, fmt.Errorf("Failed to connect to RabbitMQ: %s", err)
+func initLogger() zerolog.Logger {
+	var logger zerolog.Logger
+	if config.JSONLogging {
+		logger = zerolog.New(os.Stdout).With().Timestamp().Logger()
+	} else {
+		logger = zerolog.New(zerolog.ConsoleWriter{Out: os.Stdout}).With().Timestamp().Logger()
 	}
-	fmt.Println("Connected to RabbitMQ")
 
-	ch, err := conn.Channel()
-	if err != nil {
-		return nil, fmt.Errorf("Failed to open a channel: %s", err)
+	switch config.LogLevel {
+	case "debug":
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	case "info":
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	case "warn":
+		zerolog.SetGlobalLevel(zerolog.WarnLevel)
+	case "error":
+		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	default:
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
-	return &RabbitMQConn{
-		Conn: conn,
-		Channel: ch,
-	}, nil
+	return logger
 }
 
-func (r *RabbitMQConn) QueueDeclare(queueName string) error{
-	_, err := r.Channel.QueueDeclare(
-		queueName, 
-		true,      
-		false,     
-		false,     
-		false,
-		nil,       
-	)
+func initDependencies(logger *zerolog.Logger) (*executor.Executor, *executor.DockerClient, *queue.RabbitMQ, error) {
+	dockerClient, err := executor.CreateNewDockerClient(logger)
 	if err != nil {
-		return fmt.Errorf("Failed to declare the queue: %s", err)
+		logger.Error().Err(err).Msg("Failed to create Docker client")
+		return nil, nil, nil, err
 	}
-	fmt.Println("Queue declared")
+
+	exec := executor.NewExecutor(dockerClient, logger)
+
+	rabbitMQ, err := queue.NewRabbitMQ(config.RabbitMQUrl, logger)
+	if err != nil {
+		logger.Error().Err(err).Msg("Failed to create RabbitMQ connection")
+		dockerClient.Close()
+		return nil, nil, nil, err
+	}
+
+	return exec, dockerClient, rabbitMQ, nil
+}
+
+func handleExecutionRequest(exec *executor.Executor, rabbitMQ *queue.RabbitMQ, logger *zerolog.Logger, body []byte) error {
+	execReq := models.ExecutionRequest{}
+	err := json.Unmarshal(body, &execReq)
+	if err != nil {
+		logger.Error().Err(err).Str("rawBody", string(body)).Msg("Failed to unmarshal execution request - DISCARDING invalid message")
+		return nil
+	}
+
+	logger.Info().
+		Int("submissionId", execReq.Metadata.SubmissionId).
+		Str("language", execReq.Options.Language).
+		Msg("Starting code execution")
+	results, err := exec.Execute(context.Background(), execReq)
+	if err != nil {
+		logger.Error().
+			Int("submissionId", execReq.Metadata.SubmissionId).
+			Err(err).
+			Msg("Execution failed - DISCARDING message")
+		return nil
+	}
+
+	for _, result := range results {
+		logger.Info().
+			Int("submissionId", execReq.Metadata.SubmissionId).
+			Str("testCase", result.ID).
+			Str("stdout", result.Stdout).
+			Str("stderr", result.Stderr).
+			Int("time", result.Time).
+			Msg("Test case result")
+		resultJson, _ := json.Marshal(result)
+		logger.Info().Str("resultJson", string(resultJson)).Msg("Result JSON")
+		if err := rabbitMQ.Publish(context.Background(), config.ResultQueueName, resultJson); err != nil {
+			logger.Error().
+				Int("submissionId", execReq.Metadata.SubmissionId).
+				Str("testCase", result.ID).
+				Err(err).
+				Msg("Failed to publish result")
+		}
+
+	}
+
+	logger.Info().
+		Int("submissionId", execReq.Metadata.SubmissionId).
+		Int("testCaseCount", len(results)).
+		Msg("Execution completed successfully")
+
 	return nil
 }
 
-func (r *RabbitMQConn) Publish(queueName string, message []byte) error{
-	err := r.Channel.Publish(
-		"",
-		queueName,
-		false,
-		false,
-		amqp.Publishing{
-		ContentType: "application/text",	
-		Body: message},
-	)
+func main() {
+	// Load .env file
+	godotenv.Load()
+
+	// Configure logger based on config
+	logger := initLogger()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	exec, dockerClient, rabbitMQ, err := initDependencies(&logger)
 	if err != nil {
-		return fmt.Errorf("Failed to publish message: %s", err)
+		logger.Fatal().Err(err).Msg("Failed to initialize dependencies")
+		return
+	}
+	defer dockerClient.Close()
+	defer rabbitMQ.Channel.Close()
+	defer rabbitMQ.Conn.Close()
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		sig := <-sigChan
+		logger.Info().Str("signal", sig.String()).Msg("Received shutdown signal")
+		logger.Info().Msg("Stopping consumer, finishing in-flight executions...")
+		cancel()
+	}()
+
+	err = rabbitMQ.Consume(ctx, config.ExecutionQueueName, func(ctx context.Context, body []byte) error {
+
+		logger.Info().Str("body", string(body)).Msg("Received message")
+		if err := handleExecutionRequest(exec, rabbitMQ, &logger, body); err != nil {
+			logger.Error().Err(err).Msg("Failed to handle execution request")
+			return err
+		}
+
+		return nil
+	})
+
+	if err != nil && err != context.Canceled {
+		logger.Error().Err(err).Msg("Failed to consume messages")
+	} else {
+		logger.Info().Msg("Consumer stopped gracefully")
 	}
 
-	return nil
+	logger.Info().Msg("Executioner shutdown complete")
 }
-
-func main(){
-	rabbit, err := NewRabbitMQ()
-	if err != nil {
-		fmt.Errorf("Failed to connect to RabbitMQ: %s", err)
-	}
-
-	err = rabbit.QueueDeclare("execution")
-	if err != nil {
-		fmt.Errorf("Failed to declare the queue: %s", err)
-	}
-	
-	msgs, err := rabbit.Channel.Consume("execution", "", false, false, false, false, nil)
-	fmt.Println("Channel opened")
-	for d := range msgs {
-
-	go func(msg amqp.Delivery){  
-		var request ExecutionRequestContract
-		err := json.Unmarshal(d.Body, &request)
-		if err != nil {
-			fmt.Println("Failed to unmarshal the request")
-		}
-
-		result, err := execute(request.Sources, request.Input, request.Options)
-		if err != nil {
-			fmt.Println("Failed to execute the code")
-		}
-
-		response := Response{
-			Result: result,
-			Metadata: request.Metadata,
-		}
-
-		responseBytes, err := json.Marshal(response)
-		if err != nil {
-			fmt.Println("Failed to marshal the response")
-		}
-
-		err = rabbit.Publish("result", responseBytes)
-		if err != nil {
-			fmt.Println("Failed to publish the response")
-		}
-		d.Ack(false)
-	}(d)
-	select{}
-	}
-}
-
-func execute(sources []languages.File, input []languages.File, options languages.LanguageOptions) ([]languages.ExecutionResult, error){
-	
-	languages.Init()
-
-	return languages.StartCodeContainer(sources, input, options)
-	
-}
-
