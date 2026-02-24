@@ -1,6 +1,4 @@
 import { connect } from '@colosseum/queue'
-import { Strapi } from '@strapi/strapi';
-import fs from 'fs';
 
 let disconnectRabbit: () => Promise<any> | undefined;
 
@@ -20,10 +18,10 @@ export default {
    * This gives you an opportunity to set up your data model,
    * run jobs, or perform some special logic.
    */
-  async bootstrap({ strapi }: { strapi: Strapi }) {
+  async bootstrap({ strapi }) {
     console.log("Senatus is bootstrapping");
     console.log(strapi.config.get("server.app.rabbitUrl"));
-    const prefetchCount = strapi.config.get<number>("server.app.prefetchResults");
+    const prefetchCount = strapi.config.get("server.app.prefetchResults");
     const { 
       subscribe,
       disconnect,
@@ -36,16 +34,20 @@ export default {
     await subscribe("results", async (msg) => {
       try {
         const parsed = JSON.parse(msg);
-        const submission = await strapi.entityService.findOne('api::submission.submission', parsed.metadata.submissionId, {
-          populate: ['user', 'problem', 'language'],
+        const submission = await strapi.documents('api::submission.submission').findOne({
+          documentId: parsed.metadata.submissionId,
+          populate: ['user', 'problem', 'language']
         });
 
         for (const result of parsed.result) {
           console.log("Updating execution", result.metadata.executionId);
-          const existing = await strapi.entityService.findOne('api::execution.execution', result.metadata.executionId, {
-            populate: ['testCase'],
+          const existing = await strapi.documents('api::execution.execution').findOne({
+            documentId: result.metadata.executionId,
+            populate: ['testCase']
           });
-          const execution = await strapi.entityService.update('api::execution.execution', result.metadata.executionId, {
+          const execution = await strapi.documents('api::execution.execution').update({
+            documentId: result.metadata.executionId,
+
             data: {
               stdout: result.stdout,
               stderr: result.stderr,
@@ -54,7 +56,8 @@ export default {
               passed: existing.testCase.output === result.stdout,
               processedAt: new Date(),
               publishedAt: new Date(),
-            }
+            },
+            status: 'published',
           });
         }
       } catch (err) {

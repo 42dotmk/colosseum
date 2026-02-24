@@ -184,7 +184,6 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
           }
 
           output.push({
-            id: inp.id,
             stdout: stdout.toString(),
             stderr: stderr.toString(),
             time: parsedTime,

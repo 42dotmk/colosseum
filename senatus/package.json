@@ -11,26 +11,27 @@
   },
   "dependencies": {
     "@colosseum/queue": "file:../lib/queue",
-    "@strapi/plugin-cloud": "4.21.0",
-    "@strapi/plugin-graphql": "^4.21.0",
-    "@strapi/plugin-i18n": "4.21.0",
-    "@strapi/plugin-users-permissions": "4.21.0",
-    "@strapi/strapi": "4.21.0",
-    "pg": "8.8.0",
+    "@sensinum/strapi-plugin-mcp": "^1.1.0",
+    "@strapi/plugin-cloud": "5.33.4",
+    "@strapi/plugin-documentation": "^5.33.4",
+    "@strapi/plugin-graphql": "5.33.4",
+    "@strapi/plugin-users-permissions": "5.33.4",
+    "@strapi/strapi": "5.33.4",
+    "pg": "8.13.1",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "react-router-dom": "5.3.4",
-    "styled-components": "5.3.3"
+    "react-router-dom": "^6.0.0",
+    "styled-components": "^6.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.3"
   },
   "author": {
     "name": "A Strapi developer"
   },
   "strapi": {
     "uuid": "c950e118-3a63-47bf-a854-c65290851365"
-  },
-  "engines": {
-    "node": ">=18.0.0 <=20.x.x",
-    "npm": ">=6.0.0"
   },
   "license": "MIT"
 }
