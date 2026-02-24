@@ -1,12 +1,13 @@
 import PageLayout from "../../components/PageLayout";
 import CompeteTabs from "./CompeteTabs";
+import InfoTabs from './InfoTabs';
 
 const CompetePage = () => {
   return (
-    <PageLayout
-      leftGridChildren={<CompeteTabs />}
-      rightGridChildren={undefined}
-    />
+      <PageLayout
+        leftGridChildren={<CompeteTabs />}
+        rightGridChildren={<InfoTabs />}
+      />
   );
 };
 

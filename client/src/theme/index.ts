@@ -1,8 +1,25 @@
 import { ThemeOptions, createTheme } from '@mui/material/styles';
 
+declare module '@mui/material/styles' {
+  interface Palette {
+    editor: {
+      background: string,
+    }
+  }
+
+  interface PaletteOptions {
+    editor?: {
+      background: string,
+    }
+  }
+}
+
 const themeOptions: ThemeOptions = createTheme({
   palette: {
     mode: 'dark',
+    editor: { 
+      background: '#282A36',
+    },
     primary: {
       main: '#FFC948',
       dark: '#b38d32',
