@@ -1,4 +1,4 @@
-export default {
+export default ({ env }) => ({
   graphql: {
     config: {
       endpoint: '/graphql',
@@ -12,4 +12,4 @@ export default {
       }
     }
   }
-};
+});

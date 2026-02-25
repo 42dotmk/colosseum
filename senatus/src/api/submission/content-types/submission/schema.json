@@ -43,6 +43,12 @@
     },
     "metadata": {
       "type": "json"
+    },
+    "executions": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::execution.execution",
+      "mappedBy": "submission"
     }
   }
 }

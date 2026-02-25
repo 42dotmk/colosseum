@@ -13,6 +13,11 @@ on:
         required: true
         type: string
 
+      docker-build-args:
+        required: false
+        type: string
+        default: ''
+
 jobs:
   build_image:
     if: github.event_name == 'pull_request'
@@ -33,6 +38,7 @@ jobs:
           context: ${{ inputs.docker-context }}
           file: ${{ inputs.docker-file-path }}
           tags: ${{ inputs.docker-tags }}
+          build-args: ${{ inputs.docker-build-args }}
 
   push_image:
     name: Push docker image
@@ -59,4 +65,5 @@ jobs:
           context: ${{ inputs.docker-context }}
           file: ${{ inputs.docker-file-path }}
           tags: ${{ inputs.docker-tags }}
+          build-args: ${{ inputs.docker-build-args }}
           push: true

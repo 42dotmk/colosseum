@@ -1,40 +1,36 @@
-import type { Schema, Attribute } from '@strapi/strapi';
+import type { Schema, Struct } from '@strapi/strapi';
 
-export interface ProblemStarterCode extends Schema.Component {
+export interface ProblemStarterCode extends Struct.ComponentSchema {
   collectionName: 'components_problem_starter_codes';
   info: {
     displayName: 'Starter Code';
     icon: 'alien';
   };
   attributes: {
-    code: Attribute.Text;
-    language: Attribute.Relation<
-      'problem.starter-code',
-      'oneToOne',
-      'api::language.language'
-    >;
+    code: Schema.Attribute.Text;
+    language: Schema.Attribute.Relation<'oneToOne', 'api::language.language'>;
   };
 }
 
-export interface TestsTestCases extends Schema.Component {
+export interface TestsTestCases extends Struct.ComponentSchema {
   collectionName: 'components_tests_test_cases';
   info: {
+    description: '';
     displayName: 'Test Cases';
     icon: 'check';
-    description: '';
   };
   attributes: {
-    input: Attribute.Text;
-    output: Attribute.Text;
-    hidden: Attribute.Boolean;
-    locked: Attribute.Boolean;
-    weight: Attribute.Float & Attribute.Private;
+    hidden: Schema.Attribute.Boolean;
+    input: Schema.Attribute.Text;
+    locked: Schema.Attribute.Boolean;
+    output: Schema.Attribute.Text;
+    weight: Schema.Attribute.Float & Schema.Attribute.Private;
   };
 }
 
-declare module '@strapi/types' {
-  export module Shared {
-    export interface Components {
+declare module '@strapi/strapi' {
+  export module Public {
+    export interface ComponentSchemas {
       'problem.starter-code': ProblemStarterCode;
       'tests.test-cases': TestsTestCases;
     }
