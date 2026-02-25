@@ -53,7 +53,7 @@ func (r *RabbitMQ) Consume(ctx context.Context, queueName string, handler Handle
 		case msg, ok := <-msqs:
 			if !ok {
 				r.Logger.Info().Str("queue", queueName).Msg("Message channel closed, stopping consumer")
-				return fmt.Errorf("Message channel closed")
+				return fmt.Errorf("message channel closed")
 			}
 
 			if err := handler(ctx, msg.Body); err != nil {
