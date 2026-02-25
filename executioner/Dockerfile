@@ -4,10 +4,10 @@ RUN apk add --no-cache ca-certificates git
 
 WORKDIR /src
 
-COPY go.mod go.sum ./
+COPY executioner/go.mod executioner/go.sum ./
 RUN go mod download
 
-COPY . .
+COPY executioner/. .
 RUN CGO_ENABLED=0 GOOS=linux go build -o /out/executioner ./main.go
 
 FROM alpine:3.21
