@@ -19,6 +19,7 @@ var (
 	// Execution configuration
 	ExecutionTimeout        time.Duration
 	MaxConcurrentExecutions int
+	EnableNetworkInExecution bool
 
 	// RabbitMQ configuration
 	ExecutionQueueName string
@@ -47,6 +48,7 @@ func init() {
 
 	ExecutionTimeout = time.Duration(getEnvAsInt("EXECUTION_TIMEOUT_SECONDS", 30)) * time.Second
 	MaxConcurrentExecutions = getEnvAsInt("MAX_CONCURRENT_EXECUTIONS", 10)
+	EnableNetworkInExecution = getEnvAsBool("ENABLE_NETWORK_IN_EXECUTION", false)
 
 	ExecutionQueueName = getEnv("EXECUTION_QUEUE_NAME", "execution_queue")
 	ResultQueueName = getEnv("RESULT_QUEUE_NAME", "result")

@@ -48,16 +48,23 @@ func (d *DockerClient) Ping() error {
 }
 
 func (d *DockerClient) CreateContainer(ctx context.Context, imageName string, cmd []string) (string, error) {
+	networkDisabled := !config.EnableNetworkInExecution
+	networkMode := container.NetworkMode("")
+	if networkDisabled {
+		networkMode = "none"
+	}
 	resp, err := d.Client.ContainerCreate(ctx,
 		&container.Config{
 			Image: imageName,
 			Cmd:   cmd,
+			NetworkDisabled: networkDisabled,
 		},
 		&container.HostConfig{
 			Resources: container.Resources{
 				Memory:   config.ContainerMemoryLimit,
 				NanoCPUs: config.ContainerCPULimit,
 			},
+			NetworkMode: networkMode,
 		},
 		nil, nil, "")
 
