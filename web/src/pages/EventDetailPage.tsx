@@ -14,7 +14,7 @@ interface Problem {
   description: string;
   slug: string;
   difficulty?: string;
-  points?: number;
+  points: number;
   testCases?: any[];
 }
 
@@ -239,7 +239,7 @@ export default function EventDetailPage() {
                         </span>
                       </TableCell>
                       <TableCell className="text-center font-mono">
-                        {problem.points || 100}
+                        {problem.points ?? 'N/A'}
                       </TableCell>
                       <TableCell className="text-center">
                         <Circle className="h-4 w-4 text-muted-foreground/30 mx-auto" />
