@@ -463,8 +463,10 @@ export default function EventDetailPage() {
 
           const mode = problem.leaderboardVisibilityMode || 'public_only_live';
           const shouldUseInLiveStatus = (testCase?: { hidden?: boolean; locked?: boolean }) => {
+            // Some interactive execution payloads can miss testCase relation in this
+            // endpoint. Treat them as visible fallback so solved statuses are counted.
             if (!testCase) {
-              return false;
+              return true;
             }
 
             if (eventEnded || mode === 'full_live') {
@@ -474,15 +476,14 @@ export default function EventDetailPage() {
             return !testCase.hidden && !testCase.locked;
           };
 
+          const scopedCountFromProblem = (problem.testCases || []).filter((testCase: any) =>
+            shouldUseInLiveStatus(testCase)
+          ).length;
           const scopedExecutionResults = (latestSubmission.executions || []).filter(
             (execution) => shouldUseInLiveStatus(execution.testCase),
           );
 
-          const scopedCountFromProblem = (problem.testCases || []).filter((testCase: any) =>
-            shouldUseInLiveStatus(testCase)
-          ).length;
           const visibleCount = scopedCountFromProblem || scopedExecutionResults.length;
-
           const passedCount = scopedExecutionResults.filter((execution) => isExecutionPassed(execution)).length;
 
           if (visibleCount <= 0) {
