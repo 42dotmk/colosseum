@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowLeft, Circle, ChevronRight, FileText, Trophy } from 'lucide-react';
 import { REST_URL } from '@/config';
 import Markdown from '@/components/Markdown';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/components/ui/use-toast';
 
 interface Problem {
   documentId: string;
@@ -15,6 +17,7 @@ interface Problem {
   slug: string;
   difficulty?: string;
   points: number;
+  leaderboardVisibilityMode?: 'public_only_live' | 'full_live';
   testCases?: any[];
 }
 
@@ -25,6 +28,77 @@ interface Event {
   end: string;
   problems?: Problem[];
   supportedLanguages?: any[];
+}
+
+interface SubmissionExecution {
+  processed: boolean;
+  passed?: boolean;
+  stdout?: string;
+  testCase?: {
+    output?: string;
+    hidden?: boolean;
+    locked?: boolean;
+  };
+}
+
+interface ProblemSubmission {
+  documentId: string;
+  createdAt: string;
+  problem?: {
+    documentId: string;
+    leaderboardVisibilityMode?: 'public_only_live' | 'full_live';
+  };
+  executions?: SubmissionExecution[];
+}
+
+type ProblemStatus = 'not_tried' | 'zero' | 'partial' | 'full';
+
+interface LeaderboardProblem {
+  documentId: string;
+  title?: string;
+  points: number;
+  leaderboardVisibilityMode: 'public_only_live' | 'full_live';
+}
+
+interface LeaderboardRow {
+  rank: number;
+  user: {
+    documentId: string;
+    username?: string;
+    email?: string;
+    displayName: string;
+  };
+  totalScore: number;
+  solvedCount: number;
+  totalTime: number;
+}
+
+interface LeaderboardResponse {
+  event: {
+    documentId: string;
+    title: string;
+    start?: string;
+    end?: string;
+    eventStarted?: boolean;
+    eventEnded: boolean;
+  };
+  totals: {
+    maxPoints: number;
+    scoredCap: number;
+  };
+  leaderboardAvailable?: boolean;
+  problems: LeaderboardProblem[];
+  leaderboard: LeaderboardRow[];
+}
+
+interface RegistrationStatus {
+  eventId: string;
+  registrationMode: 'open' | 'invite_only';
+  allowPostStartRegistration: boolean;
+  registrationOpen: boolean;
+  isEligible: boolean;
+  isRegistered: boolean;
+  canRegister: boolean;
 }
 
 function getTimeRemaining(date: Date): string {
@@ -51,11 +125,45 @@ function getDifficultyColor(difficulty?: string) {
 
 export default function EventDetailPage() {
   const { eventId } = useParams();
+  const { toast } = useToast();
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('problems');
   const [timeRemaining, setTimeRemaining] = useState('');
+  const [leaderboard, setLeaderboard] = useState<LeaderboardResponse | null>(null);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
+  const [registrationStatus, setRegistrationStatus] = useState<RegistrationStatus | null>(null);
+  const [registrationLoading, setRegistrationLoading] = useState(false);
+  const [registrationError, setRegistrationError] = useState<string | null>(null);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [problemStatusById, setProblemStatusById] = useState<Record<string, ProblemStatus>>({});
+
+  const isExecutionPassed = (execution: SubmissionExecution) => {
+    if (!execution?.processed) {
+      return false;
+    }
+
+    if (typeof execution.passed === 'boolean') {
+      return execution.passed;
+    }
+
+    return (execution.stdout || '').trim() === (execution.testCase?.output || '').trim();
+  };
+
+  const getProblemStatusClass = (status: ProblemStatus | undefined) => {
+    switch (status) {
+      case 'zero':
+        return 'text-red-500 fill-current';
+      case 'partial':
+        return 'text-amber-500 fill-current';
+      case 'full':
+        return 'text-emerald-500 fill-current';
+      default:
+        return 'text-muted-foreground/30 fill-transparent';
+    }
+  };
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -98,6 +206,209 @@ export default function EventDetailPage() {
     return () => clearInterval(interval);
   }, [event]);
 
+  useEffect(() => {
+    if (!eventId) {
+      return;
+    }
+
+    const fetchRegistrationStatus = async () => {
+      setRegistrationLoading(true);
+      setRegistrationError(null);
+
+      try {
+        const token = localStorage.getItem('jwt');
+        const response = await fetch(`${REST_URL}/events/${eventId}/registration-status`, {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : '',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setRegistrationStatus(data);
+      } catch (err) {
+        console.error('Failed to load registration status:', err);
+        setRegistrationError('Could not load registration status');
+      } finally {
+        setRegistrationLoading(false);
+      }
+    };
+
+    fetchRegistrationStatus();
+  }, [eventId]);
+
+  const handleRegister = async () => {
+    if (!eventId || !registrationStatus?.canRegister) {
+      return;
+    }
+
+    setIsRegistering(true);
+
+    try {
+      const token = localStorage.getItem('jwt');
+      const response = await fetch(`${REST_URL}/events/${eventId}/register`, {
+        method: 'POST',
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      setRegistrationStatus((prev) =>
+        prev
+          ? {
+              ...prev,
+              isRegistered: true,
+              canRegister: false,
+            }
+          : prev,
+      );
+
+      toast({
+        title: 'Registered',
+        description: 'You are now registered for this event.',
+      });
+    } catch (err) {
+      console.error('Failed to register for event:', err);
+      toast({
+        title: 'Registration failed',
+        description: 'Could not register for this event. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!eventId || activeTab !== 'leaderboard') {
+      return;
+    }
+
+    const fetchLeaderboard = async () => {
+      setLeaderboardLoading(true);
+      setLeaderboardError(null);
+
+      try {
+        const token = localStorage.getItem('jwt');
+        const response = await fetch(`${REST_URL}/events/${eventId}/leaderboard`, {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : '',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setLeaderboard(data);
+      } catch (err) {
+        console.error('Failed to load leaderboard:', err);
+        setLeaderboardError('Failed to load leaderboard');
+      } finally {
+        setLeaderboardLoading(false);
+      }
+    };
+
+    fetchLeaderboard();
+  }, [eventId, activeTab]);
+
+  useEffect(() => {
+    if (!eventId || !event || !registrationStatus?.isRegistered) {
+      setProblemStatusById({});
+      return;
+    }
+
+    const fetchProblemStatuses = async () => {
+      try {
+        const token = localStorage.getItem('jwt');
+        const response = await fetch(
+          `${REST_URL}/submissions?filters[event][documentId][$eq]=${eventId}&populate[problem][fields][0]=documentId&populate[problem][fields][1]=leaderboardVisibilityMode&populate[executions][fields][0]=processed&populate[executions][fields][1]=passed&populate[executions][fields][2]=stdout&populate[executions][populate][testCase][fields][0]=output&populate[executions][populate][testCase][fields][1]=hidden&populate[executions][populate][testCase][fields][2]=locked&sort=createdAt:desc`,
+          {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : '',
+            },
+          },
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json();
+        const submissions = (Array.isArray(data) ? data : (data.data || [])) as ProblemSubmission[];
+
+        const latestByProblem = new Map<string, ProblemSubmission>();
+        for (const submission of submissions) {
+          const problemDocumentId = submission.problem?.documentId;
+          if (!problemDocumentId || latestByProblem.has(problemDocumentId)) {
+            continue;
+          }
+
+          latestByProblem.set(problemDocumentId, submission);
+        }
+
+        const nextStatusById: Record<string, ProblemStatus> = {};
+        const eventEnded = event.end ? new Date(event.end).getTime() <= Date.now() : false;
+
+        for (const problem of event.problems || []) {
+          const latestSubmission = latestByProblem.get(problem.documentId);
+          if (!latestSubmission) {
+            nextStatusById[problem.documentId] = 'not_tried';
+            continue;
+          }
+
+          const mode = problem.leaderboardVisibilityMode || 'public_only_live';
+          const shouldUseInLiveStatus = (testCase?: { hidden?: boolean; locked?: boolean }) => {
+            if (!testCase) {
+              return false;
+            }
+
+            if (eventEnded || mode === 'full_live') {
+              return true;
+            }
+
+            return !testCase.hidden && !testCase.locked;
+          };
+
+          const scopedExecutionResults = (latestSubmission.executions || []).filter(
+            (execution) => shouldUseInLiveStatus(execution.testCase),
+          );
+
+          const scopedCountFromProblem = (problem.testCases || []).filter((testCase: any) =>
+            shouldUseInLiveStatus(testCase)
+          ).length;
+          const visibleCount = scopedCountFromProblem || scopedExecutionResults.length;
+
+          const passedCount = scopedExecutionResults.filter((execution) => isExecutionPassed(execution)).length;
+
+          if (visibleCount <= 0) {
+            nextStatusById[problem.documentId] = 'zero';
+          } else if (passedCount <= 0) {
+            nextStatusById[problem.documentId] = 'zero';
+          } else if (passedCount >= visibleCount) {
+            nextStatusById[problem.documentId] = 'full';
+          } else {
+            nextStatusById[problem.documentId] = 'partial';
+          }
+        }
+
+        setProblemStatusById(nextStatusById);
+      } catch (err) {
+        console.error('Failed to load problem statuses:', err);
+      }
+    };
+
+    fetchProblemStatuses();
+  }, [eventId, event, registrationStatus?.isRegistered]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -121,6 +432,9 @@ export default function EventDetailPage() {
   const isUpcoming = startDate > now;
   const isEnded = endDate < now;
   const problems = event.problems || [];
+  const visibleProblems = isUpcoming ? [] : problems;
+  const isRegisteredForEvent = registrationStatus?.isRegistered ?? false;
+  const showRegisterButton = !!registrationStatus?.canRegister;
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -164,7 +478,7 @@ export default function EventDetailPage() {
                 {endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
               <span>·</span>
-              <span>{problems.length} {problems.length === 1 ? 'problem' : 'problems'}</span>
+              <span>{visibleProblems.length} {visibleProblems.length === 1 ? 'problem' : 'problems'}</span>
             </div>
           </div>
 
@@ -174,6 +488,30 @@ export default function EventDetailPage() {
               <div className="font-mono text-2xl font-semibold text-amber-500 tabular-nums">
                 {timeRemaining}
               </div>
+            </div>
+          )}
+
+          {!registrationLoading && registrationStatus && (
+            <div className="shrink-0 flex items-center gap-2">
+              {registrationStatus.isRegistered ? (
+                <Badge variant="secondary">Registered</Badge>
+              ) : showRegisterButton ? (
+                <Button size="sm" onClick={handleRegister} disabled={isRegistering}>
+                  {isRegistering ? 'Registering...' : 'Register'}
+                </Button>
+              ) : !registrationStatus.registrationOpen ? (
+                <Badge variant="outline">Registration closed</Badge>
+              ) : registrationStatus.registrationMode === 'invite_only' ? (
+                <Badge variant="outline">
+                  {registrationStatus.isEligible ? 'Invite only' : 'Not invited'}
+                </Badge>
+              ) : null}
+            </div>
+          )}
+
+          {!registrationLoading && !registrationStatus && registrationError && (
+            <div className="shrink-0">
+              <Badge variant="outline">Registration status unavailable</Badge>
             </div>
           )}
         </div>
@@ -188,7 +526,15 @@ export default function EventDetailPage() {
         </TabsList>
 
         <TabsContent value="problems" className="mt-0">
-          {problems.length === 0 ? (
+          {!isRegisteredForEvent ? (
+            <div className="text-center py-16 border rounded-lg">
+              <FileText className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+              <h3 className="font-medium mb-1">Registration required</h3>
+              <p className="text-sm text-muted-foreground">
+                Register for this event to access and solve problems.
+              </p>
+            </div>
+          ) : visibleProblems.length === 0 ? (
             <div className="text-center py-16 border rounded-lg">
               <FileText className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
               <h3 className="font-medium mb-1">No problems yet</h3>
@@ -210,11 +556,16 @@ export default function EventDetailPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {problems.map((problem, index) => (
+                  {visibleProblems.map((problem, index) => (
                     <TableRow 
                       key={problem.documentId}
                       className="group cursor-pointer"
-                      onClick={() => window.location.href = `/compete/${problem.documentId}`}
+                      onClick={() => {
+                        if (!isRegisteredForEvent) {
+                          return;
+                        }
+                        window.location.href = `/compete/${problem.documentId}`;
+                      }}
                     >
                       <TableCell className="text-center font-mono text-muted-foreground">
                         {index + 1}
@@ -239,10 +590,15 @@ export default function EventDetailPage() {
                         </span>
                       </TableCell>
                       <TableCell className="text-center font-mono">
-                        {problem.points ?? 'N/A'}
+                        {problem.points ?? "N/A"}
                       </TableCell>
                       <TableCell className="text-center">
-                        <Circle className="h-4 w-4 text-muted-foreground/30 mx-auto" />
+                        <Circle
+                          className={cn(
+                            'h-4 w-4 mx-auto',
+                            getProblemStatusClass(problemStatusById[problem.documentId]),
+                          )}
+                        />
                       </TableCell>
                       <TableCell>
                         <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition-colors" />
@@ -281,12 +637,57 @@ export default function EventDetailPage() {
         </TabsContent>
 
         <TabsContent value="leaderboard" className="mt-0">
-          <div className="text-center py-16 border rounded-lg">
-            <Trophy className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
-            <h3 className="font-medium mb-1">Leaderboard</h3>
-            <p className="text-sm text-muted-foreground">
-              Rankings will appear here once participants start solving problems
-            </p>
+          <div className="border rounded-lg overflow-hidden">
+            {leaderboardLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+              </div>
+            ) : leaderboardError ? (
+              <div className="text-center py-16">
+                <p className="text-sm text-destructive">{leaderboardError}</p>
+              </div>
+            ) : leaderboard && leaderboard.leaderboardAvailable === false ? (
+              <div className="text-center py-16">
+                <Trophy className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                <h3 className="font-medium mb-1">Leaderboard locked</h3>
+                <p className="text-sm text-muted-foreground">
+                  Leaderboard will be available when the contest starts.
+                </p>
+              </div>
+            ) : !leaderboard || leaderboard.leaderboard.length === 0 ? (
+              <div className="text-center py-16">
+                <Trophy className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                <h3 className="font-medium mb-1">Leaderboard</h3>
+                <p className="text-sm text-muted-foreground">
+                  Rankings will appear here once participants start solving problems
+                </p>
+              </div>
+            ) : (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="hover:bg-transparent">
+                      <TableHead className="w-16 text-center">#</TableHead>
+                      <TableHead>Participant</TableHead>
+                      <TableHead className="w-24 text-center">Solved</TableHead>
+                      <TableHead className="w-28 text-center">Score</TableHead>
+                      <TableHead className="w-28 text-center">Time</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {leaderboard.leaderboard.map((row) => (
+                      <TableRow key={row.user.documentId}>
+                        <TableCell className="text-center font-mono">{row.rank}</TableCell>
+                        <TableCell className="font-medium">{row.user.displayName}</TableCell>
+                        <TableCell className="text-center font-mono">{row.solvedCount}</TableCell>
+                        <TableCell className="text-center font-mono">{row.totalScore.toFixed(2)}</TableCell>
+                        <TableCell className="text-center font-mono">{row.totalTime.toFixed(2)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </>
+            )}
           </div>
         </TabsContent>
       </Tabs>

@@ -430,6 +430,41 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiEventRegistrationEventRegistration
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'event_registrations';
+  info: {
+    description: 'User registrations for events';
+    displayName: 'Event Registration';
+    pluralName: 'event-registrations';
+    singularName: 'event-registration';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    event: Schema.Attribute.Relation<'manyToOne', 'api::event.event'>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::event-registration.event-registration'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    registeredAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
 export interface ApiEventEvent extends Struct.CollectionTypeSchema {
   collectionName: 'events';
   info: {
@@ -447,6 +482,9 @@ export interface ApiEventEvent extends Struct.CollectionTypeSchema {
     };
   };
   attributes: {
+    allowedRegistrationUsers: Schema.Attribute.Text;
+    allowPostStartRegistration: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -466,6 +504,8 @@ export interface ApiEventEvent extends Struct.CollectionTypeSchema {
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::event.event'>;
     problems: Schema.Attribute.Relation<'oneToMany', 'api::problem.problem'>;
     publishedAt: Schema.Attribute.DateTime;
+    registrationMode: Schema.Attribute.Enumeration<['open', 'invite_only']> &
+      Schema.Attribute.DefaultTo<'open'>;
     slug: Schema.Attribute.UID<'title'> &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
@@ -595,6 +635,11 @@ export interface ApiProblemProblem extends Struct.CollectionTypeSchema {
         };
       }>;
     event: Schema.Attribute.Relation<'manyToOne', 'api::event.event'>;
+    isSnapshot: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    leaderboardVisibilityMode: Schema.Attribute.Enumeration<
+      ['public_only_live', 'full_live']
+    > &
+      Schema.Attribute.DefaultTo<'public_only_live'>;
     locale: Schema.Attribute.String;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -615,6 +660,10 @@ export interface ApiProblemProblem extends Struct.CollectionTypeSchema {
           localized: true;
         };
       }>;
+    snapshotSource: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::problem.problem'
+    >;
     starterCodes: Schema.Attribute.Component<'problem.starter-code', true> &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
@@ -1225,6 +1274,7 @@ declare module '@strapi/strapi' {
       'admin::transfer-token': AdminTransferToken;
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
+      'api::event-registration.event-registration': ApiEventRegistrationEventRegistration;
       'api::event.event': ApiEventEvent;
       'api::execution.execution': ApiExecutionExecution;
       'api::language.language': ApiLanguageLanguage;

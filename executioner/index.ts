@@ -1,7 +1,7 @@
 import { connect } from '@colosseum/queue'
 import { execute } from './languages/docker';
 
-const RABBIT_URL = process.env.RABBIT_URL || "amqp://guest:guest@localhost";
+const RABBIT_URL = process.env.RABBIT_URL || "amqp://guest:guest@127.0.0.1:5672";
 const PREFETCH_COUNT = parseInt(process.env.PREFETCH_COUNT || "10");
 
 async function run() {
@@ -22,8 +22,19 @@ async function run() {
       }));
     } catch(err) {
       console.error(err);
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      const fallbackResult = Array.isArray(parsed?.input)
+        ? parsed.input.map((inp: any) => ({
+            stdout: "",
+            stderr: `Execution worker error: ${errorMessage}`,
+            time: null,
+            metadata: inp?.metadata,
+          }))
+        : [];
+
       await publish("results", JSON.stringify({
-        error: "Unknown error",
+        result: fallbackResult,
+        metadata: parsed?.metadata,
       }));
     }
   }, PREFETCH_COUNT);

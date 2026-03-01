@@ -27,7 +27,7 @@ npm run build;
 To start the frontend
 
 ```bash
-cd client;
+cd web;
 npm install;
 npm run dev;
 ```

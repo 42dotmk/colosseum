@@ -3,5 +3,673 @@
  */
 
 import { factories } from '@strapi/strapi'
+import {
+	canUserRegisterNow,
+	canUserRegisterForEvent,
+	canUserSeeInviteOnlyEvent,
+	isRegistrationOpenNow,
+} from '../../../utils/event-registration';
+import { getCurrentUser } from '../../../utils/current-user';
 
-export default factories.createCoreController('api::event.event');
+type LeaderboardVisibilityMode = 'public_only_live' | 'full_live';
+
+type TestCaseLike = {
+	documentId: string;
+	hidden?: boolean;
+	locked?: boolean;
+	weight?: number;
+};
+
+type ExecutionLike = {
+	processed?: boolean;
+	passed?: boolean;
+	executionTime?: number;
+	testCase?: {
+		documentId: string;
+	};
+};
+
+type ProblemLike = {
+	documentId: string;
+	title?: string;
+	points?: number;
+	leaderboardVisibilityMode?: LeaderboardVisibilityMode;
+	testCases?: TestCaseLike[];
+};
+
+type SubmissionLike = {
+	documentId: string;
+	createdAt?: string;
+	user?: {
+		documentId: string;
+		username?: string;
+		email?: string;
+	};
+	problem?: {
+		documentId: string;
+	};
+	executions?: ExecutionLike[];
+};
+
+type EventRegistrationLike = {
+	documentId: string;
+	registeredAt?: string;
+	user?: {
+		documentId?: string;
+		id?: number;
+		username?: string;
+		email?: string;
+	};
+};
+
+type EventLike = {
+	documentId: string;
+	title?: string;
+	start?: string;
+	end?: string;
+	registrationMode?: 'open' | 'invite_only';
+	allowedRegistrationUsers?: string | null;
+	allowPostStartRegistration?: boolean;
+	problems?: ProblemLike[];
+};
+
+const DEFAULT_POINTS = 100;
+
+const getSafeWeight = (value?: number) =>
+	typeof value === 'number' && value > 0 ? value : 1;
+
+const round2 = (value: number) => Math.round(value * 100) / 100;
+
+const shouldUseTestCaseInLiveScore = (
+	problem: ProblemLike,
+	testCase: TestCaseLike,
+	eventEnded: boolean,
+) => {
+	const mode: LeaderboardVisibilityMode =
+		problem.leaderboardVisibilityMode || 'public_only_live';
+
+	if (eventEnded) {
+		return true;
+	}
+
+	if (mode === 'full_live') {
+		return true;
+	}
+
+	return !testCase.hidden && !testCase.locked;
+};
+
+const getEventRegistrations = async (strapi: any, eventDocumentId: string) =>
+	(await strapi.documents('api::event-registration.event-registration').findMany({
+		filters: {
+			event: {
+				documentId: eventDocumentId,
+			},
+		},
+		populate: ['user'],
+		pagination: {
+			page: 1,
+			pageSize: 10000,
+		},
+	})) as EventRegistrationLike[];
+
+const isUserRegisteredForEvent = (
+	registrations: EventRegistrationLike[],
+	user: any,
+) => {
+	if (!user) {
+		return false;
+	}
+
+	return registrations.some((registration) => {
+		const registrationUser = registration.user;
+		if (!registrationUser) {
+			return false;
+		}
+
+		if (
+			registrationUser.documentId &&
+			user.documentId &&
+			registrationUser.documentId === user.documentId
+		) {
+			return true;
+		}
+
+		if (
+			typeof registrationUser.id === 'number' &&
+			typeof user.id === 'number' &&
+			registrationUser.id === user.id
+		) {
+			return true;
+		}
+
+		return false;
+	});
+};
+
+const ensureEventIsVisibleForUser = async (
+	strapi: any,
+	event: EventLike,
+	user: any,
+) => {
+	const registrations = await getEventRegistrations(strapi, event.documentId);
+	const isRegistered = isUserRegisteredForEvent(registrations, user);
+
+	return canUserSeeInviteOnlyEvent(
+		{
+			documentId: event.documentId,
+			registrationMode: event.registrationMode,
+			allowedRegistrationUsers: event.allowedRegistrationUsers,
+		},
+		user,
+		isRegistered,
+	);
+};
+
+const hasEventStarted = (event: EventLike, nowMs = Date.now()) => {
+	if (!event.start) {
+		return true;
+	}
+
+	const startMs = new Date(event.start).getTime();
+	if (Number.isNaN(startMs)) {
+		return true;
+	}
+
+	return startMs <= nowMs;
+};
+
+const sanitizeEventForCompetitionView = (event: EventLike) => {
+	if (hasEventStarted(event)) {
+		return event;
+	}
+
+	return {
+		...event,
+		problems: [],
+	};
+};
+
+export default factories.createCoreController('api::event.event', ({ strapi }) => ({
+	async find(ctx) {
+		const user = await getCurrentUser(strapi, ctx);
+		if (!user) {
+			return ctx.unauthorized('Authentication required');
+		}
+
+		const response = (await super.find(ctx)) as any;
+		const events = response?.data || [];
+
+		const visibilityChecks = await Promise.all(
+			events.map(async (event: EventLike) => ({
+				event,
+				visible: await ensureEventIsVisibleForUser(strapi, event, user),
+			})),
+		);
+
+		response.data = visibilityChecks
+			.filter((entry) => entry.visible)
+			.map((entry) => sanitizeEventForCompetitionView(entry.event));
+
+		if (response.meta?.pagination) {
+			response.meta.pagination.total = response.data.length;
+		}
+
+		return response;
+	},
+
+	async findOne(ctx) {
+		const user = await getCurrentUser(strapi, ctx);
+		if (!user) {
+			return ctx.unauthorized('Authentication required');
+		}
+
+		const response = (await super.findOne(ctx)) as any;
+		const event = response?.data as EventLike | undefined;
+
+		if (!event) {
+			return response;
+		}
+
+		const visible = await ensureEventIsVisibleForUser(strapi, event, user);
+		if (!visible) {
+			return ctx.notFound('Event not found');
+		}
+
+		response.data = sanitizeEventForCompetitionView(event) as any;
+
+		return response;
+	},
+
+	async registrationStatus(ctx) {
+		const eventId = ctx.params.id as string;
+		if (!eventId) {
+			return ctx.badRequest('Missing event id');
+		}
+
+		const user = await getCurrentUser(strapi, ctx);
+		if (!user) {
+			return ctx.unauthorized('Authentication required');
+		}
+
+		const event = (await strapi.documents('api::event.event').findOne({
+			documentId: eventId,
+		})) as EventLike | null;
+
+		if (!event) {
+			return ctx.notFound('Event not found');
+		}
+
+		const registrations = await getEventRegistrations(strapi, event.documentId);
+		const isRegistered = isUserRegisteredForEvent(registrations, user);
+		const isEligible = canUserRegisterForEvent(
+			{
+				documentId: event.documentId,
+				start: event.start,
+				registrationMode: event.registrationMode,
+				allowedRegistrationUsers: event.allowedRegistrationUsers,
+				allowPostStartRegistration: event.allowPostStartRegistration,
+			},
+			user,
+		);
+		const registrationOpen = isRegistrationOpenNow({
+			documentId: event.documentId,
+			start: event.start,
+			allowPostStartRegistration: event.allowPostStartRegistration,
+		});
+		const canRegister = canUserRegisterNow(
+			{
+				documentId: event.documentId,
+				start: event.start,
+				registrationMode: event.registrationMode,
+				allowedRegistrationUsers: event.allowedRegistrationUsers,
+				allowPostStartRegistration: event.allowPostStartRegistration,
+			},
+			user,
+		);
+
+		ctx.body = {
+			eventId: event.documentId,
+			registrationMode: event.registrationMode || 'open',
+			allowPostStartRegistration: !!event.allowPostStartRegistration,
+			registrationOpen,
+			isEligible,
+			isRegistered,
+			canRegister: canRegister && !isRegistered,
+		};
+	},
+
+	async register(ctx) {
+		const eventId = ctx.params.id as string;
+		if (!eventId) {
+			return ctx.badRequest('Missing event id');
+		}
+
+		const user = await getCurrentUser(strapi, ctx);
+		if (!user) {
+			return ctx.unauthorized('Authentication required');
+		}
+
+		const event = (await strapi.documents('api::event.event').findOne({
+			documentId: eventId,
+		})) as EventLike | null;
+
+		if (!event) {
+			return ctx.notFound('Event not found');
+		}
+
+		const canRegister = canUserRegisterNow(
+			{
+				documentId: event.documentId,
+				start: event.start,
+				registrationMode: event.registrationMode,
+				allowedRegistrationUsers: event.allowedRegistrationUsers,
+				allowPostStartRegistration: event.allowPostStartRegistration,
+			},
+			user,
+		);
+
+		if (!canRegister) {
+			return ctx.forbidden('You are not allowed to register for this event');
+		}
+
+		const registrations = await getEventRegistrations(strapi, event.documentId);
+		if (isUserRegisteredForEvent(registrations, user)) {
+			ctx.body = {
+				ok: true,
+				alreadyRegistered: true,
+			};
+			return;
+		}
+
+		await (strapi.documents as any)('api::event-registration.event-registration').create({
+			data: {
+				event: event.documentId,
+				user: user.documentId || user.id,
+				registeredAt: new Date(),
+			},
+		});
+
+		ctx.body = {
+			ok: true,
+			alreadyRegistered: false,
+		};
+	},
+
+	async leaderboard(ctx) {
+		const eventId = ctx.params.id as string;
+
+		if (!eventId) {
+			return ctx.badRequest('Missing event id');
+		}
+
+		const event = await strapi.documents('api::event.event').findOne({
+			documentId: eventId,
+			populate: {
+				problems: {
+					populate: {
+						testCases: true,
+					},
+				},
+			},
+		});
+
+		if (!event) {
+			return ctx.notFound('Event not found');
+		}
+
+		const now = Date.now();
+		const eventStarted = hasEventStarted(event as EventLike, now);
+		const eventEnded = event.end ? new Date(event.end).getTime() <= now : false;
+
+		if (!eventStarted) {
+			ctx.body = {
+				event: {
+					documentId: event.documentId,
+					title: event.title,
+					start: event.start,
+					end: event.end,
+					eventStarted: false,
+					eventEnded,
+				},
+				totals: {
+					maxPoints: 0,
+					scoredCap: 0,
+				},
+				leaderboardAvailable: false,
+				problems: [],
+				leaderboard: [],
+			};
+			return;
+		}
+
+		const uniqueProblems = Array.from(
+			new Map(
+				((event.problems || []) as ProblemLike[])
+					.filter((problem) => !!problem?.documentId)
+					.map((problem) => [problem.documentId, problem]),
+			).values(),
+		);
+
+		const problems = uniqueProblems.map((problem) => ({
+			...problem,
+			points:
+				typeof problem.points === 'number' && problem.points >= 0
+					? problem.points
+					: DEFAULT_POINTS,
+			leaderboardVisibilityMode:
+				(problem.leaderboardVisibilityMode as LeaderboardVisibilityMode) ||
+				'public_only_live',
+			testCases: problem.testCases || [],
+		}));
+
+		const registrations = await getEventRegistrations(strapi, event.documentId);
+
+		const submissions = (await strapi.documents('api::submission.submission').findMany({
+			filters: {
+				event: {
+					documentId: event.documentId,
+				},
+			},
+			populate: ['user', 'problem', 'executions', 'executions.testCase'],
+			pagination: {
+				page: 1,
+				pageSize: 10000,
+			},
+			sort: 'createdAt:asc',
+		})) as SubmissionLike[];
+
+		const problemMap = new Map(problems.map((problem) => [problem.documentId, problem]));
+		const bestByUserProblem = new Map<string, {
+			score: number;
+			time: number;
+			createdAtTs: number;
+			maxScore: number;
+			problemId: string;
+		}>();
+
+		for (const submission of submissions) {
+			if (!submission.user?.documentId || !submission.problem?.documentId) {
+				continue;
+			}
+
+			const problem = problemMap.get(submission.problem.documentId);
+			if (!problem) {
+				continue;
+			}
+
+			const scopedCases = (problem.testCases || []).filter((testCase) =>
+				shouldUseTestCaseInLiveScore(problem, testCase, eventEnded),
+			);
+
+			const totalWeight = scopedCases.reduce(
+				(sum, testCase) => sum + getSafeWeight(testCase.weight),
+				0,
+			);
+
+			const executionMap = new Map(
+				(submission.executions || [])
+					.filter((execution) => execution.testCase?.documentId)
+					.map((execution) => [execution.testCase!.documentId, execution]),
+			);
+
+			let passedWeight = 0;
+			let totalExecutionTime = 0;
+
+			for (const testCase of scopedCases) {
+				const execution = executionMap.get(testCase.documentId);
+				if (!execution?.processed) {
+					continue;
+				}
+
+				const testWeight = getSafeWeight(testCase.weight);
+
+				if (execution.passed) {
+					passedWeight += testWeight;
+				}
+
+				if (typeof execution.executionTime === 'number' && execution.executionTime >= 0) {
+					totalExecutionTime += execution.executionTime;
+				}
+			}
+
+			const problemMaxScore = problem.points || DEFAULT_POINTS;
+			const rawScore = totalWeight > 0 ? (passedWeight / totalWeight) * problemMaxScore : 0;
+			const score = round2(rawScore);
+			const createdAtTs = submission.createdAt ? new Date(submission.createdAt).getTime() : Number.MAX_SAFE_INTEGER;
+
+			const key = `${submission.user.documentId}::${problem.documentId}`;
+			const existing = bestByUserProblem.get(key);
+
+			const shouldReplace =
+				!existing ||
+				score > existing.score ||
+				(score === existing.score && totalExecutionTime < existing.time) ||
+				(score === existing.score && totalExecutionTime === existing.time && createdAtTs < existing.createdAtTs);
+
+			if (shouldReplace) {
+				bestByUserProblem.set(key, {
+					score,
+					time: totalExecutionTime,
+					createdAtTs,
+					maxScore: problemMaxScore,
+					problemId: problem.documentId,
+				});
+			}
+		}
+
+		const usersById = new Map<string, { documentId: string; username?: string; email?: string }>();
+		submissions.forEach((submission) => {
+			if (submission.user?.documentId && !usersById.has(submission.user.documentId)) {
+				usersById.set(submission.user.documentId, submission.user);
+			}
+		});
+
+		registrations.forEach((registration) => {
+			if (!registration.user?.documentId) {
+				return;
+			}
+
+			if (!usersById.has(registration.user.documentId)) {
+				usersById.set(registration.user.documentId, {
+					documentId: registration.user.documentId,
+					username: registration.user.username,
+					email: registration.user.email,
+				});
+			}
+		});
+
+		const rows = new Map<string, {
+			user: { documentId: string; username?: string; email?: string; displayName: string };
+			totalScore: number;
+			solvedCount: number;
+			totalTime: number;
+			lastSubmissionTs: number;
+			byProblem: Record<string, { score: number; maxScore: number }>;
+		}>();
+
+		for (const [key, best] of bestByUserProblem.entries()) {
+			const [userId] = key.split('::');
+			const user = usersById.get(userId);
+			const displayName = user?.username || user?.email || `user-${userId.slice(0, 8)}`;
+
+			if (!rows.has(userId)) {
+				rows.set(userId, {
+					user: {
+						documentId: userId,
+						username: user?.username,
+						email: user?.email,
+						displayName,
+					},
+					totalScore: 0,
+					solvedCount: 0,
+					totalTime: 0,
+					lastSubmissionTs: 0,
+					byProblem: {},
+				});
+			}
+
+			const row = rows.get(userId)!;
+			row.totalScore += best.score;
+			row.totalTime += best.time;
+			row.lastSubmissionTs = Math.max(row.lastSubmissionTs, best.createdAtTs);
+			row.byProblem[best.problemId] = {
+				score: best.score,
+				maxScore: best.maxScore,
+			};
+
+			if (best.score >= best.maxScore) {
+				row.solvedCount += 1;
+			}
+		}
+
+		for (const registration of registrations) {
+			const registrationUser = registration.user;
+			if (!registrationUser?.documentId) {
+				continue;
+			}
+
+			if (rows.has(registrationUser.documentId)) {
+				continue;
+			}
+
+			const displayName =
+				registrationUser.username ||
+				registrationUser.email ||
+				`user-${registrationUser.documentId.slice(0, 8)}`;
+
+			rows.set(registrationUser.documentId, {
+				user: {
+					documentId: registrationUser.documentId,
+					username: registrationUser.username,
+					email: registrationUser.email,
+					displayName,
+				},
+				totalScore: 0,
+				solvedCount: 0,
+				totalTime: 0,
+				lastSubmissionTs: registration.registeredAt
+					? new Date(registration.registeredAt).getTime()
+					: Number.MAX_SAFE_INTEGER,
+				byProblem: {},
+			});
+		}
+
+		const ranked = Array.from(rows.values())
+			.map((row) => ({
+				...row,
+				totalScore: round2(row.totalScore),
+				problemScores: problems.map((problem) => ({
+					problemId: problem.documentId,
+					score: row.byProblem[problem.documentId]?.score ?? 0,
+					maxScore: row.byProblem[problem.documentId]?.maxScore ?? (problem.points || DEFAULT_POINTS),
+				})),
+			}))
+			.sort((a, b) => {
+				if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+				if (b.solvedCount !== a.solvedCount) return b.solvedCount - a.solvedCount;
+				if (a.totalTime !== b.totalTime) return a.totalTime - b.totalTime;
+				return a.lastSubmissionTs - b.lastSubmissionTs;
+			})
+			.map((row, index) => ({
+				rank: index + 1,
+				...row,
+			}));
+
+		const totalMaxPoints = problems.reduce((sum, problem) => sum + (problem.points || DEFAULT_POINTS), 0);
+		const totalScoredCap = problems.reduce((sum, problem) => {
+			const scopedCases = (problem.testCases || []).filter((testCase) =>
+				shouldUseTestCaseInLiveScore(problem, testCase, eventEnded),
+			);
+
+			if (scopedCases.length === 0) {
+				return sum;
+			}
+
+			return sum + (problem.points || DEFAULT_POINTS);
+		}, 0);
+
+		ctx.body = {
+			event: {
+				documentId: event.documentId,
+				title: event.title,
+				start: event.start,
+				end: event.end,
+				eventStarted: true,
+				eventEnded,
+			},
+			totals: {
+				maxPoints: totalMaxPoints,
+				scoredCap: totalScoredCap,
+			},
+			leaderboardAvailable: true,
+			problems: problems.map((problem) => ({
+				documentId: problem.documentId,
+				title: problem.title,
+				points: problem.points || DEFAULT_POINTS,
+				leaderboardVisibilityMode: problem.leaderboardVisibilityMode || 'public_only_live',
+			})),
+			leaderboard: ranked,
+		};
+	},
+}));

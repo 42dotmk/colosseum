@@ -196,9 +196,6 @@ export default function EventsPage() {
     <div className="max-w-4xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Contests</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Compete in coding challenges and climb the leaderboard
-        </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>

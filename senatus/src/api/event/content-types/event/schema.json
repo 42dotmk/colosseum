@@ -63,6 +63,21 @@
       },
       "targetField": "title"
     },
+    "registrationMode": {
+      "type": "enumeration",
+      "enum": [
+        "open",
+        "invite_only"
+      ],
+      "default": "open"
+    },
+    "allowedRegistrationUsers": {
+      "type": "text"
+    },
+    "allowPostStartRegistration": {
+      "type": "boolean",
+      "default": false
+    },
     "problems": {
       "type": "relation",
       "relation": "oneToMany",

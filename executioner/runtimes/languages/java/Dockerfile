@@ -4,4 +4,6 @@ WORKDIR /exc/
 
 ADD . .
 
-ENTRYPOINT /exc/entrypoint.sh
+RUN sed -i 's/\r$//' /exc/entrypoint.sh && chmod +x /exc/entrypoint.sh
+
+ENTRYPOINT ["/exc/entrypoint.sh"]

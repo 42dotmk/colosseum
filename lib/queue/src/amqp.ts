@@ -6,7 +6,10 @@ type UnsubscribeFn = () => Promise<void>;
 export const connect = async (url: string) => {
   console.log(`Connect via rabbitmq-client ${url}`);
 
-  const rabbit = new Connection(url);
+  const rabbit = new Connection({
+    url,
+    frameMax: 131072,
+  });
   const consumers: Consumer[] = [];
   const publishers: { [key: string]: Publisher } = {};
 
@@ -72,7 +75,7 @@ export const connect = async (url: string) => {
   const publish = async (queue: string, msg: string, deliveryMode = 2) => {
     const pub = publishers[queue] ?? rabbit.createPublisher({
       confirm: true,
-      maxAttempts: 2,
+      maxAttempts: 5,
     });
 
     if (!publishers[queue]) {

@@ -33,16 +33,19 @@ interface TestCase {
 }
 
 interface Execution {
+  id?: string;
   documentId: string;
   stdout: string;
   stderr: string;
   executionTime: number;
   processed: boolean;
+  passed?: boolean;
   testCase?: {
     documentId: string;
     input: string;
     output: string;
     hidden: boolean;
+    locked?: boolean;
   };
 }
 
@@ -69,12 +72,125 @@ export default function CompetePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [executionIdsBySubmission, setExecutionIdsBySubmission] = useState<Record<string, string[]>>({});
+  const [executionOverrides, setExecutionOverrides] = useState<Record<string, Execution[]>>({});
   const [activeTab, setActiveTab] = useState('description');
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const initialCodeLoadedRef = useRef(false);
 
+  const isExecutionPassed = (exec: Execution) => {
+    if (!exec.processed) {
+      return false;
+    }
+
+    if (typeof exec.passed === 'boolean') {
+      return exec.passed;
+    }
+
+    return exec.stdout?.trim() === exec.testCase?.output?.trim();
+  };
+
+  const getSubmissionExecutions = (submission: Submission) =>
+    executionOverrides[submission.documentId]?.length
+      ? executionOverrides[submission.documentId]
+      : (submission.executions || []);
+
+  const fetchExecutionResults = async (ids: string[]): Promise<Execution[]> => {
+    if (!ids.length) {
+      return [];
+    }
+
+    try {
+      const token = localStorage.getItem('jwt');
+      const headers = {
+        Authorization: token ? `Bearer ${token}` : '',
+      };
+
+      const response = await fetch(
+        `${REST_URL}/submissions/executions?ids=${ids.join(',')}`,
+        { headers }
+      );
+
+      if (!response.ok) {
+        return [];
+      }
+
+      const data = await response.json();
+      const executions = data?.executions || [];
+
+      return executions.map((exec: any) => ({
+        id: exec.id,
+        documentId: exec.id,
+        stdout: exec.stdout || '',
+        stderr: exec.stderr || '',
+        executionTime: typeof exec.executionTime === 'number' ? exec.executionTime : -1,
+        processed: !!exec.processed,
+        passed: typeof exec.passed === 'boolean' ? exec.passed : undefined,
+        testCase: exec.testCase
+          ? {
+              documentId: exec.testCase.id,
+              input: exec.testCase.input,
+              output: exec.testCase.output,
+              hidden: !!exec.testCase.hidden,
+              locked: !!exec.testCase.locked,
+            }
+          : undefined,
+      }));
+    } catch (err) {
+      console.error('Failed to fetch execution results:', err);
+      return [];
+    }
+  };
+
+  const fetchExecutionsForSubmission = async (submissionId: string): Promise<Execution[]> => {
+    if (!submissionId) {
+      return [];
+    }
+
+    try {
+      const token = localStorage.getItem('jwt');
+      const headers = {
+        Authorization: token ? `Bearer ${token}` : '',
+      };
+
+      const response = await fetch(
+        `${REST_URL}/executions?filters[submission][documentId][$eq]=${submissionId}&populate[testCase]=*&sort=createdAt:asc`,
+        { headers }
+      );
+
+      if (!response.ok) {
+        return [];
+      }
+
+      const data = await response.json();
+      const executionsArray = Array.isArray(data) ? data : (data.data || []);
+
+      return executionsArray.map((exec: any) => ({
+        id: exec.documentId,
+        documentId: exec.documentId,
+        stdout: exec.stdout || '',
+        stderr: exec.stderr || '',
+        executionTime: typeof exec.executionTime === 'number' ? exec.executionTime : -1,
+        processed: !!exec.processed,
+        passed: typeof exec.passed === 'boolean' ? exec.passed : undefined,
+        testCase: exec.testCase
+          ? {
+              documentId: exec.testCase.documentId,
+              input: exec.testCase.input,
+              output: exec.testCase.output,
+              hidden: !!exec.testCase.hidden,
+              locked: !!exec.testCase.locked,
+            }
+          : undefined,
+      }));
+    } catch (err) {
+      console.error('Failed to fetch executions for submission:', err);
+      return [];
+    }
+  };
+
   // Fetch submissions from API
-  const fetchSubmissions = async (loadCodeFromSubmission = false) => {
+  const fetchSubmissions = async (loadCodeFromSubmission = false): Promise<Submission[]> => {
     try {
       const token = localStorage.getItem('jwt');
       const headers = {
@@ -82,7 +198,7 @@ export default function CompetePage() {
       };
 
       const submissionsRes = await fetch(
-        `${REST_URL}/submissions?filters[problem][documentId][$eq]=${problemId}&populate[language]=*&populate[executions][populate][testCase][fields][0]=documentId&populate[executions][populate][testCase][fields][1]=input&populate[executions][populate][testCase][fields][2]=output&populate[executions][populate][testCase][fields][3]=hidden&sort=createdAt:desc`,
+        `${REST_URL}/submissions?filters[problem][documentId][$eq]=${problemId}&populate[language]=*&populate[executions][populate][testCase][fields][0]=documentId&populate[executions][populate][testCase][fields][1]=input&populate[executions][populate][testCase][fields][2]=output&populate[executions][populate][testCase][fields][3]=hidden&populate[executions][populate][testCase][fields][4]=locked&sort=createdAt:desc`,
         { headers }
       );
 
@@ -90,6 +206,47 @@ export default function CompetePage() {
         const submissionsData = await submissionsRes.json();
         const submissionsArray = Array.isArray(submissionsData) ? submissionsData : (submissionsData.data || []);
         setSubmissions(submissionsArray);
+
+        const submissionsWithoutExecutions = submissionsArray.filter(
+          (submission: Submission) => !submission.executions || submission.executions.length === 0
+        );
+
+        if (submissionsWithoutExecutions.length > 0) {
+          const fallbackResults = await Promise.all(
+            submissionsWithoutExecutions.map(async (submission: Submission) => {
+              const executions = await fetchExecutionsForSubmission(submission.documentId);
+              return { submissionId: submission.documentId, executions };
+            })
+          );
+
+          const nextOverrides: Record<string, Execution[]> = {};
+          const nextExecutionIds: Record<string, string[]> = {};
+
+          for (const result of fallbackResults) {
+            if (!result.executions.length) {
+              continue;
+            }
+
+            nextOverrides[result.submissionId] = result.executions;
+            nextExecutionIds[result.submissionId] = result.executions
+              .map((exec: Execution) => exec.documentId)
+              .filter(Boolean);
+          }
+
+          if (Object.keys(nextOverrides).length > 0) {
+            setExecutionOverrides((prev) => ({
+              ...prev,
+              ...nextOverrides,
+            }));
+          }
+
+          if (Object.keys(nextExecutionIds).length > 0) {
+            setExecutionIdsBySubmission((prev) => ({
+              ...prev,
+              ...nextExecutionIds,
+            }));
+          }
+        }
         
         // Load code from latest submission only on initial load or when explicitly requested
         if (loadCodeFromSubmission && submissionsArray.length > 0 && submissionsArray[0].code && !initialCodeLoadedRef.current) {
@@ -99,9 +256,14 @@ export default function CompetePage() {
           }
           initialCodeLoadedRef.current = true;
         }
+
+        return submissionsArray;
       }
+
+      return [];
     } catch (err) {
       console.error('Failed to fetch submissions:', err);
+      return [];
     }
   };
 
@@ -145,7 +307,7 @@ export default function CompetePage() {
   }, [problemId]);
 
   const testCases = problem?.testCases || [];
-  const publicTestCases = testCases.filter((tc: TestCase) => !tc.hidden);
+  const publicTestCases = testCases.filter((tc: TestCase) => !tc.hidden && !tc.locked);
 
   useEffect(() => {
     if (languages.length > 0 && !selectedLanguage) {
@@ -174,11 +336,17 @@ export default function CompetePage() {
 
   // Poll submissions for updates
   useEffect(() => {
-    if (submissions.length === 0) return;
+    if (submissions.length === 0) {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      return;
+    }
 
     // Check if any submission has unprocessed executions
     const hasUnprocessed = submissions.some(sub => 
-      sub.executions?.some(exec => !exec.processed)
+      getSubmissionExecutions(sub).some(exec => !exec.processed)
     );
 
     if (!hasUnprocessed) {
@@ -190,23 +358,38 @@ export default function CompetePage() {
     }
 
     const pollSubmissions = async () => {
-      await fetchSubmissions();
+      const latestSubmissions = await fetchSubmissions();
+
+      const executionEntries = Object.entries(executionIdsBySubmission);
+      if (executionEntries.length > 0) {
+        for (const [submissionId, ids] of executionEntries) {
+          const results = await fetchExecutionResults(ids);
+          if (results.length > 0) {
+            setExecutionOverrides((prev) => ({
+              ...prev,
+              [submissionId]: results,
+            }));
+          }
+        }
+      }
       
       // Check if all done and show toast
-      const updatedHasUnprocessed = submissions.some(sub => 
-        sub.executions?.some(exec => !exec.processed)
-      );
+      const updatedHasUnprocessed = latestSubmissions.some(sub => {
+        const executions = executionOverrides[sub.documentId]?.length
+          ? executionOverrides[sub.documentId]
+          : (sub.executions || []);
+        return executions.some(exec => !exec.processed);
+      });
       
-      if (!updatedHasUnprocessed && submissions.length > 0) {
-        const latestSub = submissions[0];
-        if (latestSub.executions) {
-          const passed = latestSub.executions.filter((exec: Execution) => 
-            exec.stdout?.trim() === exec.testCase?.output?.trim()
-          ).length;
+      if (!updatedHasUnprocessed && latestSubmissions.length > 0) {
+        const latestSub = latestSubmissions[0];
+        const latestExecutions = getSubmissionExecutions(latestSub);
+        if (latestExecutions.length > 0) {
+          const passed = latestExecutions.filter((exec: Execution) => isExecutionPassed(exec)).length;
           toast({
             title: 'Execution Complete',
-            description: `${passed}/${latestSub.executions.length} test cases passed`,
-            variant: passed === latestSub.executions.length ? 'default' : 'destructive',
+            description: `${passed}/${latestExecutions.length} test cases passed`,
+            variant: passed === latestExecutions.length ? 'default' : 'destructive',
           });
         }
       }
@@ -219,7 +402,7 @@ export default function CompetePage() {
         clearInterval(pollingIntervalRef.current);
       }
     };
-  }, [submissions, toast]);
+  }, [submissions, executionIdsBySubmission, executionOverrides, toast]);
 
   const handleSubmit = async () => {
     if (!selectedLanguage) {
@@ -253,7 +436,18 @@ export default function CompetePage() {
       });
 
       const submissionData = await submissionRes.json();
+      if (!submissionRes.ok || !submissionData?.data?.documentId) {
+        const message =
+          submissionData?.error?.message ||
+          submissionData?.message ||
+          'Failed to create submission';
+        throw new Error(message);
+      }
+
       const submissionId = submissionData.data.documentId;
+
+      await fetchSubmissions();
+      setActiveTab('results');
 
       // Submit for execution
       const submitRes = await fetch(`${REST_URL}/submissions/submit?id=${submissionId}`, {
@@ -261,21 +455,44 @@ export default function CompetePage() {
       });
 
       const submitData = await submitRes.json();
+      if (!submitRes.ok) {
+        const message =
+          submitData?.error?.message ||
+          submitData?.message ||
+          'Failed to submit for execution';
+        throw new Error(message);
+      }
+
       console.log('Submit response:', submitData);
 
       if (submitData.executions && submitData.executions.length > 0) {
+        const executionIds = submitData.executions as string[];
+        setExecutionIdsBySubmission((prev) => ({
+          ...prev,
+          [submissionId]: executionIds,
+        }));
+
+        const immediateResults = await fetchExecutionResults(executionIds);
+        if (immediateResults.length > 0) {
+          setExecutionOverrides((prev) => ({
+            ...prev,
+            [submissionId]: immediateResults,
+          }));
+        }
+
         // Fetch updated submissions
         await fetchSubmissions();
-        // Switch to submissions tab
-        setActiveTab('results');
         toast({
           title: 'Submitted!',
           description: 'Your code is being executed...',
         });
       } else {
-        throw new Error('No executions returned');
+        await fetchSubmissions();
+        throw new Error('No executions were queued');
       }
     } catch (err) {
+      await fetchSubmissions();
+      setActiveTab('results');
       toast({
         title: 'Submission failed',
         description: err instanceof Error ? err.message : 'Please try again',
@@ -408,10 +625,13 @@ export default function CompetePage() {
                     </div>
                   ) : (
                     submissions.map((submission, subIndex) => {
-                      const executions = submission.executions || [];
+                      const executions = getSubmissionExecutions(submission);
                       const hasUnprocessed = executions.some(exec => !exec.processed);
+                      const hasQueueFailure = executions.some((exec: Execution) =>
+                        typeof exec.stderr === 'string' && exec.stderr.includes('Queue publish failed')
+                      );
                       const passedCount = executions.filter((exec: Execution) => 
-                        exec.processed && exec.stdout?.trim() === exec.testCase?.output?.trim()
+                        isExecutionPassed(exec)
                       ).length;
 
                       return (
@@ -431,6 +651,10 @@ export default function CompetePage() {
                                   <Loader2 className="h-3 w-3 animate-spin" />
                                   Running
                                 </Badge>
+                              ) : hasQueueFailure ? (
+                                <Badge variant="destructive" className="text-xs">
+                                  Queue unavailable
+                                </Badge>
                               ) : (
                                 <Badge 
                                   variant="outline"
@@ -449,8 +673,7 @@ export default function CompetePage() {
 
                           <div className="space-y-2 ml-3 pl-3 border-l">
                             {executions.map((execution, index) => {
-                              const isPassed = execution.processed && 
-                                execution.stdout?.trim() === execution.testCase?.output?.trim();
+                              const isPassed = isExecutionPassed(execution);
                               const isFailed = execution.processed && !isPassed;
                               const isRunning = !execution.processed;
 
@@ -499,22 +722,30 @@ export default function CompetePage() {
                                         </>
                                       )}
                                       
-                                      <div>
-                                        <div className="text-xs text-muted-foreground mb-1">Output</div>
-                                        <pre className={cn(
-                                          "text-xs p-2 rounded font-mono overflow-x-auto",
-                                          isPassed ? "bg-emerald-500/10 text-emerald-400" : "bg-destructive/10 text-destructive"
-                                        )}>
-                                          {execution.stdout || '(empty)'}
-                                        </pre>
-                                      </div>
-                                      
-                                      {execution.stderr && (
-                                        <div>
-                                          <div className="text-xs text-destructive mb-1">Error</div>
-                                          <pre className="text-xs bg-destructive/10 text-destructive p-2 rounded font-mono overflow-x-auto">
-                                            {execution.stderr}
-                                          </pre>
+                                      {!execution.testCase?.hidden ? (
+                                        <>
+                                          <div>
+                                            <div className="text-xs text-muted-foreground mb-1">Output</div>
+                                            <pre className={cn(
+                                              "text-xs p-2 rounded font-mono overflow-x-auto",
+                                              isPassed ? "bg-emerald-500/10 text-emerald-400" : "bg-destructive/10 text-destructive"
+                                            )}>
+                                              {execution.stdout || '(empty)'}
+                                            </pre>
+                                          </div>
+
+                                          {execution.stderr && (
+                                            <div>
+                                              <div className="text-xs text-destructive mb-1">Error</div>
+                                              <pre className="text-xs bg-destructive/10 text-destructive p-2 rounded font-mono overflow-x-auto">
+                                                {execution.stderr}
+                                              </pre>
+                                            </div>
+                                          )}
+                                        </>
+                                      ) : (
+                                        <div className="text-xs text-muted-foreground italic">
+                                          Execution details are hidden for hidden tests.
                                         </div>
                                       )}
                                       
