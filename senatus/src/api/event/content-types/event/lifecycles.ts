@@ -7,6 +7,9 @@ type ProblemLike = {
   description?: string;
   points?: number;
   leaderboardVisibilityMode?: 'public_only_live' | 'full_live';
+  isInteractive?: boolean;
+  interactorSource?: string;
+  checkerSource?: string;
   starterCodes?: Array<{
     code?: string;
     language?: {
@@ -130,6 +133,9 @@ const createProblemSnapshot = async (strapi: any, eventDocumentId: string, probl
       description: problem.description,
       points: problem.points,
       leaderboardVisibilityMode: problem.leaderboardVisibilityMode,
+      isInteractive: !!problem.isInteractive,
+      interactorSource: problem.interactorSource,
+      checkerSource: problem.checkerSource,
       starterCodes,
       event: eventDocumentId,
       isSnapshot: true,

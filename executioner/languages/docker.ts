@@ -6,9 +6,13 @@ import { v4 } from 'uuid';
 import { readFile, writeFile } from 'fs/promises';
 
 type LanguageOptions = {
-  [key: string]: string;
+  [key: string]: string | undefined;
   language: string;
   entrypointFile: string;
+  // Interactive problem support
+  interactive?: string; // '1' when interactive
+  interactorSource?: string;
+  checkerSource?: string;
 };
 
 type File = {
@@ -106,6 +110,16 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
     await writeFile(filePath, file.content);
   }
 
+  // Write interactor and checker sources for interactive problems
+  if (options.interactive === '1') {
+    if (options.interactorSource) {
+      await writeFile(path.resolve(path.join(srcDir, 'interactor.cpp')), options.interactorSource);
+    }
+    if (options.checkerSource) {
+      await writeFile(path.resolve(path.join(srcDir, 'checker.cpp')), options.checkerSource);
+    }
+  }
+
   for (const file of input) {
     const filePath = path.resolve(path.join(inputDir, file.filename));
     await writeFile(filePath, file.content);
@@ -131,6 +145,11 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
 
       if (!ENABLE_NETWORK_IN_EXECUTION) {
         extraArgs.push("--network=none");
+      }
+
+      if (options.interactive === '1') {
+        extraArgs.push(`-e`, `INTERACTIVE=1`);
+        extraArgs.push(`-e`, `SOLUTION_FILE=${options.entrypointFile}`);
       }
 
       const args = [

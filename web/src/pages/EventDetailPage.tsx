@@ -17,6 +17,9 @@ interface Problem {
   slug: string;
   difficulty?: string;
   points: number;
+  isInteractive?: boolean;
+  interactorSource?: string;
+  checkerSource?: string;
   leaderboardVisibilityMode?: 'public_only_live' | 'full_live';
   testCases?: any[];
 }
@@ -682,6 +685,11 @@ export default function EventDetailPage() {
                         >
                           {problem.title}
                         </Link>
+                        {problem.isInteractive && (
+                          <Badge variant="secondary" className="ml-2 h-5 text-[10px]">
+                            Interactive
+                          </Badge>
+                        )}
                         {problem.testCases && (
                           <span className="text-xs text-muted-foreground ml-2">
                             {problem.testCases.length} tests

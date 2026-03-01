@@ -18,6 +18,9 @@ interface Problem {
   description: string;
   slug: string;
   points: number;
+  isInteractive?: boolean;
+  interactorSource?: string;
+  checkerSource?: string;
   testCases?: TestCase[];
   starterCodes?: any[];
 }
@@ -559,6 +562,105 @@ export default function CompetePage() {
   }
 
   const selectedLang = languages.find((l: any) => l.documentId === selectedLanguage);
+  const isInteractiveProblem = !!problem.isInteractive;
+
+  const formatExecutionTime = (seconds: number) => {
+    if (!Number.isFinite(seconds) || seconds < 0) return null;
+    if (seconds >= 1) {
+      return `${seconds.toFixed(3).replace(/\.?0+$/, '')}s`;
+    }
+    return `${Math.round(seconds * 1000)}ms`;
+  };
+
+  const formatTimeLimit = (value: number | undefined) => {
+    if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return '—';
+    if (value >= 1) {
+      return `${value.toFixed(3).replace(/\.?0+$/, '')}s`;
+    }
+    return `${Math.round(value * 1000)}ms`;
+  };
+
+  const formatMemoryLimit = (value: number | undefined) => {
+    if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return '—';
+    if (value >= 1024) {
+      const gb = value / 1024;
+      return gb % 1 === 0 ? `${gb}GB` : `${gb.toFixed(2).replace(/\.?0+$/, '')}GB`;
+    }
+    if (value < 1) {
+      return `${Math.round(value * 1024)}KB`;
+    }
+    return value % 1 === 0 ? `${value}MB` : `${value.toFixed(2).replace(/\.?0+$/, '')}MB`;
+  };
+
+  const parseInteractiveStderr = (stderr: string) => {
+    const source = stderr || '';
+    const participantMatch = source.match(/=== PARTICIPANT_OUTPUT ===\n([\s\S]*?)(?=\n=== (?:INTERACTOR_MESSAGE|INTERACTOR_STREAM) ===|$)/);
+    const interactorMatch = source.match(/=== INTERACTOR_MESSAGE ===\n([\s\S]*?)(?=\n=== INTERACTOR_STREAM ===|$)/);
+    const interactorStreamMatch = source.match(/=== INTERACTOR_STREAM ===\n([\s\S]*)$/);
+
+    const participantOutput = participantMatch?.[1]?.trim() || '';
+    const interactorMessage = interactorMatch?.[1]?.trim() || '';
+    const interactorStream = interactorStreamMatch?.[1]?.trim() || '';
+
+    const cleaned = source
+      .replace(/\n?=== PARTICIPANT_OUTPUT ===\n[\s\S]*?(?=\n=== (?:INTERACTOR_MESSAGE|INTERACTOR_STREAM) ===|$)/, '')
+      .replace(/\n?=== INTERACTOR_MESSAGE ===\n[\s\S]*?(?=\n=== INTERACTOR_STREAM ===|$)/, '')
+      .replace(/\n?=== INTERACTOR_STREAM ===\n[\s\S]*$/, '')
+      .trim();
+
+    return {
+      participantOutput,
+      interactorMessage,
+      interactorStream,
+      fallback: cleaned,
+    };
+  };
+
+  const getInteractorDisplay = (stream: string, message: string, inputText: string) => {
+    const streamLines = (stream || '')
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    const firstInputLine = (inputText || '')
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .find(Boolean);
+
+    const firstInputToken = (inputText || '')
+      .trim()
+      .split(/\s+/)
+      .find(Boolean);
+
+    const normalizedStream = [...streamLines];
+    if (
+      normalizedStream.length > 0 &&
+      ((firstInputLine && normalizedStream[0] === firstInputLine) ||
+        (firstInputToken && normalizedStream[0] === firstInputToken))
+    ) {
+      normalizedStream.shift();
+    }
+
+    const combined = [
+      normalizedStream.join('\n').trim(),
+      (message || '').trim(),
+    ].filter(Boolean);
+
+    return combined.join('\n\n').trim();
+  };
+
+  const sortExecutionsForDisplay = (executions: Execution[]) => {
+    const rank = (execution: Execution) => {
+      const hidden = !!execution.testCase?.hidden;
+      const locked = !!execution.testCase?.locked;
+      if (!hidden && !locked) return 0;
+      if (!hidden && locked) return 1;
+      if (hidden && !locked) return 2;
+      return 3;
+    };
+
+    return [...executions].sort((left, right) => rank(left) - rank(right));
+  };
 
   return (
     <div className="h-[calc(100vh-7rem)] flex flex-col">
@@ -573,8 +675,17 @@ export default function CompetePage() {
           <h1 className="text-lg font-medium">
             {problem.title}
           </h1>
+          {isInteractiveProblem && (
+            <Badge variant="secondary" className="h-5 text-[10px]">
+              Interactive
+            </Badge>
+          )}
         </div>
         <div className="flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-3 text-xs text-muted-foreground mr-1">
+            <span>Time limit: {formatTimeLimit(selectedLang?.defaultMaxCpuTime)}</span>
+            <span>Memory limit: {formatMemoryLimit(selectedLang?.defaultMaxMemory)}</span>
+          </div>
           <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
             <SelectTrigger className="w-[160px] h-9">
               <SelectValue placeholder="Select language" />
@@ -679,7 +790,7 @@ export default function CompetePage() {
                     </div>
                   ) : (
                     submissions.map((submission, subIndex) => {
-                      const executions = getSubmissionExecutions(submission);
+                      const executions = sortExecutionsForDisplay(getSubmissionExecutions(submission));
                       const hasUnprocessed = executions.some(exec => !exec.processed);
                       const hasQueueFailure = executions.some((exec: Execution) =>
                         typeof exec.stderr === 'string' && exec.stderr.includes('Queue publish failed')
@@ -730,6 +841,17 @@ export default function CompetePage() {
                               const isPassed = isExecutionPassed(execution);
                               const isFailed = execution.processed && !isPassed;
                               const isRunning = !execution.processed;
+                              const detailsVisible = !execution.testCase?.hidden && !execution.testCase?.locked;
+                              const interactiveDetails = isInteractiveProblem
+                                ? parseInteractiveStderr(execution.stderr || '')
+                                : null;
+                              const interactorDisplay = isInteractiveProblem
+                                ? getInteractorDisplay(
+                                    interactiveDetails?.interactorStream || '',
+                                    interactiveDetails?.interactorMessage || '',
+                                    execution.testCase?.input || ''
+                                  )
+                                : '';
 
                               return (
                                 <div 
@@ -759,7 +881,7 @@ export default function CompetePage() {
                                   
                                   {execution.processed && (
                                     <div className="space-y-2">
-                                      {!execution.testCase?.hidden && (
+                                      {detailsVisible && (
                                         <>
                                           <div>
                                             <div className="text-xs text-muted-foreground mb-1">Input</div>
@@ -767,46 +889,85 @@ export default function CompetePage() {
                                               {execution.testCase?.input}
                                             </pre>
                                           </div>
-                                          <div>
-                                            <div className="text-xs text-muted-foreground mb-1">Expected</div>
-                                            <pre className="text-xs bg-muted p-2 rounded font-mono overflow-x-auto">
-                                              {execution.testCase?.output}
-                                            </pre>
-                                          </div>
-                                        </>
-                                      )}
-                                      
-                                      {!execution.testCase?.hidden ? (
-                                        <>
-                                          <div>
-                                            <div className="text-xs text-muted-foreground mb-1">Output</div>
-                                            <pre className={cn(
-                                              "text-xs p-2 rounded font-mono overflow-x-auto",
-                                              isPassed ? "bg-emerald-500/10 text-emerald-400" : "bg-destructive/10 text-destructive"
-                                            )}>
-                                              {execution.stdout || '(empty)'}
-                                            </pre>
-                                          </div>
-
-                                          {execution.stderr && (
+                                          {!isInteractiveProblem && (
                                             <div>
-                                              <div className="text-xs text-destructive mb-1">Error</div>
-                                              <pre className="text-xs bg-destructive/10 text-destructive p-2 rounded font-mono overflow-x-auto">
-                                                {execution.stderr}
+                                              <div className="text-xs text-muted-foreground mb-1">Expected</div>
+                                              <pre className="text-xs bg-muted p-2 rounded font-mono overflow-x-auto">
+                                                {execution.testCase?.output}
                                               </pre>
                                             </div>
                                           )}
                                         </>
+                                      )}
+                                      
+                                      {detailsVisible ? (
+                                        <>
+                                          {isInteractiveProblem ? (
+                                            <>
+                                              <div>
+                                                <div className="text-xs text-muted-foreground mb-1">Your Output</div>
+                                                <pre className="text-xs bg-muted p-2 rounded font-mono overflow-x-auto">
+                                                  {interactiveDetails?.participantOutput || '(empty)'}
+                                                </pre>
+                                              </div>
+
+                                              {(interactorDisplay || (isFailed && (interactiveDetails?.fallback || execution.stderr))) && (
+                                                <div>
+                                                  <div className={cn("text-xs mb-1", isPassed ? "text-muted-foreground" : "text-destructive")}>
+                                                    Interactor
+                                                  </div>
+                                                  <pre className={cn(
+                                                    "text-xs p-2 rounded font-mono overflow-x-auto",
+                                                    isPassed ? "bg-muted text-foreground" : "bg-destructive/10 text-destructive"
+                                                  )}>
+                                                    {interactorDisplay || interactiveDetails?.fallback || execution.stderr}
+                                                  </pre>
+                                                </div>
+                                              )}
+
+                                              <div>
+                                                <div className="text-xs text-muted-foreground mb-1">Verdict</div>
+                                                <pre className={cn(
+                                                  "text-xs p-2 rounded font-mono overflow-x-auto",
+                                                  isPassed ? "bg-emerald-500/10 text-emerald-400" : "bg-destructive/10 text-destructive"
+                                                )}>
+                                                  {execution.stdout || '(empty)'}
+                                                </pre>
+                                              </div>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <div>
+                                                <div className="text-xs text-muted-foreground mb-1">Output</div>
+                                                <pre className={cn(
+                                                  "text-xs p-2 rounded font-mono overflow-x-auto",
+                                                  isPassed ? "bg-emerald-500/10 text-emerald-400" : "bg-destructive/10 text-destructive"
+                                                )}>
+                                                  {execution.stdout || '(empty)'}
+                                                </pre>
+                                              </div>
+
+                                              {execution.stderr && isFailed && (
+                                                <div>
+                                                  <div className="text-xs text-destructive mb-1">Error</div>
+                                                  <pre className="text-xs bg-destructive/10 text-destructive p-2 rounded font-mono overflow-x-auto">
+                                                    {execution.stderr}
+                                                  </pre>
+                                                </div>
+                                              )}
+                                            </>
+                                          )}
+                                        </>
                                       ) : (
                                         <div className="text-xs text-muted-foreground italic">
-                                          Execution details are hidden for hidden tests.
+                                          Execution details are hidden for {execution.testCase?.locked ? 'locked' : 'hidden'} tests.
                                         </div>
                                       )}
                                       
-                                      {execution.executionTime >= 0 && (
+                                      {execution.executionTime >= 0 && !execution.testCase?.locked && (
                                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1">
                                           <Clock className="h-3 w-3" />
-                                          {execution.executionTime}ms
+                                          {formatExecutionTime(execution.executionTime)}
                                         </div>
                                       )}
                                     </div>
