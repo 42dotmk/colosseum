@@ -101,6 +101,17 @@ interface RegistrationStatus {
   canRegister: boolean;
 }
 
+interface EventQuestion {
+  documentId: string;
+  question: string;
+  answer: string;
+  answeredAt?: string;
+  answeredBy?: {
+    documentId?: string;
+    displayName?: string;
+  };
+}
+
 function getTimeRemaining(date: Date): string {
   const now = new Date();
   const diff = date.getTime() - now.getTime();
@@ -139,6 +150,11 @@ export default function EventDetailPage() {
   const [registrationError, setRegistrationError] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
   const [problemStatusById, setProblemStatusById] = useState<Record<string, ProblemStatus>>({});
+  const [questions, setQuestions] = useState<EventQuestion[]>([]);
+  const [questionsLoading, setQuestionsLoading] = useState(false);
+  const [questionsError, setQuestionsError] = useState<string | null>(null);
+  const [questionDraft, setQuestionDraft] = useState('');
+  const [isSubmittingQuestion, setIsSubmittingQuestion] = useState(false);
 
   const isExecutionPassed = (execution: SubmissionExecution) => {
     if (!execution?.processed) {
@@ -319,6 +335,83 @@ export default function EventDetailPage() {
 
     fetchLeaderboard();
   }, [eventId, activeTab]);
+
+  useEffect(() => {
+    if (!eventId) {
+      return;
+    }
+
+    const fetchQuestions = async () => {
+      setQuestionsLoading(true);
+      setQuestionsError(null);
+
+      try {
+        const token = localStorage.getItem('jwt');
+        const response = await fetch(`${REST_URL}/events/${eventId}/questions`, {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : '',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setQuestions(Array.isArray(data?.data) ? data.data : []);
+      } catch (err) {
+        console.error('Failed to load event questions:', err);
+        setQuestionsError('Failed to load Q&A');
+      } finally {
+        setQuestionsLoading(false);
+      }
+    };
+
+    fetchQuestions();
+  }, [eventId]);
+
+  const handleAskQuestion = async () => {
+    if (!eventId || !questionDraft.trim()) {
+      return;
+    }
+
+    setIsSubmittingQuestion(true);
+
+    try {
+      const token = localStorage.getItem('jwt');
+      const response = await fetch(`${REST_URL}/events/${eventId}/questions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify({
+          data: {
+            question: questionDraft.trim(),
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.error?.message || 'Failed to submit question');
+      }
+
+      setQuestionDraft('');
+      toast({
+        title: 'Question submitted',
+        description: 'Your question was sent to organizers and will appear once answered.',
+      });
+    } catch (err) {
+      toast({
+        title: 'Failed to submit question',
+        description: err instanceof Error ? err.message : 'Please try again',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSubmittingQuestion(false);
+    }
+  };
 
   useEffect(() => {
     if (!eventId || !event || !registrationStatus?.isRegistered) {
@@ -522,6 +615,14 @@ export default function EventDetailPage() {
         <TabsList className="mb-6">
           <TabsTrigger value="problems">Problems</TabsTrigger>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="qa" className="gap-2">
+            Q&A
+            {questions.length > 0 && (
+              <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                {questions.length}
+              </Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
         </TabsList>
 
@@ -633,6 +734,63 @@ export default function EventDetailPage() {
                 </div>
               </div>
             )}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="qa" className="mt-0">
+          <div className="space-y-6">
+            <div className="border rounded-lg p-4 space-y-3">
+              <h3 className="text-sm font-medium">Ask organizers a question</h3>
+              <textarea
+                className="w-full min-h-24 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                value={questionDraft}
+                onChange={(e) => setQuestionDraft(e.target.value)}
+                placeholder="Write your question here..."
+                maxLength={2000}
+              />
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Only answered questions are shown publicly in this tab.
+                </p>
+                <Button
+                  onClick={handleAskQuestion}
+                  disabled={isSubmittingQuestion || !questionDraft.trim() || !isRegisteredForEvent}
+                >
+                  {isSubmittingQuestion ? 'Submitting...' : 'Submit question'}
+                </Button>
+              </div>
+            </div>
+
+            <div className="border rounded-lg p-4">
+              {questionsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary border-t-transparent"></div>
+                </div>
+              ) : questionsError ? (
+                <p className="text-sm text-destructive">{questionsError}</p>
+              ) : questions.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No answered questions yet.</p>
+              ) : (
+                <div className="space-y-4">
+                  {questions.map((item) => (
+                    <div key={item.documentId} className="rounded-md border p-4 space-y-3">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Question</p>
+                        <p className="text-sm">{item.question}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Answer</p>
+                        <p className="text-sm">{item.answer}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Answered by {item.answeredBy?.displayName || 'organizer'}
+                          {item.answeredAt ? ` • ${new Date(item.answeredAt).toLocaleString()}` : ''}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </TabsContent>
 

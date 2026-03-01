@@ -430,6 +430,47 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiEventQuestionEventQuestion
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'event_questions';
+  info: {
+    description: 'Participant Q&A for events';
+    displayName: 'Event Question';
+    pluralName: 'event-questions';
+    singularName: 'event-question';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    answer: Schema.Attribute.Text;
+    answeredAt: Schema.Attribute.DateTime;
+    answeredBy: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    event: Schema.Attribute.Relation<'manyToOne', 'api::event.event'>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::event-question.event-question'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    question: Schema.Attribute.Text & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
 export interface ApiEventRegistrationEventRegistration
   extends Struct.CollectionTypeSchema {
   collectionName: 'event_registrations';
@@ -1274,6 +1315,7 @@ declare module '@strapi/strapi' {
       'admin::transfer-token': AdminTransferToken;
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
+      'api::event-question.event-question': ApiEventQuestionEventQuestion;
       'api::event-registration.event-registration': ApiEventRegistrationEventRegistration;
       'api::event.event': ApiEventEvent;
       'api::execution.execution': ApiExecutionExecution;

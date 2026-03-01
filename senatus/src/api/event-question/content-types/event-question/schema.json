@@ -1,0 +1,40 @@
+{
+  "kind": "collectionType",
+  "collectionName": "event_questions",
+  "info": {
+    "singularName": "event-question",
+    "pluralName": "event-questions",
+    "displayName": "Event Question",
+    "description": "Participant Q&A for events"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "question": {
+      "type": "text",
+      "required": true
+    },
+    "answer": {
+      "type": "text"
+    },
+    "answeredAt": {
+      "type": "datetime"
+    },
+    "event": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::event.event"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "answeredBy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    }
+  }
+}
