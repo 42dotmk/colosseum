@@ -526,6 +526,7 @@ export default function EventDetailPage() {
   const isEnded = endDate < now;
   const problems = event.problems || [];
   const visibleProblems = isUpcoming ? [] : problems;
+  const isViewOnlyEvent = isEnded;
   const isRegisteredForEvent = registrationStatus?.isRegistered ?? false;
   const showRegisterButton = !!registrationStatus?.canRegister;
 
@@ -627,7 +628,7 @@ export default function EventDetailPage() {
         </TabsList>
 
         <TabsContent value="problems" className="mt-0">
-          {!isRegisteredForEvent ? (
+          {!isRegisteredForEvent && !isViewOnlyEvent ? (
             <div className="text-center py-16 border rounded-lg">
               <FileText className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
               <h3 className="font-medium mb-1">Registration required</h3>
@@ -662,10 +663,12 @@ export default function EventDetailPage() {
                       key={problem.documentId}
                       className="group cursor-pointer"
                       onClick={() => {
-                        if (!isRegisteredForEvent) {
+                        if (!isRegisteredForEvent && !isViewOnlyEvent) {
                           return;
                         }
-                        window.location.href = `/compete/${problem.documentId}`;
+                        window.location.href = isViewOnlyEvent
+                          ? `/compete/${problem.documentId}?mode=view`
+                          : `/compete/${problem.documentId}`;
                       }}
                     >
                       <TableCell className="text-center font-mono text-muted-foreground">
@@ -673,7 +676,7 @@ export default function EventDetailPage() {
                       </TableCell>
                       <TableCell>
                         <Link 
-                          to={`/compete/${problem.documentId}`}
+                          to={isViewOnlyEvent ? `/compete/${problem.documentId}?mode=view` : `/compete/${problem.documentId}`}
                           className="font-medium group-hover:text-primary transition-colors"
                           onClick={(e) => e.stopPropagation()}
                         >

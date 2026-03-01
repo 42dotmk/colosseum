@@ -2,6 +2,11 @@ import { connect } from '@colosseum/queue'
 
 let disconnectRabbit: () => Promise<any> | undefined;
 
+const normalizeOutput = (value: unknown) =>
+  String(value ?? '')
+    .replace(/\r\n/g, '\n')
+    .trim();
+
 export default {
   /**
    * An asynchronous register function that runs before
@@ -45,6 +50,10 @@ export default {
             documentId: result.metadata.executionId,
             populate: ['testCase']
           });
+
+          const expectedOutput = normalizeOutput(existing?.testCase?.output);
+          const actualOutput = normalizeOutput(result.stdout);
+
           const execution = await strapi.documents('api::execution.execution').update({
             documentId: result.metadata.executionId,
 
@@ -53,7 +62,7 @@ export default {
               stderr: result.stderr,
               executionTime: result.time,
               processed: true,
-              passed: existing.testCase.output === result.stdout,
+              passed: expectedOutput === actualOutput,
               processedAt: new Date(),
               publishedAt: new Date(),
             },

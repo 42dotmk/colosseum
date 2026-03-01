@@ -79,6 +79,19 @@ export default factories.createCoreController('api::problem.problem', ({ strapi 
 			}
 		}
 
+		if (event.end) {
+			const eventEndMs = new Date(event.end).getTime();
+			if (!Number.isNaN(eventEndMs) && eventEndMs < Date.now()) {
+				const response = await super.findOne(ctx);
+				if ((response as any)?.data) {
+					(response as any).data = sanitizeProblemTestCases((response as any).data);
+					return response;
+				}
+
+				return sanitizeProblemTestCases(response);
+			}
+		}
+
 		const registrations = await strapi.documents('api::event-registration.event-registration').findMany({
 			filters: {
 				event: {

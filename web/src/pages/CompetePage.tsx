@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -53,6 +53,10 @@ interface Submission {
   documentId: string;
   code: string;
   createdAt: string;
+  metadata?: {
+    mode?: string;
+    sourceEvent?: string;
+  };
   language: {
     documentId: string;
     name: string;
@@ -63,6 +67,7 @@ interface Submission {
 
 export default function CompetePage() {
   const { problemId } = useParams();
+  const location = useLocation();
   const { toast } = useToast();
   const [code, setCode] = useState('// Write your solution here\n');
   const [selectedLanguage, setSelectedLanguage] = useState<string>('');
@@ -77,6 +82,9 @@ export default function CompetePage() {
   const [activeTab, setActiveTab] = useState('description');
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const initialCodeLoadedRef = useRef(false);
+  const query = new URLSearchParams(location.search);
+  const isViewMode = query.get('mode') === 'view';
+  const isTrainingMode = query.get('mode') === 'training';
 
   const isExecutionPassed = (exec: Execution) => {
     if (!exec.processed) {
@@ -205,9 +213,18 @@ export default function CompetePage() {
       if (submissionsRes.ok) {
         const submissionsData = await submissionsRes.json();
         const submissionsArray = Array.isArray(submissionsData) ? submissionsData : (submissionsData.data || []);
-        setSubmissions(submissionsArray);
+        const filteredSubmissions = submissionsArray.filter((submission: Submission) => {
+          const mode = submission?.metadata?.mode;
+          if (isTrainingMode) {
+            return mode === 'practice';
+          }
 
-        const submissionsWithoutExecutions = submissionsArray.filter(
+          return mode !== 'practice';
+        });
+
+        setSubmissions(filteredSubmissions);
+
+        const submissionsWithoutExecutions = filteredSubmissions.filter(
           (submission: Submission) => !submission.executions || submission.executions.length === 0
         );
 
@@ -249,15 +266,15 @@ export default function CompetePage() {
         }
         
         // Load code from latest submission only on initial load or when explicitly requested
-        if (loadCodeFromSubmission && submissionsArray.length > 0 && submissionsArray[0].code && !initialCodeLoadedRef.current) {
-          setCode(submissionsArray[0].code);
-          if (submissionsArray[0].language?.documentId) {
-            setSelectedLanguage(submissionsArray[0].language.documentId);
+        if (loadCodeFromSubmission && filteredSubmissions.length > 0 && filteredSubmissions[0].code && !initialCodeLoadedRef.current) {
+          setCode(filteredSubmissions[0].code);
+          if (filteredSubmissions[0].language?.documentId) {
+            setSelectedLanguage(filteredSubmissions[0].language.documentId);
           }
           initialCodeLoadedRef.current = true;
         }
 
-        return submissionsArray;
+        return filteredSubmissions;
       }
 
       return [];
@@ -295,7 +312,9 @@ export default function CompetePage() {
         setLanguages(Array.isArray(languagesData) ? languagesData : (languagesData.data || []));
         
         // Fetch user's submissions and load code from latest submission
-        await fetchSubmissions(true);
+        if (!isViewMode) {
+          await fetchSubmissions(true);
+        }
       } catch (err) {
         console.error('Failed to load problem:', err);
         setError('Failed to load problem');
@@ -304,7 +323,7 @@ export default function CompetePage() {
       }
     };
     fetchData();
-  }, [problemId]);
+  }, [problemId, isViewMode, isTrainingMode]);
 
   const testCases = problem?.testCases || [];
   const publicTestCases = testCases.filter((tc: TestCase) => !tc.hidden && !tc.locked);
@@ -336,6 +355,14 @@ export default function CompetePage() {
 
   // Poll submissions for updates
   useEffect(() => {
+    if (isViewMode) {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+      }
+      return;
+    }
+
     if (submissions.length === 0) {
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
@@ -402,9 +429,17 @@ export default function CompetePage() {
         clearInterval(pollingIntervalRef.current);
       }
     };
-  }, [submissions, executionIdsBySubmission, executionOverrides, toast]);
+  }, [submissions, executionIdsBySubmission, executionOverrides, toast, isViewMode]);
 
   const handleSubmit = async () => {
+    if (isViewMode) {
+      toast({
+        title: 'View mode',
+        description: 'Submissions are disabled for this problem view.',
+      });
+      return;
+    }
+
     if (!selectedLanguage) {
       toast({
         title: 'No language selected',
@@ -431,6 +466,10 @@ export default function CompetePage() {
             problem: problemId,
             language: selectedLanguage,
             code,
+            metadata: {
+              mode: isTrainingMode ? 'practice' : 'competition',
+            },
+            mode: isTrainingMode ? 'practice' : 'competition',
           },
         }),
       });
@@ -527,7 +566,7 @@ export default function CompetePage() {
       <div className="flex items-center justify-between mb-3 pb-3 border-b">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" asChild className="-ml-2">
-            <Link to="/">
+            <Link to={isTrainingMode ? '/training' : '/'}>
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
@@ -548,12 +587,24 @@ export default function CompetePage() {
               ))}
             </SelectContent>
           </Select>
-          <Button onClick={handleSubmit} disabled={isSubmitting} size="sm">
+          <Button onClick={handleSubmit} disabled={isSubmitting || isViewMode} size="sm">
             <Play className="mr-1.5 h-3.5 w-3.5" />
-            {isSubmitting ? 'Running...' : 'Run'}
+            {isViewMode ? 'View only' : (isSubmitting ? 'Running...' : 'Run')}
           </Button>
         </div>
       </div>
+
+      {isViewMode && (
+        <div className="mb-3 rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-400">
+          This problem is opened in view mode from a past event. Submissions are disabled.
+        </div>
+      )}
+
+      {isTrainingMode && (
+        <div className="mb-3 rounded-md border border-primary/30 bg-primary/10 px-3 py-2 text-xs text-primary">
+          Training mode: submissions are treated as practice and do not affect contest leaderboard.
+        </div>
+      )}
 
       {/* Main content - two panel layout */}
       <div className="flex-1 grid grid-cols-2 gap-3 min-h-0">
@@ -564,12 +615,14 @@ export default function CompetePage() {
               <TabsList className="h-8">
                 <TabsTrigger value="description" className="text-xs px-3 h-7">Problem</TabsTrigger>
                 <TabsTrigger value="testcases" className="text-xs px-3 h-7">Tests</TabsTrigger>
-                <TabsTrigger value="results" className="text-xs px-3 h-7">
-                  Results
-                  {submissions.length > 0 && (
-                    <span className="ml-1.5 text-xs text-muted-foreground">({submissions.length})</span>
-                  )}
-                </TabsTrigger>
+                {!isViewMode && (
+                  <TabsTrigger value="results" className="text-xs px-3 h-7">
+                    Results
+                    {submissions.length > 0 && (
+                      <span className="ml-1.5 text-xs text-muted-foreground">({submissions.length})</span>
+                    )}
+                  </TabsTrigger>
+                )}
               </TabsList>
             </div>
             
@@ -614,6 +667,7 @@ export default function CompetePage() {
                 </div>
               </TabsContent>
               
+              {!isViewMode && (
               <TabsContent value="results" className="mt-0 h-full">
                 <div className="space-y-4">
                   {submissions.length === 0 ? (
@@ -767,6 +821,7 @@ export default function CompetePage() {
                   )}
                 </div>
               </TabsContent>
+              )}
             </div>
           </Tabs>
         </Card>

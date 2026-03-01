@@ -58,9 +58,13 @@ const getEventRegistrations = async (strapi: any, eventDocumentId: string) =>
   });
 
 type CompetitionBlockReason = {
-  code: 'EVENT_NOT_STARTED' | 'EVENT_REGISTRATION_REQUIRED' | 'EVENT_NOT_ELIGIBLE';
+  code: 'EVENT_NOT_STARTED' | 'EVENT_ENDED' | 'EVENT_REGISTRATION_REQUIRED' | 'EVENT_NOT_ELIGIBLE';
   message: string;
   details: Record<string, any>;
+};
+
+type CompetitionGuardOptions = {
+  allowEndedPractice?: boolean;
 };
 
 const isUserRegisteredForEvent = (registrations: any[], user: any) =>
@@ -79,7 +83,12 @@ const isUserRegisteredForEvent = (registrations: any[], user: any) =>
     return registrationIdentifiers.some((identifier) => userIdentifiers.includes(identifier));
   });
 
-const getCompetitionBlockReason = async (strapi: any, user: any, event: any) => {
+const getCompetitionBlockReason = async (
+  strapi: any,
+  user: any,
+  event: any,
+  options: CompetitionGuardOptions = {},
+) => {
   if (!event?.documentId || !user) {
     return {
       code: 'EVENT_REGISTRATION_REQUIRED',
@@ -99,6 +108,25 @@ const getCompetitionBlockReason = async (strapi: any, user: any, event: any) => 
         details: {
           eventDocumentId: event.documentId,
           eventStart: event.start,
+          now: new Date().toISOString(),
+        },
+      } as CompetitionBlockReason;
+    }
+  }
+
+  if (event.end) {
+    const eventEndMs = new Date(event.end).getTime();
+    if (!Number.isNaN(eventEndMs) && eventEndMs < Date.now()) {
+      if (options.allowEndedPractice) {
+        return null;
+      }
+
+      return {
+        code: 'EVENT_ENDED',
+        message: 'Event has ended. Submissions are disabled.',
+        details: {
+          eventDocumentId: event.documentId,
+          eventEnd: event.end,
           now: new Date().toISOString(),
         },
       } as CompetitionBlockReason;
@@ -349,13 +377,23 @@ export default factories.createCoreController('api::submission.submission', ({ s
       return ctx.badRequest('Problem is not linked to an event');
     }
 
-    const blockReason = await getCompetitionBlockReason(strapi, user, problem.event);
-    if (blockReason) {
-      respondForbiddenWithReason(ctx, blockReason);
-      return;
-    }
-
     const payload = ctx.request.body?.data || {};
+    const isPracticeSubmission =
+      payload?.mode === 'practice' ||
+      payload?.metadata?.mode === 'practice';
+
+    if (isPracticeSubmission) {
+      const eventEndMs = problem.event?.end ? new Date(problem.event.end).getTime() : Number.NaN;
+      if (Number.isNaN(eventEndMs) || eventEndMs > Date.now()) {
+        return ctx.forbidden('Practice mode is available only for ended events');
+      }
+    } else {
+      const blockReason = await getCompetitionBlockReason(strapi, user, problem.event);
+      if (blockReason) {
+        respondForbiddenWithReason(ctx, blockReason);
+        return;
+      }
+    }
 
     const createdSubmission = await strapi.documents('api::submission.submission').create({
       data: {
@@ -363,7 +401,12 @@ export default factories.createCoreController('api::submission.submission', ({ s
         language: payload.language,
         problem: problemId,
         user: user.documentId || user.id,
-        event: problem.event.documentId,
+        event: isPracticeSubmission ? null : problem.event.documentId,
+        metadata: {
+          ...(payload.metadata || {}),
+          mode: isPracticeSubmission ? 'practice' : (payload?.metadata?.mode || 'competition'),
+          sourceEvent: problem.event.documentId,
+        },
         publishedAt: new Date(),
       },
       status: 'published',
@@ -410,10 +453,14 @@ export default factories.createCoreController('api::submission.submission', ({ s
         }
       });
 
-      const blockReason = await getCompetitionBlockReason(strapi, user, submission.problem?.event);
-      if (blockReason) {
-        respondForbiddenWithReason(ctx, blockReason);
-        return;
+      const submissionMode = (submission?.metadata as any)?.mode;
+      const isPracticeSubmission = submissionMode === 'practice';
+      if (!isPracticeSubmission) {
+        const blockReason = await getCompetitionBlockReason(strapi, user, submission.problem?.event);
+        if (blockReason) {
+          respondForbiddenWithReason(ctx, blockReason);
+          return;
+        }
       }
 
       const executionsToQueue: { testCase: any, execution: any }[] = [];

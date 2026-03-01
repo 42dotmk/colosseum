@@ -10,6 +10,8 @@ import EventsPage from '@/pages/EventsPage';
 import EventDetailPage from '@/pages/EventDetailPage';
 import CompetePage from '@/pages/CompetePage';
 import ProfilePage from '@/pages/ProfilePage';
+import TrainingPage from '@/pages/TrainingPage';
+import TrainingLeaderboardPage from '@/pages/TrainingLeaderboardPage';
 
 function App() {
   useEffect(() => {
@@ -62,6 +64,26 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <ProfilePage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/training"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <TrainingPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/training/leaderboard"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <TrainingLeaderboardPage />
                 </Layout>
               </ProtectedRoute>
             }
