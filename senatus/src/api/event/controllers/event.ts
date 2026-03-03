@@ -42,6 +42,9 @@ type ProblemLike = {
 type SubmissionLike = {
 	documentId: string;
 	createdAt?: string;
+	metadata?: {
+		mode?: string;
+	};
 	user?: {
 		documentId: string;
 		username?: string;
@@ -51,6 +54,11 @@ type SubmissionLike = {
 		documentId: string;
 	};
 	executions?: ExecutionLike[];
+};
+
+type TrainingProblemLike = {
+	documentId: string;
+	testCases?: TestCaseLike[];
 };
 
 type EventRegistrationLike = {
@@ -510,6 +518,214 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
 		};
 	},
 
+	async trainingLeaderboard(ctx) {
+		const user = await getCurrentUser(strapi, ctx);
+		if (!user) {
+			return ctx.unauthorized('Authentication required');
+		}
+
+		const now = Date.now();
+
+		const endedEvents = await strapi.documents('api::event.event').findMany({
+			filters: {
+				end: {
+					$lt: new Date(now).toISOString(),
+				},
+			},
+			populate: {
+				problems: {
+					populate: {
+						testCases: true,
+					},
+				},
+			},
+			pagination: {
+				page: 1,
+				pageSize: 10000,
+			},
+		});
+
+		const trainingProblems = ((endedEvents || []) as any[])
+			.flatMap((event) => event.problems || [])
+			.filter((problem: any) => !!problem?.documentId) as TrainingProblemLike[];
+
+		const uniqueProblems = Array.from(
+			new Map(trainingProblems.map((problem) => [problem.documentId, problem])).values(),
+		);
+
+		const eligibleProblemIds = uniqueProblems
+			.filter((problem) => (problem.testCases || []).some((testCase) => !testCase.hidden && !testCase.locked))
+			.map((problem) => problem.documentId);
+
+		if (eligibleProblemIds.length === 0) {
+			ctx.body = {
+				totals: {
+					problems: 0,
+				},
+				leaderboard: [],
+			};
+			return;
+		}
+
+		const submissions = (await strapi.documents('api::submission.submission').findMany({
+			filters: {
+				problem: {
+					documentId: {
+						$in: eligibleProblemIds,
+					},
+				},
+			},
+			populate: ['user', 'problem', 'executions', 'executions.testCase'],
+			pagination: {
+				page: 1,
+				pageSize: 10000,
+			},
+			sort: 'createdAt:asc',
+		})) as SubmissionLike[];
+
+		const practiceSubmissions = (submissions || []).filter(
+			(submission) => submission?.metadata?.mode === 'practice',
+		);
+
+		const problemById = new Map(uniqueProblems.map((problem) => [problem.documentId, problem]));
+		const usersById = new Map<string, { documentId: string; username?: string; email?: string }>();
+
+		const byUserProblem = new Map<string, {
+			solved: boolean;
+			time: number;
+			createdAtTs: number;
+		}>();
+
+		for (const submission of practiceSubmissions) {
+			if (!submission.user?.documentId || !submission.problem?.documentId) {
+				continue;
+			}
+
+			usersById.set(submission.user.documentId, submission.user);
+
+			const problem = problemById.get(submission.problem.documentId);
+			if (!problem) {
+				continue;
+			}
+
+			const scopedCases = (problem.testCases || []).filter((testCase) => !testCase.hidden && !testCase.locked);
+			if (scopedCases.length === 0) {
+				continue;
+			}
+
+			const executionMap = new Map(
+				(submission.executions || [])
+					.filter((execution) => execution.testCase?.documentId)
+					.map((execution) => [execution.testCase!.documentId, execution]),
+			);
+
+			let solved = true;
+			let totalTime = 0;
+
+			for (const testCase of scopedCases) {
+				const execution = executionMap.get(testCase.documentId);
+				if (!execution || !isExecutionPassed(execution)) {
+					solved = false;
+					break;
+				}
+
+				if (typeof execution.executionTime === 'number' && execution.executionTime >= 0) {
+					totalTime += execution.executionTime;
+				}
+			}
+
+			const createdAtTs = submission.createdAt
+				? new Date(submission.createdAt).getTime()
+				: Number.MAX_SAFE_INTEGER;
+
+			const key = `${submission.user.documentId}::${submission.problem.documentId}`;
+			const existing = byUserProblem.get(key);
+
+			if (!existing) {
+				byUserProblem.set(key, {
+					solved,
+					time: totalTime,
+					createdAtTs,
+				});
+				continue;
+			}
+
+			if (solved && !existing.solved) {
+				byUserProblem.set(key, {
+					solved: true,
+					time: totalTime,
+					createdAtTs,
+				});
+				continue;
+			}
+
+			if (solved && existing.solved) {
+				const shouldReplace =
+					totalTime < existing.time ||
+					(totalTime === existing.time && createdAtTs < existing.createdAtTs);
+
+				if (shouldReplace) {
+					byUserProblem.set(key, {
+						solved: true,
+						time: totalTime,
+						createdAtTs,
+					});
+				}
+			}
+		}
+
+		const rows = new Map<string, {
+			user: { documentId: string; username?: string; email?: string; displayName: string };
+			solvedCount: number;
+			totalTime: number;
+		}>();
+
+		for (const [key, result] of byUserProblem.entries()) {
+			if (!result.solved) {
+				continue;
+			}
+
+			const [userId] = key.split('::');
+			const userRecord = usersById.get(userId);
+			const displayName = userRecord?.username || userRecord?.email || `user-${userId.slice(0, 8)}`;
+
+			if (!rows.has(userId)) {
+				rows.set(userId, {
+					user: {
+						documentId: userId,
+						username: userRecord?.username,
+						email: userRecord?.email,
+						displayName,
+					},
+					solvedCount: 0,
+					totalTime: 0,
+				});
+			}
+
+			const row = rows.get(userId)!;
+			row.solvedCount += 1;
+			row.totalTime += result.time;
+		}
+
+		const leaderboard = Array.from(rows.values())
+			.sort((a, b) => {
+				if (b.solvedCount !== a.solvedCount) return b.solvedCount - a.solvedCount;
+				if (a.totalTime !== b.totalTime) return a.totalTime - b.totalTime;
+				return a.user.displayName.localeCompare(b.user.displayName);
+			})
+			.map((row, index) => ({
+				rank: index + 1,
+				...row,
+			}));
+
+		ctx.body = {
+			totals: {
+				problems: eligibleProblemIds.length,
+			},
+			leaderboard,
+		};
+	},
+
 	async leaderboard(ctx) {
 		const eventId = ctx.params.id as string;
 
@@ -603,6 +819,10 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
 		}>();
 
 		for (const submission of submissions) {
+			if (submission?.metadata?.mode === 'practice') {
+				continue;
+			}
+
 			if (!submission.user?.documentId || !submission.problem?.documentId) {
 				continue;
 			}
