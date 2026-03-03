@@ -185,6 +185,23 @@ const respondForbiddenWithReason = (ctx: any, reason: CompetitionBlockReason) =>
   };
 };
 
+const respondInteractiveNotSupported = (ctx: any, problem: any) => {
+  ctx.status = 400;
+  ctx.body = {
+    error: {
+      status: 400,
+      name: 'ValidationError',
+      message: 'Interactive problem execution is not available yet',
+      details: {
+        code: 'INTERACTIVE_NOT_SUPPORTED',
+        problemDocumentId: problem?.documentId || null,
+      },
+    },
+  };
+};
+
+const isInteractiveProblem = (problem: any) => !!(problem as any)?.isInteractive;
+
 const isOwnedByUser = (owner: any, user: any) => {
   if (!owner || !user) {
     return false;
@@ -447,16 +464,25 @@ export default factories.createCoreController('api::submission.submission', ({ s
         return ctx.notFound('Submission not found');
       }
 
+      const problem = await strapi.documents('api::problem.problem').findOne({
+        documentId: submission?.problem?.documentId,
+        populate: ['event'],
+      });
+
+      if (!problem) {
+        return ctx.badRequest('Problem not found for this submission');
+      }
+
       const testCases = await strapi.documents('api::test-case.test-case').findMany({
         filters: {
-          problem: { documentId: submission.problem.documentId as any },
+          problem: { documentId: problem.documentId as any },
         }
       });
 
       const submissionMode = (submission?.metadata as any)?.mode;
       const isPracticeSubmission = submissionMode === 'practice';
       if (!isPracticeSubmission) {
-        const blockReason = await getCompetitionBlockReason(strapi, user, submission.problem?.event);
+        const blockReason = await getCompetitionBlockReason(strapi, user, problem?.event);
         if (blockReason) {
           respondForbiddenWithReason(ctx, blockReason);
           return;
@@ -502,6 +528,11 @@ export default factories.createCoreController('api::submission.submission', ({ s
         options: {
           language: submission.language.codeName,
           entrypointFile: submission.language.entrypoint,
+          ...(isInteractiveProblem(problem) ? {
+            interactive: '1',
+            interactorSource: (problem as any).interactorSource || '',
+            checkerSource: (problem as any).checkerSource || '',
+          } : {}),
         },
         metadata: {
           submissionId: submission.documentId,

@@ -61,6 +61,16 @@
       ],
       "default": "public_only_live"
     },
+    "isInteractive": {
+      "type": "boolean",
+      "default": false
+    },
+    "interactorSource": {
+      "type": "text"
+    },
+    "checkerSource": {
+      "type": "text"
+    },
     "slug": {
       "type": "uid",
       "pluginOptions": {

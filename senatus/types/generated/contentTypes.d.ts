@@ -666,6 +666,7 @@ export interface ApiProblemProblem extends Struct.CollectionTypeSchema {
     };
   };
   attributes: {
+    checkerSource: Schema.Attribute.Text;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -676,6 +677,8 @@ export interface ApiProblemProblem extends Struct.CollectionTypeSchema {
         };
       }>;
     event: Schema.Attribute.Relation<'manyToOne', 'api::event.event'>;
+    interactorSource: Schema.Attribute.Text;
+    isInteractive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     isSnapshot: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     leaderboardVisibilityMode: Schema.Attribute.Enumeration<
       ['public_only_live', 'full_live']

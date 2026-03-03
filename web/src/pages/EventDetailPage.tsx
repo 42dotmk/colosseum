@@ -17,6 +17,9 @@ interface Problem {
   slug: string;
   difficulty?: string;
   points: number;
+  isInteractive?: boolean;
+  interactorSource?: string;
+  checkerSource?: string;
   leaderboardVisibilityMode?: 'public_only_live' | 'full_live';
   testCases?: any[];
 }
@@ -460,8 +463,10 @@ export default function EventDetailPage() {
 
           const mode = problem.leaderboardVisibilityMode || 'public_only_live';
           const shouldUseInLiveStatus = (testCase?: { hidden?: boolean; locked?: boolean }) => {
+            // Some interactive execution payloads can miss testCase relation in this
+            // endpoint. Treat them as visible fallback so solved statuses are counted.
             if (!testCase) {
-              return false;
+              return true;
             }
 
             if (eventEnded || mode === 'full_live') {
@@ -471,15 +476,14 @@ export default function EventDetailPage() {
             return !testCase.hidden && !testCase.locked;
           };
 
+          const scopedCountFromProblem = (problem.testCases || []).filter((testCase: any) =>
+            shouldUseInLiveStatus(testCase)
+          ).length;
           const scopedExecutionResults = (latestSubmission.executions || []).filter(
             (execution) => shouldUseInLiveStatus(execution.testCase),
           );
 
-          const scopedCountFromProblem = (problem.testCases || []).filter((testCase: any) =>
-            shouldUseInLiveStatus(testCase)
-          ).length;
           const visibleCount = scopedCountFromProblem || scopedExecutionResults.length;
-
           const passedCount = scopedExecutionResults.filter((execution) => isExecutionPassed(execution)).length;
 
           if (visibleCount <= 0) {
@@ -682,6 +686,11 @@ export default function EventDetailPage() {
                         >
                           {problem.title}
                         </Link>
+                        {problem.isInteractive && (
+                          <Badge variant="secondary" className="ml-2 h-5 text-[10px]">
+                            Interactive
+                          </Badge>
+                        )}
                         {problem.testCases && (
                           <span className="text-xs text-muted-foreground ml-2">
                             {problem.testCases.length} tests

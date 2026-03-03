@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2026-03-01T15:32:59.378Z"
+    "x-generation-date": "2026-03-01T17:24:56.432Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -6841,6 +6841,15 @@
                     "full_live"
                   ]
                 },
+                "isInteractive": {
+                  "type": "boolean"
+                },
+                "interactorSource": {
+                  "type": "string"
+                },
+                "checkerSource": {
+                  "type": "string"
+                },
                 "slug": {
                   "type": "string"
                 },
@@ -8118,6 +8127,15 @@
                         "public_only_live",
                         "full_live"
                       ]
+                    },
+                    "isInteractive": {
+                      "type": "boolean"
+                    },
+                    "interactorSource": {
+                      "type": "string"
+                    },
+                    "checkerSource": {
+                      "type": "string"
                     },
                     "slug": {
                       "type": "string"
@@ -9670,6 +9688,15 @@
                         "full_live"
                       ]
                     },
+                    "isInteractive": {
+                      "type": "boolean"
+                    },
+                    "interactorSource": {
+                      "type": "string"
+                    },
+                    "checkerSource": {
+                      "type": "string"
+                    },
                     "slug": {
                       "type": "string"
                     },
@@ -10630,6 +10657,15 @@
                       "public_only_live",
                       "full_live"
                     ]
+                  },
+                  "isInteractive": {
+                    "type": "boolean"
+                  },
+                  "interactorSource": {
+                    "type": "string"
+                  },
+                  "checkerSource": {
+                    "type": "string"
                   },
                   "slug": {
                     "type": "string"
@@ -12398,6 +12434,15 @@
                   "full_live"
                 ]
               },
+              "isInteractive": {
+                "type": "boolean"
+              },
+              "interactorSource": {
+                "type": "string"
+              },
+              "checkerSource": {
+                "type": "string"
+              },
               "slug": {
                 "type": "string"
               },
@@ -12599,6 +12644,15 @@
                         "public_only_live",
                         "full_live"
                       ]
+                    },
+                    "isInteractive": {
+                      "type": "boolean"
+                    },
+                    "interactorSource": {
+                      "type": "string"
+                    },
+                    "checkerSource": {
+                      "type": "string"
                     },
                     "slug": {
                       "type": "string"
@@ -12950,6 +13004,15 @@
               "public_only_live",
               "full_live"
             ]
+          },
+          "isInteractive": {
+            "type": "boolean"
+          },
+          "interactorSource": {
+            "type": "string"
+          },
+          "checkerSource": {
+            "type": "string"
           },
           "slug": {
             "type": "string"
@@ -13896,6 +13959,15 @@
                         "public_only_live",
                         "full_live"
                       ]
+                    },
+                    "isInteractive": {
+                      "type": "boolean"
+                    },
+                    "interactorSource": {
+                      "type": "string"
+                    },
+                    "checkerSource": {
+                      "type": "string"
                     },
                     "slug": {
                       "type": "string"
@@ -15190,6 +15262,15 @@
                   "public_only_live",
                   "full_live"
                 ]
+              },
+              "isInteractive": {
+                "type": "boolean"
+              },
+              "interactorSource": {
+                "type": "string"
+              },
+              "checkerSource": {
+                "type": "string"
               },
               "slug": {
                 "type": "string"
@@ -16657,6 +16738,15 @@
                   "public_only_live",
                   "full_live"
                 ]
+              },
+              "isInteractive": {
+                "type": "boolean"
+              },
+              "interactorSource": {
+                "type": "string"
+              },
+              "checkerSource": {
+                "type": "string"
               },
               "slug": {
                 "type": "string"
