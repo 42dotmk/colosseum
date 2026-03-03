@@ -75,6 +75,24 @@ type EventLike = {
 	problems?: ProblemLike[];
 };
 
+type EventQuestionLike = {
+	documentId: string;
+	question?: string;
+	answer?: string;
+	answeredAt?: string;
+	createdAt?: string;
+	user?: {
+		documentId?: string;
+		username?: string;
+		email?: string;
+	};
+	answeredBy?: {
+		documentId?: string;
+		username?: string;
+		email?: string;
+	};
+};
+
 const DEFAULT_POINTS = 100;
 
 const getSafeWeight = (value?: number) =>
@@ -369,6 +387,126 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
 		ctx.body = {
 			ok: true,
 			alreadyRegistered: false,
+		};
+	},
+
+	async questions(ctx) {
+		const eventId = ctx.params.id as string;
+		if (!eventId) {
+			return ctx.badRequest('Missing event id');
+		}
+
+		const user = await getCurrentUser(strapi, ctx);
+		if (!user) {
+			return ctx.unauthorized('Authentication required');
+		}
+
+		const event = (await strapi.documents('api::event.event').findOne({
+			documentId: eventId,
+		})) as EventLike | null;
+
+		if (!event) {
+			return ctx.notFound('Event not found');
+		}
+
+		const visible = await ensureEventIsVisibleForUser(strapi, event, user);
+		if (!visible) {
+			return ctx.notFound('Event not found');
+		}
+
+		const records = (await strapi.documents('api::event-question.event-question').findMany({
+			filters: {
+				event: {
+					documentId: event.documentId,
+				},
+				answer: {
+					$notNull: true,
+				},
+			},
+			populate: ['user', 'answeredBy'],
+			sort: ['answeredAt:desc', 'createdAt:desc'],
+			pagination: {
+				page: 1,
+				pageSize: 10000,
+			},
+		})) as EventQuestionLike[];
+
+		ctx.body = {
+			data: (records || []).map((record) => ({
+				documentId: record.documentId,
+				question: record.question || '',
+				answer: record.answer || '',
+				answeredAt: record.answeredAt || record.createdAt,
+				askedBy: {
+					documentId: record.user?.documentId,
+					displayName: record.user?.username || record.user?.email || 'participant',
+				},
+				answeredBy: {
+					documentId: record.answeredBy?.documentId,
+					displayName: record.answeredBy?.username || record.answeredBy?.email || 'organizer',
+				},
+			})),
+		};
+	},
+
+	async askQuestion(ctx) {
+		const eventId = ctx.params.id as string;
+		if (!eventId) {
+			return ctx.badRequest('Missing event id');
+		}
+
+		const user = await getCurrentUser(strapi, ctx);
+		if (!user) {
+			return ctx.unauthorized('Authentication required');
+		}
+
+		const event = (await strapi.documents('api::event.event').findOne({
+			documentId: eventId,
+		})) as EventLike | null;
+
+		if (!event) {
+			return ctx.notFound('Event not found');
+		}
+
+		const visible = await ensureEventIsVisibleForUser(strapi, event, user);
+		if (!visible) {
+			return ctx.notFound('Event not found');
+		}
+
+		const registrations = await getEventRegistrations(strapi, event.documentId);
+		if (!isUserRegisteredForEvent(registrations, user)) {
+			return ctx.forbidden('You must register for this event before posting questions');
+		}
+
+		const rawQuestion =
+			ctx.request.body?.data?.question ||
+			ctx.request.body?.question ||
+			'';
+		const question = String(rawQuestion).trim();
+
+		if (!question) {
+			return ctx.badRequest('Question is required');
+		}
+
+		if (question.length > 2000) {
+			return ctx.badRequest('Question is too long');
+		}
+
+		const created = await strapi.documents('api::event-question.event-question').create({
+			data: {
+				question,
+				event: event.documentId,
+				user: user.documentId || user.id,
+			},
+		});
+
+		ctx.body = {
+			data: {
+				documentId: created.documentId,
+				question: created.question,
+				createdAt: created.createdAt,
+				status: 'pending_answer',
+			},
 		};
 	},
 
