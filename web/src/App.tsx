@@ -9,6 +9,7 @@ import RegisterPage from '@/pages/RegisterPage';
 import EventsPage from '@/pages/EventsPage';
 import EventDetailPage from '@/pages/EventDetailPage';
 import CompetePage from '@/pages/CompetePage';
+import ProfilePage from '@/pages/ProfilePage';
 
 function App() {
   useEffect(() => {
@@ -51,6 +52,16 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <CompetePage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ProfilePage />
                 </Layout>
               </ProtectedRoute>
             }

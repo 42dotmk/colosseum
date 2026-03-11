@@ -23,9 +23,11 @@ type TestCaseLike = {
 type ExecutionLike = {
 	processed?: boolean;
 	passed?: boolean;
+	stdout?: string;
 	executionTime?: number;
 	testCase?: {
 		documentId: string;
+		output?: string;
 	};
 };
 
@@ -79,6 +81,20 @@ const getSafeWeight = (value?: number) =>
 	typeof value === 'number' && value > 0 ? value : 1;
 
 const round2 = (value: number) => Math.round(value * 100) / 100;
+
+const isExecutionPassed = (execution?: ExecutionLike) => {
+	if (!execution?.processed) {
+		return false;
+	}
+
+	if (typeof execution.passed === 'boolean') {
+		return execution.passed;
+	}
+
+	const stdout = (execution.stdout || '').trim();
+	const expected = (execution.testCase?.output || '').trim();
+	return stdout.length > 0 && stdout === expected;
+};
 
 const shouldUseTestCaseInLiveScore = (
 	problem: ProblemLike,
@@ -484,7 +500,7 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
 
 				const testWeight = getSafeWeight(testCase.weight);
 
-				if (execution.passed) {
+				if (isExecutionPassed(execution)) {
 					passedWeight += testWeight;
 				}
 
@@ -502,10 +518,7 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
 			const existing = bestByUserProblem.get(key);
 
 			const shouldReplace =
-				!existing ||
-				score > existing.score ||
-				(score === existing.score && totalExecutionTime < existing.time) ||
-				(score === existing.score && totalExecutionTime === existing.time && createdAtTs < existing.createdAtTs);
+				!existing || createdAtTs >= existing.createdAtTs;
 
 			if (shouldReplace) {
 				bestByUserProblem.set(key, {
