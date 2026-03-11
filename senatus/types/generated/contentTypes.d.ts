@@ -600,6 +600,14 @@ export interface ApiProblemProblem extends Struct.CollectionTypeSchema {
       'oneToMany',
       'api::problem.problem'
     >;
+    points: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<100>;
     publishedAt: Schema.Attribute.DateTime;
     slug: Schema.Attribute.UID<'title'> &
       Schema.Attribute.SetPluginOptions<{

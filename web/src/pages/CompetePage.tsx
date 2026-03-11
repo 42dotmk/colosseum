@@ -17,6 +17,7 @@ interface Problem {
   title: string;
   description: string;
   slug: string;
+  points: number;
   testCases?: TestCase[];
   starterCodes?: any[];
 }

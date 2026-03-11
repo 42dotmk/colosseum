@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2026-01-25T23:15:56.165Z"
+    "x-generation-date": "2026-03-01T08:55:38.021Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -5287,6 +5287,9 @@
                 "title": {
                   "type": "string"
                 },
+                "points": {
+                  "type": "integer"
+                },
                 "slug": {
                   "type": "string"
                 },
@@ -6278,6 +6281,9 @@
                   },
                   "title": {
                     "type": "string"
+                  },
+                  "points": {
+                    "type": "integer"
                   },
                   "slug": {
                     "type": "string"
@@ -8002,6 +8008,9 @@
               "title": {
                 "type": "string"
               },
+              "points": {
+                "type": "integer"
+              },
               "slug": {
                 "type": "string"
               },
@@ -8179,6 +8188,9 @@
                     },
                     "title": {
                       "type": "string"
+                    },
+                    "points": {
+                      "type": "integer"
                     },
                     "slug": {
                       "type": "string"
@@ -8486,6 +8498,9 @@
           },
           "title": {
             "type": "string"
+          },
+          "points": {
+            "type": "integer"
           },
           "slug": {
             "type": "string"
@@ -9388,6 +9403,9 @@
                     },
                     "title": {
                       "type": "string"
+                    },
+                    "points": {
+                      "type": "integer"
                     },
                     "slug": {
                       "type": "string"
@@ -10651,6 +10669,9 @@
               },
               "title": {
                 "type": "string"
+              },
+              "points": {
+                "type": "integer"
               },
               "slug": {
                 "type": "string"
