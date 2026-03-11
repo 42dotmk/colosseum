@@ -24,6 +24,20 @@ const ENABLE_NETWORK_IN_EXECUTION = process.env.ENABLE_NETWORK_IN_EXECUTION === 
 const IMAGE_BASE = process.env.IMAGE_BASE || 'ghcr.io/42dotmk/colosseum-executioner-';
 const WORKDIR = process.env.WORKDIR || '_work';
 
+const normalizeRuntimeLanguage = (language: string) => {
+  if (!language) {
+    return language;
+  }
+
+  const normalized = language.toLowerCase();
+
+  if (normalized === 'cpp' || normalized === 'c++' || normalized === 'cxx') {
+    return 'gcc';
+  }
+
+  return normalized;
+};
+
 if (!fs.existsSync(WORKDIR)) {
   fs.mkdirSync(WORKDIR);
 }
@@ -56,7 +70,7 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
   const srcDir = path.resolve(path.join(subWorkspace, "src"));
   const inputDir = path.resolve(path.join(subWorkspace, "input"));
   const outputDir = path.resolve(path.join(subWorkspace, "output"));
-  const lang = options.language;
+  const lang = normalizeRuntimeLanguage(options.language);
 
   if (!fs.existsSync(subWorkspace)) {
     fs.mkdirSync(subWorkspace);
@@ -146,23 +160,33 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
       const child = cp.spawn('docker', args);
       console.log(child.spawnargs.join(' '))
 
-      let stdout = '';
-      let stderr = '';
+      let runtimeStdout = '';
+      let runtimeStderr = '';
+      let spawnError: string | null = null;
 
       child.stdout.on('data', (data) => {
         console.log(`stdout: ${data}`);
-        stdout += data;
+        runtimeStdout += data;
       });
 
       child.stderr.on('data', (data) => {
         console.error(`stderr: ${data}`);
-        stderr += data;
+        runtimeStderr += data;
+      });
+
+      child.on('error', (err) => {
+        spawnError = err instanceof Error ? err.message : String(err);
+        console.error(`docker spawn error: ${spawnError}`);
       });
 
       child.on('close', async (code) => {
         console.log(`child process exited with code ${code}`);
 
         const output = [];
+        const dockerErrorDetails = [spawnError, runtimeStderr.trim(), runtimeStdout.trim()]
+          .filter(Boolean)
+          .join("\n")
+          .trim();
 
         for (const inp of input) {
           const stdoutPath = path.resolve(path.join(outputDir, `${inp.filename}.stdout`));
@@ -170,7 +194,14 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
           const timePath = path.resolve(path.join(outputDir, `${inp.filename}.time`));
           const stdout = await readIfExists(stdoutPath);
           
-          const stderr = await readIfExists(stderrPath);
+          let stderr = await readIfExists(stderrPath);
+
+          if (!stdout && !stderr && code !== 0) {
+            stderr = dockerErrorDetails
+              ? `Execution runtime failed (exit code ${code}):\n${dockerErrorDetails}`
+              : `Execution runtime failed (exit code ${code})`;
+          }
+
           const time = await readIfExists(timePath);
 
           let parsedTime = null;

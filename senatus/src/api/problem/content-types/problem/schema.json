@@ -53,6 +53,14 @@
       "default": 100,
       "min": 0
     },
+    "leaderboardVisibilityMode": {
+      "type": "enumeration",
+      "enum": [
+        "public_only_live",
+        "full_live"
+      ],
+      "default": "public_only_live"
+    },
     "slug": {
       "type": "uid",
       "pluginOptions": {
@@ -67,6 +75,15 @@
       "relation": "manyToOne",
       "target": "api::event.event",
       "inversedBy": "problems"
+    },
+    "isSnapshot": {
+      "type": "boolean",
+      "default": false
+    },
+    "snapshotSource": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::problem.problem"
     }
   }
 }
