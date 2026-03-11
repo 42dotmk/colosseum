@@ -8,7 +8,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
   senatus:
-    image: ghcr.io/42dotmk/colosseum-senatus:latest
+    image: ghcr.io/42dotmk/colosseum-senatus:${IMAGE_TAG:-latest}
     environment:
       DATABASE_HOST: ${DATABASE_HOST}
       DATABASE_CLIENT: ${DATABASE_CLIENT}
@@ -28,7 +28,7 @@ services:
     volumes:
       - strapi_uploads:/app/public/uploads
   client:
-    image: ghcr.io/42dotmk/colosseum-client-prod:latest
+    image: ghcr.io/42dotmk/colosseum-client-prod:${IMAGE_TAG:-latest}
     ports:
       - 3333:80
 
