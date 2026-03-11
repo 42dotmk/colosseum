@@ -9,7 +9,6 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
     paths:
-      - 'client/**'
       - 'senatus/**'
       - 'executioner/**'
       - 'web/**'
@@ -23,7 +22,6 @@ jobs:
     name: Find modified files
     runs-on: ubuntu-latest
     outputs:
-      client: ${{ steps.changes.outputs.client }}
       web: ${{ steps.changes.outputs.web }}
       senatus: ${{ steps.changes.outputs.senatus }}
       executioner: ${{ steps.changes.outputs.executioner }}
@@ -46,8 +44,6 @@ jobs:
         uses: dorny/paths-filter@v3.0.1
         with:
           filters: |
-            client:
-              - 'client/**'
             web:
               - 'web/**'
             senatus:
@@ -79,17 +75,6 @@ jobs:
       docker-file-path: ./senatus/Dockerfile
       image-name: ghcr.io/42dotmk/colosseum-senatus
       docker-tags: ghcr.io/42dotmk/colosseum-senatus:latest
-
-  client:
-    name: Client
-    needs: find_modified_files
-    uses: ./.github/workflows/build-push-docker-image.yml
-    if: needs.find_modified_files.outputs.client == 'true'
-    with:
-      docker-context: ./client
-      docker-file-path: ./client/Dockerfile
-      image-name: ghcr.io/42dotmk/colosseum-client-prod
-      docker-tags: ghcr.io/42dotmk/colosseum-client-prod:latest
 
   web:
     name: Web (Production)
