@@ -253,6 +253,24 @@ const sanitizeSubmissionCollectionResponse = (response: any) => {
   return sanitizeSubmissionForParticipant(response);
 };
 
+// Resolves ctx.request.body.data.language to a documentId in-place.
+// Accepts codeName ("gcc"), documentId string, or numeric id.
+const resolveLanguageInBody = async (ctx: any, strapi: any) => {
+  const payload = ctx.request.body?.data;
+  if (!payload?.language) return;
+
+  const isNumericId = !isNaN(Number(payload.language));
+  const lang = await strapi.documents('api::language.language').findFirst({
+    filters: isNumericId
+      ? { id: Number(payload.language) }
+      : { codeName: payload.language },
+  });
+  if (lang) {
+    payload.language = lang.documentId;
+  }
+  // If not found by codeName/id, leave as-is (may already be a documentId).
+};
+
 export default factories.createCoreController('api::submission.submission', ({ strapi }) => ({
   async find(ctx) {
     const user = await getCurrentUser(strapi, ctx);
@@ -341,6 +359,41 @@ export default factories.createCoreController('api::submission.submission', ({ s
     return sanitizeSubmissionCollectionResponse(response);
   },
 
+  async update(ctx) {
+    await resolveLanguageInBody(ctx, strapi);
+    const payload = ctx.request.body?.data || {};
+
+    // metadata is a JSON column — wrap plain strings so Postgres accepts them.
+    if (typeof payload.metadata === 'string') {
+      payload.metadata = JSON.stringify(payload.metadata);
+    }
+
+    // ctx.params.id may be numeric (legacy) or a documentId
+    const id = ctx.params.id;
+    let documentId: string;
+    if (!isNaN(Number(id))) {
+      const row = await strapi.db
+        .query('api::submission.submission')
+        .findOne({
+          where: { id: Number(id) },
+          select: ['documentId'],
+        });
+      if (!row) {
+        return ctx.notFound('Submission not found');
+      }
+      documentId = row.documentId;
+    } else {
+      documentId = id;
+    }
+
+    const updated = await strapi.documents('api::submission.submission').update({
+      documentId,
+      data: payload,
+    });
+
+    ctx.body = { data: updated, meta: {} };
+  },
+
   async create(ctx) {
 
     const user = await getCurrentUser(strapi, ctx);
@@ -371,10 +424,18 @@ export default factories.createCoreController('api::submission.submission', ({ s
 
     const payload = ctx.request.body?.data || {};
 
+    // Resolve payload.language to a documentId for the Strapi v5 Document Service.
+    // Accepts: codeName string ("gcc"), documentId string, or numeric id.
+    await resolveLanguageInBody(ctx, strapi);
+    const languageDocumentId: string | undefined = payload.language;
+    if (!languageDocumentId) {
+      return ctx.badRequest('Language is required');
+    }
+
     const createdSubmission = await strapi.documents('api::submission.submission').create({
       data: {
         code: payload.code,
-        language: payload.language,
+        language: languageDocumentId,
         problem: problemId,
         user: user.documentId || user.id,
         event: problem.event.documentId,
@@ -404,10 +465,27 @@ export default factories.createCoreController('api::submission.submission', ({ s
         return;
       }
 
-      const submission = await strapi.documents('api::submission.submission').findOne({
-        documentId: id,
-        populate: ['user', 'problem', 'problem.event', 'language']
-      });
+      // Accept either a documentId (string) or numeric id.
+      let submission: any = null;
+      if (!isNaN(Number(id))) {
+        const row = await strapi.db
+          .query('api::submission.submission')
+          .findOne({
+            where: { id: Number(id) },
+            select: ['documentId'],
+          });
+        if (row) {
+          submission = await strapi.documents('api::submission.submission').findOne({
+            documentId: row.documentId,
+            populate: ['user', 'problem', 'problem.event', 'language'],
+          });
+        }
+      } else {
+        submission = await strapi.documents('api::submission.submission').findOne({
+          documentId: id,
+          populate: ['user', 'problem', 'problem.event', 'language'],
+        });
+      }
 
       if (!submission) {
         ctx.body = { error: 'Submission not found' };

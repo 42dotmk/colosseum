@@ -39,21 +39,28 @@ const extractSubmissionDocumentIdFromFilters = (filters: any): string | null => 
   }
 
   const submission = filters.submission;
-  if (!submission || typeof submission !== 'object') {
-    return null;
+  if (typeof submission === 'string') {
+    return submission;
   }
-
-  const documentId = submission.documentId;
-  if (typeof documentId === 'string') {
-    return documentId;
-  }
-
-  if (documentId && typeof documentId === 'object') {
-    if (typeof documentId.$eq === 'string') {
-      return documentId.$eq;
+  if (submission && typeof submission === 'object') {
+    const documentId = submission.documentId;
+    if (typeof documentId === 'string') {
+      return documentId;
     }
-    if (typeof documentId.$in?.[0] === 'string') {
-      return documentId.$in[0];
+    if (documentId && typeof documentId === 'object') {
+      if (typeof documentId.$eq === 'string') {
+        return documentId.$eq;
+      }
+      if (typeof documentId.$in?.[0] === 'string') {
+        return documentId.$in[0];
+      }
+    }
+  }
+
+  if (Array.isArray(filters.$and)) {
+    for (const condition of filters.$and) {
+      const found = extractSubmissionDocumentIdFromFilters(condition);
+      if (found) return found;
     }
   }
 
@@ -134,17 +141,42 @@ export default factories.createCoreController('api::execution.execution', ({ str
     }
 
     const submissionDocumentId = extractSubmissionDocumentIdFromFilters(ctx.query?.filters);
-    if (!submissionDocumentId) {
+
+    // Also accept filtering by execution documentId (e.g. from submit response)
+    const executionDocIdFilter = (ctx.query?.filters as any)?.documentId;
+    const executionDocIds: string[] | null =
+      executionDocIdFilter?.$in && Array.isArray(executionDocIdFilter.$in)
+        ? executionDocIdFilter.$in
+        : typeof executionDocIdFilter === 'string'
+          ? [executionDocIdFilter]
+          : typeof executionDocIdFilter?.$eq === 'string'
+            ? [executionDocIdFilter.$eq]
+            : null;
+
+    if (!submissionDocumentId && !executionDocIds) {
       return ctx.forbidden('Submission filter is required');
     }
 
-    const submission = await strapi.documents('api::submission.submission').findOne({
-      documentId: submissionDocumentId,
-      populate: ['user'],
-    });
+    if (submissionDocumentId) {
+      const submission = await strapi.documents('api::submission.submission').findOne({
+        documentId: submissionDocumentId,
+        populate: ['user'],
+      });
 
-    if (!submission || !isOwnedByUser(submission.user, user)) {
-      return ctx.notFound('Submission not found');
+      if (!submission || !isOwnedByUser(submission.user, user)) {
+        return ctx.notFound('Submission not found');
+      }
+    }
+
+    // Strip submission from filters before passing to Strapi's query sanitizer —
+    // it's not a valid filterable key on the execution schema and causes a 400.
+    const filters = ctx.query?.filters as any;
+    if (filters) {
+      delete filters.submission;
+      if (Array.isArray(filters.$and)) {
+        filters.$and = filters.$and.filter((c: any) => c?.submission === undefined);
+        if (filters.$and.length === 0) delete filters.$and;
+      }
     }
 
     const response = await super.find(ctx);

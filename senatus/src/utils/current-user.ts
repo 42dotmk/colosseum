@@ -1,12 +1,17 @@
+const DEV_USER = { id: 0, documentId: 'dev-user', username: 'dev', email: 'dev@localhost' };
+
 export const getCurrentUser = async (strapi: any, ctx: any) => {
   if (!strapi.config.server.app.authEnabled) {
+    if (ctx.state?.user) {
+      return ctx.state.user;
+    }
     const dbUser = await strapi.db
       .query('plugin::users-permissions.user')
       .findOne({
         where: {},
         select: ['id', 'documentId', 'username', 'email'],
       });
-    return dbUser || null;
+    return dbUser ?? DEV_USER;
   }
 
   const authUser = ctx.state?.user;
