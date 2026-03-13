@@ -7,6 +7,7 @@ import { factories } from '@strapi/strapi'
 import { canUserRegisterForEvent, normalizeComparableIdentifiers } from '../../../utils/event-registration';
 import { getCurrentUser } from '../../../utils/current-user';
 
+
 let queueClientPromise: Promise<Awaited<ReturnType<typeof connect>>> | null = null;
 
 const getQueueClient = async (strapi: any) => {
@@ -103,6 +104,10 @@ const getCompetitionBlockReason = async (strapi: any, user: any, event: any) => 
         },
       } as CompetitionBlockReason;
     }
+  }
+
+  if (!strapi.config.get('server.app.authEnabled')) {
+    return null;
   }
 
   const registrations = await getEventRegistrations(strapi, event.documentId);
@@ -255,6 +260,13 @@ export default factories.createCoreController('api::submission.submission', ({ s
       return ctx.unauthorized('Authentication required');
     }
 
+    // Strip metadata filter — it's a JSON column and plain-string values cause a
+    // Postgres "invalid input syntax for type json" error. Filtering by raw metadata
+    // is not a supported public-API feature.
+    if (ctx.query?.filters && typeof ctx.query.filters === 'object') {
+      delete (ctx.query.filters as any).metadata;
+    }
+
     const response = (await super.find(ctx)) as any;
     const entries = Array.isArray(response?.data)
       ? response.data
@@ -330,6 +342,7 @@ export default factories.createCoreController('api::submission.submission', ({ s
   },
 
   async create(ctx) {
+
     const user = await getCurrentUser(strapi, ctx);
     if (!user) {
       return ctx.unauthorized('Authentication required');
@@ -351,6 +364,7 @@ export default factories.createCoreController('api::submission.submission', ({ s
 
     const blockReason = await getCompetitionBlockReason(strapi, user, problem.event);
     if (blockReason) {
+      console.log('Blocking submission due to:', blockReason);
       respondForbiddenWithReason(ctx, blockReason);
       return;
     }
@@ -389,7 +403,7 @@ export default factories.createCoreController('api::submission.submission', ({ s
         ctx.body = { error: 'No submission id provided' };
         return;
       }
-      
+
       const submission = await strapi.documents('api::submission.submission').findOne({
         documentId: id,
         populate: ['user', 'problem', 'problem.event', 'language']
@@ -509,7 +523,7 @@ export default factories.createCoreController('api::submission.submission', ({ s
       }
 
       const executionIds = ids.split(',').map(id => id.trim());
-      
+
       const executions = await strapi.documents('api::execution.execution').findMany({
         filters: {
           documentId: { $in: executionIds },
@@ -525,22 +539,22 @@ export default factories.createCoreController('api::submission.submission', ({ s
 
       const allProcessed = sanitizedExecutions.every(exec => exec.processed);
       const results = sanitizedExecutions
-      .filter((exec: any) => !!exec?.testCase?.documentId)
-      .map(exec => ({
-        id: exec.documentId,
-        processed: exec.processed,
-        passed: exec.passed,
-        executionTime: exec.executionTime,
-        stdout: exec.stdout,
-        stderr: exec.stderr,
-        testCase: {
-          id: exec.testCase.documentId,
-          input: exec.testCase.input,
-          output: exec.testCase.output,
-          hidden: !!exec.testCase.hidden,
-          locked: !!exec.testCase.locked,
-        }
-      }));
+        .filter((exec: any) => !!exec?.testCase?.documentId)
+        .map(exec => ({
+          id: exec.documentId,
+          processed: exec.processed,
+          passed: exec.passed,
+          executionTime: exec.executionTime,
+          stdout: exec.stdout,
+          stderr: exec.stderr,
+          testCase: {
+            id: exec.testCase.documentId,
+            input: exec.testCase.input,
+            output: exec.testCase.output,
+            hidden: !!exec.testCase.hidden,
+            locked: !!exec.testCase.locked,
+          }
+        }));
 
       ctx.body = {
         complete: allProcessed,

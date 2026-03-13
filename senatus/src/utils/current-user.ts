@@ -1,34 +1,44 @@
 export const getCurrentUser = async (strapi: any, ctx: any) => {
-	const authUser = ctx.state?.user;
-	if (authUser?.documentId) {
-		return authUser;
-	}
+  if (!strapi.config.server.app.authEnabled) {
+    const dbUser = await strapi.db
+      .query('plugin::users-permissions.user')
+      .findOne({
+        where: {},
+        select: ['id', 'documentId', 'username', 'email'],
+      });
+    return dbUser || null;
+  }
 
-	if (authUser?.id) {
-		const dbUser = await strapi.db
-			.query('plugin::users-permissions.user')
-			.findOne({
-				where: { id: authUser.id },
-				select: ['id', 'documentId', 'username', 'email'],
-			});
+  const authUser = ctx.state?.user;
+  if (authUser?.documentId) {
+    return authUser;
+  }
 
-		return dbUser || authUser;
-	}
+  if (authUser?.id) {
+    const dbUser = await strapi.db
+      .query('plugin::users-permissions.user')
+      .findOne({
+        where: { id: authUser.id },
+        select: ['id', 'documentId', 'username', 'email'],
+      });
 
-	const jwtService = strapi.plugin('users-permissions')?.service('jwt');
-	const token = jwtService?.getToken ? await jwtService.getToken(ctx) : null;
-	const tokenUserId = token?.id;
+    return dbUser || authUser;
+  }
 
-	if (!tokenUserId) {
-		return null;
-	}
+  const jwtService = strapi.plugin('users-permissions')?.service('jwt');
+  const token = jwtService?.getToken ? await jwtService.getToken(ctx) : null;
+  const tokenUserId = token?.id;
 
-	const dbUser = await strapi.db
-		.query('plugin::users-permissions.user')
-		.findOne({
-			where: { id: tokenUserId },
-			select: ['id', 'documentId', 'username', 'email'],
-		});
+  if (!tokenUserId) {
+    return null;
+  }
 
-	return dbUser || null;
+  const dbUser = await strapi.db
+    .query('plugin::users-permissions.user')
+    .findOne({
+      where: { id: tokenUserId },
+      select: ['id', 'documentId', 'username', 'email'],
+    });
+
+  return dbUser || null;
 };
