@@ -179,8 +179,11 @@ export default factories.createCoreController('api::execution.execution', ({ str
       }
     }
 
-    const response = await super.find(ctx);
-    return sanitizeExecutionResponse(response);
+    await this.validateQuery(ctx);
+    const sanitizedQuery = await this.sanitizeQuery(ctx);
+
+    const { results, pagination } = await strapi.service('api::execution.execution' as any).find(sanitizedQuery);
+    return this.transformResponse(sanitizeExecutionResponse(results), { pagination });
   },
 
   async findOne(ctx) {
@@ -199,11 +202,14 @@ export default factories.createCoreController('api::execution.execution', ({ str
       return ctx.notFound('Execution not found');
     }
 
-    const response = await super.findOne(ctx);
-    const sanitized = sanitizeExecutionResponse(response);
-    if ((sanitized as any)?.data === null) {
+    await this.validateQuery(ctx);
+    const sanitizedQuery = await this.sanitizeQuery(ctx);
+
+    const entity = await strapi.service('api::execution.execution' as any).findOne(ctx.params.id, sanitizedQuery);
+    const sanitized = sanitizeExecutionResponse(entity);
+    if ((sanitized as any) === null) {
       return ctx.notFound('Execution not found');
     }
-    return sanitized;
+    return this.transformResponse(sanitized);
   },
 }));
