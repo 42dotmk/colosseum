@@ -126,7 +126,11 @@ export default function TrainingPage() {
         })),
       );
   }, [events]);
+<<<<<<< HEAD
   
+=======
+console.log("pastProblems:",pastProblems)
+>>>>>>> 6c5f602 (Adding previous and next buttons in training navigation)
   useEffect(() => {
     const fetchStatuses = async () => {
       const uniqueProblemIds = Array.from(new Set(pastProblems.map((problem) => problem.documentId)));
