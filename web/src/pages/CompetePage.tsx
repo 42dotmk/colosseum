@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { useParams, Link, useLocation } from 'react-router-dom';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -14,7 +14,22 @@ import { cn } from '@/lib/utils';
 import { REST_URL } from '@/config';
 import Markdown from '@/components/Markdown';
 
+interface EventProblem {
+  documentId: string;
+  title: string;
+  points?: number;
+  difficulty?: string;
+}
+
+interface EventItem {
+  documentId: string;
+  title: string;
+  end: string;
+  problems?: EventProblem[];
+}
+
 interface Problem {
+  id: number;
   title: string;
   description: string;
   slug: string;
@@ -77,6 +92,9 @@ export default function CompetePage() {
   const [selectedLanguage, setSelectedLanguage] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [problem, setProblem] = useState<Problem | null>(null);
+  const [previousProblem, setPreviousProblem] = useState<EventProblem | null>(null);
+  const [nextProblem, setNextProblem] = useState<EventProblem | null>(null);
+  const [events,setEvents] = useState<EventItem[]>([])
   const [languages, setLanguages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -88,6 +106,7 @@ export default function CompetePage() {
   const initialCodeLoadedRef = useRef(false);
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<any>(null);
+  const navigate = useNavigate();
 
   // LSP — must be unconditional (before any early returns)
   const isCpp = languages.find((l: any) => l.documentId === selectedLanguage)?.codeName === 'cpp';
@@ -452,6 +471,84 @@ export default function CompetePage() {
     };
   }, [submissions, executionIdsBySubmission, executionOverrides, toast, isViewMode]);
 
+  useEffect(() => {
+      const fetchPastEvents = async () => {
+        try {
+          const token = localStorage.getItem('jwt');
+          const response = await fetch(
+            `${REST_URL}/events?fields[0]=documentId&fields[1]=title&fields[2]=end&populate[problems][fields][0]=documentId&populate[problems][fields][1]=title&populate[problems][fields][2]=points&sort=end:desc`,
+            {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : '',
+            },
+            },
+          );
+  
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+  
+          const data = await response.json();
+          const allEvents = Array.isArray(data) ? data : (data.data || []);
+          setEvents(allEvents);
+        } catch (err) {
+          console.error('Failed to load training problems:', err);
+        } 
+      };
+  
+      fetchPastEvents();
+    }, []);
+  
+  const pastProblems = useMemo(() => {
+    const now = Date.now();
+  
+    return (events || [])
+      .filter((event) => {
+        const endMs = new Date(event.end).getTime();
+        return !Number.isNaN(endMs) && endMs < now;
+      })
+      .flatMap((event) =>
+        (event.problems || []).map((problem) => ({
+          ...problem,
+          eventId: event.documentId,
+          eventTitle: event.title,
+          eventEnd: event.end,
+        })),
+      );
+  }, [events]);
+
+  useEffect(() => {
+    let problemIndex = pastProblems.findIndex(obj => obj.documentId === problemId)
+    setPreviousProblem(problemIndex > 0 ?  pastProblems[problemIndex-1] : null);
+    setNextProblem((problemIndex +1 < pastProblems.length) ? pastProblems[problemIndex+1] : null)
+  },[problemId,pastProblems])
+
+  useEffect(() => {
+  const handleTrainingNavigation = (e: KeyboardEvent) => {
+    if (!isTrainingMode) return;
+    if (!(e.ctrlKey || e.metaKey)) return;
+
+    const target = e.target as HTMLElement | null;
+    const tag = target?.tagName?.toLowerCase();
+
+    // optional: don't trigger while typing in inputs
+    if (tag === 'input' || tag === 'textarea') return;
+
+    if (e.key === 'ArrowLeft' && previousProblem) {
+      e.preventDefault();
+      navigate(`/compete/${previousProblem.documentId}?mode=training`);
+    }
+
+    if (e.key === 'ArrowRight' && nextProblem) {
+      e.preventDefault();
+      navigate(`/compete/${nextProblem.documentId}?mode=training`);
+    }
+  };
+
+  window.addEventListener('keydown', handleTrainingNavigation);
+  return () => window.removeEventListener('keydown', handleTrainingNavigation);
+}, [isTrainingMode, previousProblem, nextProblem, navigate]);
+
   const handleSubmit = async () => {
     if (isViewMode) {
       toast({
@@ -679,6 +776,54 @@ export default function CompetePage() {
 
     return [...executions].sort((left, right) => rank(left) - rank(right));
   };
+
+  const TrainingNavigation = () => (
+  <div className="mt-4 border-t px-4 py-4">
+    <div className="grid grid-cols-[minmax(0,18rem)_auto_minmax(0,18rem)] items-center gap-3">
+      <div className="flex justify-start">
+        {previousProblem ? (
+          <Button
+            variant="outline"
+            className="w-72 justify-start overflow-hidden"
+            onClick={() =>
+              navigate(`/compete/${previousProblem.documentId}?mode=training`)
+            }
+          >
+            <span className="mr-2 shrink-0">←</span>
+            <span className="truncate">
+              Previous: {previousProblem.title}
+            </span>
+          </Button>
+        ) : (
+          <div className="w-72" />
+        )}
+      </div>
+
+      <div className="text-xs text-muted-foreground text-center whitespace-nowrap">
+        navigation
+      </div>
+
+      <div className="flex justify-end">
+        {nextProblem ? (
+          <Button
+            variant="outline"
+            className="w-72 justify-between overflow-hidden"
+            onClick={() =>
+              navigate(`/compete/${nextProblem.documentId}?mode=training`)
+            }
+          >
+            <span className="truncate">
+              Next: {nextProblem.title}
+            </span>
+            <span className="ml-2 shrink-0">→</span>
+          </Button>
+        ) : (
+          <div className="w-72" />
+        )}
+      </div>
+    </div>
+  </div>
+);
 
   return (
     <div className="h-[calc(100vh-7rem)] flex flex-col">
@@ -1003,6 +1148,7 @@ export default function CompetePage() {
               )}
             </div>
           </Tabs>
+          {isTrainingMode && <TrainingNavigation />}
         </Card>
 
         {/* Right Panel - Code Editor */}
