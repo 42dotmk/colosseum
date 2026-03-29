@@ -7,10 +7,10 @@
     "watch": "tsc -p . -w"
   },
   "dependencies": {
-    "rabbitmq-client": "^4.5.2"
+    "rabbitmq-client": "^4.6.0"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "@types/node": "^20.11.30"
+    "@types/node": "^20.11.30",
+    "typescript": "^5.0.0"
   }
 }

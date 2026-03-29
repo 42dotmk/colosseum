@@ -1,19 +1,20 @@
-FROM node:alpine
+FROM golang:1.24-alpine AS build
 
-RUN apk add --no-cache docker-cli
-RUN npm i -g tsx
+RUN apk add --no-cache ca-certificates git
+
+WORKDIR /src
+
+COPY executioner/go.mod executioner/go.sum ./
+RUN go mod download
+
+COPY executioner/. .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /out/executioner ./main.go
+
+FROM alpine:3.21
+
+RUN apk add --no-cache ca-certificates docker-cli
 
 WORKDIR /app
+COPY --from=build /out/executioner /app/executioner
 
-ADD executioner executioner
-ADD lib lib
-
-WORKDIR /app/lib/queue
-RUN npm i 
-
-RUN npm run build
-
-WORKDIR /app/executioner
-RUN npm i 
-
-ENTRYPOINT [ "tsx", "index.ts" ]
+ENTRYPOINT ["/app/executioner"]
