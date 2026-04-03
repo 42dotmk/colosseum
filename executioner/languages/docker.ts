@@ -108,7 +108,7 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
 
   for (const file of input) {
     const filePath = path.resolve(path.join(inputDir, file.filename));
-    await writeFile(filePath, file.content);
+    await writeFile(filePath, file.content ?? '');
   }
 
   try {
@@ -153,7 +153,6 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
         "-v",
         `${compileStderrPath}:/exc/${compileStderrFilename}`,
         ...extraArgs,
-        "-i",
         `${IMAGE_BASE}${lang}`
       ];
 

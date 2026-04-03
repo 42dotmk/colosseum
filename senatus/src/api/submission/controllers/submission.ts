@@ -7,6 +7,7 @@ import { factories } from '@strapi/strapi'
 import { canUserRegisterForEvent, normalizeComparableIdentifiers } from '../../../utils/event-registration';
 import { getCurrentUser } from '../../../utils/current-user';
 
+
 let queueClientPromise: Promise<Awaited<ReturnType<typeof connect>>> | null = null;
 
 const getQueueClient = async (strapi: any) => {
@@ -103,6 +104,10 @@ const getCompetitionBlockReason = async (strapi: any, user: any, event: any) => 
         },
       } as CompetitionBlockReason;
     }
+  }
+
+  if (!strapi.config.get('server.app.authEnabled')) {
+    return null;
   }
 
   const registrations = await getEventRegistrations(strapi, event.documentId);
@@ -248,11 +253,42 @@ const sanitizeSubmissionCollectionResponse = (response: any) => {
   return sanitizeSubmissionForParticipant(response);
 };
 
+// Resolves ctx.request.body.data.language to a documentId in-place.
+// Accepts codeName ("gcc"), documentId string, or numeric id.
+const resolveLanguageInBody = async (ctx: any, strapi: any) => {
+  const payload = ctx.request.body?.data;
+  if (!payload?.language) return;
+
+  const isNumericId = !isNaN(Number(payload.language));
+  const lang = await strapi.documents('api::language.language').findFirst({
+    filters: isNumericId
+      ? { id: Number(payload.language) }
+      : { codeName: payload.language },
+  });
+  if (lang) {
+    payload.language = lang.documentId;
+  }
+  // If not found by codeName/id, leave as-is (may already be a documentId).
+};
+
 export default factories.createCoreController('api::submission.submission', ({ strapi }) => ({
   async find(ctx) {
     const user = await getCurrentUser(strapi, ctx);
     if (!user) {
       return ctx.unauthorized('Authentication required');
+    }
+
+    // metadata is a JSON column — plain-string filter values cause a Postgres
+    // "invalid input syntax for type json" error. Wrap them so the comparison works.
+    if (ctx.query?.filters && typeof ctx.query.filters === 'object') {
+      const filters = ctx.query.filters as any;
+      if (typeof filters.metadata === 'string') {
+        filters.metadata = JSON.stringify(filters.metadata);
+      } else if (filters.metadata?.$eq && typeof filters.metadata.$eq === 'string') {
+        filters.metadata.$eq = JSON.stringify(filters.metadata.$eq);
+      } else if (Array.isArray(filters.metadata?.$in)) {
+        filters.metadata.$in = filters.metadata.$in.map((v: any) => typeof v === 'string' ? JSON.stringify(v) : v);
+      }
     }
 
     const response = (await super.find(ctx)) as any;
@@ -329,7 +365,43 @@ export default factories.createCoreController('api::submission.submission', ({ s
     return sanitizeSubmissionCollectionResponse(response);
   },
 
+  async update(ctx) {
+    await resolveLanguageInBody(ctx, strapi);
+    const payload = ctx.request.body?.data || {};
+
+    // metadata is a JSON column — wrap plain strings so Postgres accepts them.
+    if (typeof payload.metadata === 'string') {
+      payload.metadata = JSON.stringify(payload.metadata);
+    }
+
+    // ctx.params.id may be numeric (legacy) or a documentId
+    const id = ctx.params.id;
+    let documentId: string;
+    if (!isNaN(Number(id))) {
+      const row = await strapi.db
+        .query('api::submission.submission')
+        .findOne({
+          where: { id: Number(id) },
+          select: ['documentId'],
+        });
+      if (!row) {
+        return ctx.notFound('Submission not found');
+      }
+      documentId = row.documentId;
+    } else {
+      documentId = id;
+    }
+
+    const updated = await strapi.documents('api::submission.submission').update({
+      documentId,
+      data: payload,
+    });
+
+    ctx.body = { data: updated, meta: {} };
+  },
+
   async create(ctx) {
+
     const user = await getCurrentUser(strapi, ctx);
     if (!user) {
       return ctx.unauthorized('Authentication required');
@@ -351,19 +423,29 @@ export default factories.createCoreController('api::submission.submission', ({ s
 
     const blockReason = await getCompetitionBlockReason(strapi, user, problem.event);
     if (blockReason) {
+      console.log('Blocking submission due to:', blockReason);
       respondForbiddenWithReason(ctx, blockReason);
       return;
     }
 
     const payload = ctx.request.body?.data || {};
 
+    // Resolve payload.language to a documentId for the Strapi v5 Document Service.
+    // Accepts: codeName string ("gcc"), documentId string, or numeric id.
+    await resolveLanguageInBody(ctx, strapi);
+    const languageDocumentId: string | undefined = payload.language;
+    if (!languageDocumentId) {
+      return ctx.badRequest('Language is required');
+    }
+
     const createdSubmission = await strapi.documents('api::submission.submission').create({
       data: {
         code: payload.code,
-        language: payload.language,
+        language: languageDocumentId,
         problem: problemId,
         user: user.documentId || user.id,
         event: problem.event.documentId,
+        metadata: typeof payload.metadata === 'string' ? JSON.stringify(payload.metadata) : payload.metadata,
         publishedAt: new Date(),
       },
       status: 'published',
@@ -389,11 +471,28 @@ export default factories.createCoreController('api::submission.submission', ({ s
         ctx.body = { error: 'No submission id provided' };
         return;
       }
-      
-      const submission = await strapi.documents('api::submission.submission').findOne({
-        documentId: id,
-        populate: ['user', 'problem', 'problem.event', 'language']
-      });
+
+      // Accept either a documentId (string) or numeric id.
+      let submission: any = null;
+      if (!isNaN(Number(id))) {
+        const row = await strapi.db
+          .query('api::submission.submission')
+          .findOne({
+            where: { id: Number(id) },
+            select: ['documentId'],
+          });
+        if (row) {
+          submission = await strapi.documents('api::submission.submission').findOne({
+            documentId: row.documentId,
+            populate: ['user', 'problem', 'problem.event', 'language'],
+          });
+        }
+      } else {
+        submission = await strapi.documents('api::submission.submission').findOne({
+          documentId: id,
+          populate: ['user', 'problem', 'problem.event', 'language'],
+        });
+      }
 
       if (!submission) {
         ctx.body = { error: 'Submission not found' };
@@ -497,11 +596,6 @@ export default factories.createCoreController('api::submission.submission', ({ s
         return ctx.unauthorized('Authentication required');
       }
 
-      const userFilter = getCurrentUserFilter(user);
-      if (!userFilter) {
-        return ctx.unauthorized('Authentication required');
-      }
-
       const ids = ctx.request.query.ids as string;
       if (!ids) {
         ctx.body = { error: 'No execution ids provided' };
@@ -509,7 +603,7 @@ export default factories.createCoreController('api::submission.submission', ({ s
       }
 
       const executionIds = ids.split(',').map(id => id.trim());
-      
+
       const executions = await strapi.documents('api::execution.execution').findMany({
         filters: {
           documentId: { $in: executionIds },
@@ -525,22 +619,22 @@ export default factories.createCoreController('api::submission.submission', ({ s
 
       const allProcessed = sanitizedExecutions.every(exec => exec.processed);
       const results = sanitizedExecutions
-      .filter((exec: any) => !!exec?.testCase?.documentId)
-      .map(exec => ({
-        id: exec.documentId,
-        processed: exec.processed,
-        passed: exec.passed,
-        executionTime: exec.executionTime,
-        stdout: exec.stdout,
-        stderr: exec.stderr,
-        testCase: {
-          id: exec.testCase.documentId,
-          input: exec.testCase.input,
-          output: exec.testCase.output,
-          hidden: !!exec.testCase.hidden,
-          locked: !!exec.testCase.locked,
-        }
-      }));
+        .filter((exec: any) => !!exec?.testCase?.documentId)
+        .map(exec => ({
+          id: exec.documentId,
+          processed: exec.processed,
+          passed: exec.passed,
+          executionTime: exec.executionTime,
+          stdout: exec.stdout,
+          stderr: exec.stderr,
+          testCase: {
+            id: exec.testCase.documentId,
+            input: exec.testCase.input,
+            output: exec.testCase.output,
+            hidden: !!exec.testCase.hidden,
+            locked: !!exec.testCase.locked,
+          }
+        }));
 
       ctx.body = {
         complete: allProcessed,
