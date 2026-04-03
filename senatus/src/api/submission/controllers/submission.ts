@@ -278,11 +278,17 @@ export default factories.createCoreController('api::submission.submission', ({ s
       return ctx.unauthorized('Authentication required');
     }
 
-    // Strip metadata filter — it's a JSON column and plain-string values cause a
-    // Postgres "invalid input syntax for type json" error. Filtering by raw metadata
-    // is not a supported public-API feature.
+    // metadata is a JSON column — plain-string filter values cause a Postgres
+    // "invalid input syntax for type json" error. Wrap them so the comparison works.
     if (ctx.query?.filters && typeof ctx.query.filters === 'object') {
-      delete (ctx.query.filters as any).metadata;
+      const filters = ctx.query.filters as any;
+      if (typeof filters.metadata === 'string') {
+        filters.metadata = JSON.stringify(filters.metadata);
+      } else if (filters.metadata?.$eq && typeof filters.metadata.$eq === 'string') {
+        filters.metadata.$eq = JSON.stringify(filters.metadata.$eq);
+      } else if (Array.isArray(filters.metadata?.$in)) {
+        filters.metadata.$in = filters.metadata.$in.map((v: any) => typeof v === 'string' ? JSON.stringify(v) : v);
+      }
     }
 
     const response = (await super.find(ctx)) as any;
@@ -439,6 +445,7 @@ export default factories.createCoreController('api::submission.submission', ({ s
         problem: problemId,
         user: user.documentId || user.id,
         event: problem.event.documentId,
+        metadata: typeof payload.metadata === 'string' ? JSON.stringify(payload.metadata) : payload.metadata,
         publishedAt: new Date(),
       },
       status: 'published',
@@ -586,11 +593,6 @@ export default factories.createCoreController('api::submission.submission', ({ s
     try {
       const user = await getCurrentUser(strapi, ctx);
       if (!user) {
-        return ctx.unauthorized('Authentication required');
-      }
-
-      const userFilter = getCurrentUserFilter(user);
-      if (!userFilter) {
         return ctx.unauthorized('Authentication required');
       }
 
