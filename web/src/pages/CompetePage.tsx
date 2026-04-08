@@ -800,7 +800,7 @@ export default function CompetePage() {
       </div>
 
       <div className="text-xs text-muted-foreground text-center whitespace-nowrap">
-        navigation
+        
       </div>
 
       <div className="flex justify-end">
