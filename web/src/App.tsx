@@ -12,7 +12,7 @@ import CompetePage from '@/pages/CompetePage';
 import ProfilePage from '@/pages/ProfilePage';
 import TrainingPage from '@/pages/TrainingPage';
 import TrainingLeaderboardPage from '@/pages/TrainingLeaderboardPage';
-import TutorialsPage from '@/pages/TutorialsPage';
+import TutorialsPage from '@/pages/TutorialsPage/TutorialsPage';
 import TutorialDetailPage from '@/pages/TutorialDetailPage';
 
 function App() {
