@@ -145,6 +145,7 @@ export default function TutorialDetailPage() {
             <Clock3 className="h-3.5 w-3.5" />
             {tutorial.readTimeMinutes} min read
           </span>
+          
           {tutorial.relatedProblem?.documentId && (
             <Badge variant="outline" className="text-[10px]">
               <Link to={`/compete/${tutorial.relatedProblem.documentId}`}>
