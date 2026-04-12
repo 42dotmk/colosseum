@@ -5,6 +5,7 @@ import ProblemLimits from "./ProblemLimits";
 import LanguageSelect from "./LanguageSelect";
 import SubmitButton from "./SubmitButton";
 
+<<<<<<< HEAD
 type ProblemProps = {
   isTrainingMode: boolean,
   isViewMode: boolean,
@@ -13,10 +14,17 @@ type ProblemProps = {
 }
 
 type LanguageProps = {
+=======
+type HeaderProps = {
+  isTrainingMode: boolean,
+  problemTitle: string,
+  isInteractiveProblem: boolean,
+>>>>>>> def93e2 (Refactored to Header, Left Panel and Right Panel. Still much work to be done)
   selectedLanguageObject: Language | undefined,
   currentLanguage: string,
   setCurrentLanguage: React.Dispatch<React.SetStateAction<string>>,
   languages: Language[],
+<<<<<<< HEAD
 }
 
 type HeaderProps = {
@@ -31,6 +39,16 @@ export default function Header({problemProps,languageProps,handleSubmit,isSubmit
   const {isTrainingMode, isViewMode, problemTitle, isInteractiveProblem} = problemProps;
   const {selectedLanguageObject, currentLanguage, setCurrentLanguage, languages} = languageProps;
   
+=======
+  handleSubmit: () => Promise<void>,
+  isSubmitting: boolean,
+  isViewMode: boolean
+}
+
+export default function Header({isTrainingMode,problemTitle,isInteractiveProblem,selectedLanguageObject,currentLanguage,setCurrentLanguage,languages,handleSubmit,isSubmitting,isViewMode}: HeaderProps) {
+
+  console.log("interactive: ",isInteractiveProblem);
+>>>>>>> def93e2 (Refactored to Header, Left Panel and Right Panel. Still much work to be done)
   return (
     <>
       <div className="flex items-center justify-between mb-3 pb-3 border-b">

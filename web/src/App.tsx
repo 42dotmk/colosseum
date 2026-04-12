@@ -9,6 +9,10 @@ import RegisterPage from '@/pages/RegisterPage';
 import EventsPage from '@/pages/EventsPage';
 import CompetePage from '@/pages/CompetePage/CompetePage';
 import EventDetailPage from '@/pages/EventDetail/EventDetailPage';
+<<<<<<< HEAD
+=======
+import CompetePage from '@/pages/CompetePage/CompetePage';
+>>>>>>> def93e2 (Refactored to Header, Left Panel and Right Panel. Still much work to be done)
 import ProfilePage from '@/pages/ProfilePage';
 import TrainingPage from '@/pages/TrainingPage';
 import TrainingLeaderboardPage from '@/pages/TrainingLeaderboardPage';

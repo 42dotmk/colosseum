@@ -293,7 +293,11 @@ export default function CompetePage() {
   }, [languages, currentLanguage]);
 
   useEffect(() => {
+<<<<<<< HEAD
     const fetchEvents = async () => {
+=======
+    const fetchPastEvents = async () => {
+>>>>>>> def93e2 (Refactored to Header, Left Panel and Right Panel. Still much work to be done)
       try {
         const token = localStorage.getItem('jwt');
         const response = await fetch(
@@ -318,7 +322,11 @@ export default function CompetePage() {
     };
 
     if (isTrainingMode) {
+<<<<<<< HEAD
       fetchEvents();
+=======
+      fetchPastEvents();
+>>>>>>> def93e2 (Refactored to Header, Left Panel and Right Panel. Still much work to be done)
     }
   }, [isTrainingMode]);
 
@@ -584,10 +592,23 @@ export default function CompetePage() {
   return (
     <div className="h-[calc(100vh-7rem)] flex flex-col">
       <Header
+<<<<<<< HEAD
         languageProps={{selectedLanguageObject, currentLanguage, setCurrentLanguage, languages}}
         problemProps={{isTrainingMode, isViewMode, problemTitle: problem.title, isInteractiveProblem}}
         handleSubmit={handleSubmit}
         isSubmitting={isSubmitting}
+=======
+        isTrainingMode={isTrainingMode}
+        problemTitle={problem.title}
+        isInteractiveProblem={isInteractiveProblem}
+        selectedLanguageObject={selectedLanguageObject}
+        currentLanguage={currentLanguage}
+        setCurrentLanguage={setCurrentLanguage}
+        languages={languages}
+        handleSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+        isViewMode={isViewMode}
+>>>>>>> def93e2 (Refactored to Header, Left Panel and Right Panel. Still much work to be done)
       />
 
       <ProblemMode isTrainingMode={isTrainingMode} isViewMode={isViewMode} />
@@ -595,6 +616,10 @@ export default function CompetePage() {
       <div className="flex-1 grid grid-cols-2 gap-3 min-h-0">
         <LeftPanel
           isViewMode={isViewMode}
+<<<<<<< HEAD
+=======
+          problemDescription={problem.description}
+>>>>>>> def93e2 (Refactored to Header, Left Panel and Right Panel. Still much work to be done)
           isInteractiveProblem={isInteractiveProblem}
           problem={problem}
           activeTab={activeTab}
