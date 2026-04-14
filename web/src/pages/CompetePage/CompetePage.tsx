@@ -601,7 +601,6 @@ export default function CompetePage() {
       <div className="flex-1 grid grid-cols-2 gap-3 min-h-0">
         <LeftPanel
           isViewMode={isViewMode}
-          problemDescription={problem.description}
           isInteractiveProblem={isInteractiveProblem}
           problem={problem}
           activeTab={activeTab}
