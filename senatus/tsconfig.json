@@ -1,6 +1,8 @@
 {
   "extends": "@strapi/typescript-utils/tsconfigs/server",
   "compilerOptions": {
+    "module":"NodeNext",
+    "moduleResolution": "NodeNext",
     "outDir": "dist",
     "rootDir": "."
   },
