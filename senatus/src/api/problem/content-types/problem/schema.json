@@ -94,6 +94,11 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::problem.problem"
+    },
+    "position": {
+      "type": "integer",
+      "default": 1,
+      "min": 1
     }
   }
 }

@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2026-04-11T10:13:47.181Z"
+    "x-generation-date": "2026-04-17T00:54:32.303Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -7036,6 +7036,9 @@
                     }
                   }
                 },
+                "position": {
+                  "type": "integer"
+                },
                 "createdAt": {
                   "type": "string",
                   "format": "date-time"
@@ -8178,6 +8181,9 @@
                           "type": "string"
                         }
                       }
+                    },
+                    "position": {
+                      "type": "integer"
                     },
                     "createdAt": {
                       "type": "string",
@@ -9739,6 +9745,9 @@
                         }
                       }
                     },
+                    "position": {
+                      "type": "integer"
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
@@ -10852,6 +10861,9 @@
                         "type": "string"
                       }
                     }
+                  },
+                  "position": {
+                    "type": "integer"
                   },
                   "createdAt": {
                     "type": "string",
@@ -12471,6 +12483,9 @@
                 ],
                 "example": "string or id"
               },
+              "position": {
+                "type": "integer"
+              },
               "locale": {
                 "type": "string"
               },
@@ -12840,6 +12855,9 @@
                         }
                       }
                     },
+                    "position": {
+                      "type": "integer"
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
@@ -13055,6 +13073,9 @@
                 "type": "string"
               }
             }
+          },
+          "position": {
+            "type": "integer"
           },
           "createdAt": {
             "type": "string",
@@ -14010,6 +14031,9 @@
                           "type": "string"
                         }
                       }
+                    },
+                    "position": {
+                      "type": "integer"
                     },
                     "createdAt": {
                       "type": "string",
@@ -15457,6 +15481,9 @@
                     "type": "string"
                   }
                 }
+              },
+              "position": {
+                "type": "integer"
               },
               "createdAt": {
                 "type": "string",
@@ -16933,6 +16960,9 @@
                     "type": "string"
                   }
                 }
+              },
+              "position": {
+                "type": "integer"
               },
               "createdAt": {
                 "type": "string",

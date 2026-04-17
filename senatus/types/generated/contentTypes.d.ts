@@ -697,6 +697,14 @@ export interface ApiProblemProblem extends Struct.CollectionTypeSchema {
         number
       > &
       Schema.Attribute.DefaultTo<100>;
+    position: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 1;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<1>;
     publishedAt: Schema.Attribute.DateTime;
     slug: Schema.Attribute.UID<'title'> &
       Schema.Attribute.SetPluginOptions<{

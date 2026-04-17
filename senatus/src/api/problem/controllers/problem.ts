@@ -127,4 +127,5 @@ export default factories.createCoreController('api::problem.problem', ({ strapi 
 
 		return sanitizeProblemTestCases(response);
 	},
+  
 }));
