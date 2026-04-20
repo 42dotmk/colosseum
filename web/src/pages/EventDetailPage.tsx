@@ -201,6 +201,7 @@ export default function EventDetailPage() {
         const data = await response.json();
         const eventData = data.data || data;
         setEvent(eventData);
+        eventData.problems.map( (problem: any) => {console.log(problem.position)});
       } catch (err) {
         console.error('Failed to load event:', err);
         setError('Failed to load event');

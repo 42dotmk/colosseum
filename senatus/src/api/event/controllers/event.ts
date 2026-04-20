@@ -1114,6 +1114,7 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
           data: {
             position: p.position,
           },
+          status: "published",
         });
       }));
       return ctx.send({ ok: true, data: reordered.map(p => ({ documentId: p.documentId, position: p.position })) });
