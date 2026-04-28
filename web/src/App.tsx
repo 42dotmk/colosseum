@@ -9,7 +9,7 @@ import RegisterPage from '@/pages/RegisterPage';
 import EventsPage from '@/pages/EventsPage';
 import EventDetailPage from '@/pages/EventDetailPage';
 import CompetePage from '@/pages/CompetePage';
-import ProfilePage from '@/pages/ProfilePage';
+import ProfilePage from '@/pages/profile/ProfilePage';
 import TrainingPage from '@/pages/TrainingPage';
 import TrainingLeaderboardPage from '@/pages/TrainingLeaderboardPage';
 import TutorialsPage from '@/pages/TutorialsPage';
