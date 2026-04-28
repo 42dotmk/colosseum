@@ -8,7 +8,7 @@
     "description": ""
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {
     "i18n": {
@@ -55,11 +55,11 @@
     },
     "leaderboardVisibilityMode": {
       "type": "enumeration",
+      "default": "public_only_live",
       "enum": [
         "public_only_live",
         "full_live"
-      ],
-      "default": "public_only_live"
+      ]
     },
     "isInteractive": {
       "type": "boolean",

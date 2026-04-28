@@ -1108,13 +1108,13 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
     const reordered = reorderProblems(allProblems, problemId, newPosition);
 
     try {
-      await Promise.all(reordered.map((p) => {
+      await Promise.all(
+        reordered.map(async (p) => {
         return strapi.documents('api::problem.problem').update({
           documentId: p.documentId,
           data: {
             position: p.position,
           },
-          status: "published",
         });
       }));
       return ctx.send({ ok: true, data: reordered.map(p => ({ documentId: p.documentId, position: p.position })) });

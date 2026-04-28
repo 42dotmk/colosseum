@@ -65,11 +65,11 @@
     },
     "registrationMode": {
       "type": "enumeration",
+      "default": "open",
       "enum": [
         "open",
         "invite_only"
-      ],
-      "default": "open"
+      ]
     },
     "allowedRegistrationUsers": {
       "type": "text"

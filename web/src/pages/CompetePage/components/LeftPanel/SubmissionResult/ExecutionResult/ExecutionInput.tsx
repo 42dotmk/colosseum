@@ -19,7 +19,6 @@ export default function ExecutionInput({
         </pre>
       </div>
 
-      {/* Here this feild may not always be needed, like if there are multiple solutions */}
       {!isInteractiveProblem && (
         <div>
           <div className="text-xs text-muted-foreground mb-1">

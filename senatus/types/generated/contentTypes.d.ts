@@ -658,7 +658,7 @@ export interface ApiProblemProblem extends Struct.CollectionTypeSchema {
     singularName: 'problem';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   pluginOptions: {
     i18n: {
