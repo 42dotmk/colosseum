@@ -1,4 +1,4 @@
-interface TutorialThumbnailProps{
+interface TutorialThumbnailProps {
     src?:string;
     alt:string;
     className?:string;

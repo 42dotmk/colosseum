@@ -2,7 +2,7 @@ import ReadTime from "./ReadTime";
 import TutorialSummary from "./TutorialSummary";
 import RelatedProblem from "./RelatedProblem";
 
-interface TutorialDetailsProps{
+interface TutorialDetailsProps {
     title: string;
     readTimeMinutes:number;
     summary?: string;

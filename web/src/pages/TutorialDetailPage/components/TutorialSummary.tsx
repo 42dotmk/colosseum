@@ -1,4 +1,4 @@
-interface TutorialSummaryProps{
+interface TutorialSummaryProps {
     summary?:string;
 }
 

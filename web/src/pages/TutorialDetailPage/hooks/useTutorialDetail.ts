@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { REST_URL } from '@/config';
 import { TutorialDetail } from '../types/TutorialDetail';
 
-const useTutorialDetail = (tutorialId?:string) =>
-{
+const useTutorialDetail = (tutorialId?:string) => {
     const [tutorial, setTutorial] = useState<TutorialDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);

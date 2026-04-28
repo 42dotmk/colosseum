@@ -1,6 +1,6 @@
 import BackToTutorialsButton from "./BackToTutorialsButton";
 
-interface ErrorStateProps{
+interface ErrorStateProps {
     error:string | null;
 };
 

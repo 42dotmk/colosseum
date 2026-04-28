@@ -1,6 +1,6 @@
 import { Clock3 } from 'lucide-react';
 
-interface ReadTimeProps{
+interface ReadTimeProps {
     minutes:number;
 }
 

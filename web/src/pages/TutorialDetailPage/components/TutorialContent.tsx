@@ -1,6 +1,6 @@
 import Markdown from '@/components/Markdown';
 
-interface TutorialContentProps{
+interface TutorialContentProps {
     content:string;
     className:string;
 }
