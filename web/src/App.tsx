@@ -5,7 +5,7 @@ import { Toaster } from '@/components/ui/toaster';
 import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import LoginPage from '@/pages/LoginPage';
-import RegisterPage from '@/pages/RegisterPage';
+import RegisterPage from '@/pages/register/RegisterPage';
 import EventsPage from '@/pages/EventsPage';
 import EventDetailPage from '@/pages/EventDetailPage';
 import CompetePage from '@/pages/CompetePage';
