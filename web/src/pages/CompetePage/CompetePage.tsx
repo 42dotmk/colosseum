@@ -584,16 +584,10 @@ export default function CompetePage() {
   return (
     <div className="h-[calc(100vh-7rem)] flex flex-col">
       <Header
-        isTrainingMode={isTrainingMode}
-        problemTitle={problem.title}
-        isInteractiveProblem={isInteractiveProblem}
-        selectedLanguageObject={selectedLanguageObject}
-        currentLanguage={currentLanguage}
-        setCurrentLanguage={setCurrentLanguage}
-        languages={languages}
+        languageProps={{selectedLanguageObject, currentLanguage, setCurrentLanguage, languages}}
+        problemProps={{isTrainingMode, isViewMode, problemTitle: problem.title, isInteractiveProblem}}
         handleSubmit={handleSubmit}
         isSubmitting={isSubmitting}
-        isViewMode={isViewMode}
       />
 
       <ProblemMode isTrainingMode={isTrainingMode} isViewMode={isViewMode} />

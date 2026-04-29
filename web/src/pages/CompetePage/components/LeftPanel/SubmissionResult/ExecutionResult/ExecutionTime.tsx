@@ -1,24 +1,12 @@
 import { Execution } from "@/pages/CompetePage/types/Execution"
 import { Clock } from "lucide-react"
+import { formatExecutionTime } from "./utils"
 
 type ExecutionTimeProps = {
   execution: Execution
 }
 
-export default function ExecutionTime({
-  execution
-}: ExecutionTimeProps) {
-
-   const formatExecutionTime = (seconds: number) => {
-    if (!Number.isFinite(seconds) || seconds < 0) return null;
-
-    if (seconds >= 1) {
-      return `${seconds.toFixed(3).replace(/\.?0+$/, '')}s`;
-    }
-
-    return `${Math.round(seconds * 1000)}ms`;
-  };
-
+export default function ExecutionTime({ execution }: ExecutionTimeProps) {
   return (
     <>
       {execution.executionTime >= 0 && !execution.testCase?.locked && (

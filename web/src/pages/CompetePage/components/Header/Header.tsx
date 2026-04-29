@@ -5,22 +5,32 @@ import ProblemLimits from "./ProblemLimits";
 import LanguageSelect from "./LanguageSelect";
 import SubmitButton from "./SubmitButton";
 
-type HeaderProps = {
+type ProblemProps = {
   isTrainingMode: boolean,
+  isViewMode: boolean,
   problemTitle: string,
   isInteractiveProblem: boolean,
+}
+
+type LanguageProps = {
   selectedLanguageObject: Language | undefined,
   currentLanguage: string,
   setCurrentLanguage: React.Dispatch<React.SetStateAction<string>>,
   languages: Language[],
-  handleSubmit: () => Promise<void>,
-  isSubmitting: boolean,
-  isViewMode: boolean
 }
 
-export default function Header({isTrainingMode,problemTitle,isInteractiveProblem,selectedLanguageObject,currentLanguage,setCurrentLanguage,languages,handleSubmit,isSubmitting,isViewMode}: HeaderProps) {
+type HeaderProps = {
+  problemProps: ProblemProps,
+  languageProps: LanguageProps,
+  
+  handleSubmit: () => Promise<void>,
+  isSubmitting: boolean,
+}
 
-  console.log("interactive: ",isInteractiveProblem);
+export default function Header({problemProps,languageProps,handleSubmit,isSubmitting}: HeaderProps) {
+  const {isTrainingMode, isViewMode, problemTitle, isInteractiveProblem} = problemProps;
+  const {selectedLanguageObject, currentLanguage, setCurrentLanguage, languages} = languageProps;
+  
   return (
     <>
       <div className="flex items-center justify-between mb-3 pb-3 border-b">
