@@ -128,6 +128,7 @@ export default function TrainingPage() {
   }, [events]);
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
   
 =======
 console.log("pastProblems:",pastProblems)
@@ -135,6 +136,9 @@ console.log("pastProblems:",pastProblems)
 =======
 
 >>>>>>> fbbd36c (removing the word between the buttons)
+=======
+  
+>>>>>>> cfe1066 (fixed some of the comments)
   useEffect(() => {
     const fetchStatuses = async () => {
       const uniqueProblemIds = Array.from(new Set(pastProblems.map((problem) => problem.documentId)));

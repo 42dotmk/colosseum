@@ -593,6 +593,7 @@ export default function CompetePage() {
     <div className="h-[calc(100vh-7rem)] flex flex-col">
       <Header
 <<<<<<< HEAD
+<<<<<<< HEAD
         languageProps={{selectedLanguageObject, currentLanguage, setCurrentLanguage, languages}}
         problemProps={{isTrainingMode, isViewMode, problemTitle: problem.title, isInteractiveProblem}}
         handleSubmit={handleSubmit}
@@ -609,6 +610,12 @@ export default function CompetePage() {
         isSubmitting={isSubmitting}
         isViewMode={isViewMode}
 >>>>>>> def93e2 (Refactored to Header, Left Panel and Right Panel. Still much work to be done)
+=======
+        languageProps={{selectedLanguageObject, currentLanguage, setCurrentLanguage, languages}}
+        problemProps={{isTrainingMode, isViewMode, problemTitle: problem.title, isInteractiveProblem}}
+        handleSubmit={handleSubmit}
+        isSubmitting={isSubmitting}
+>>>>>>> cfe1066 (fixed some of the comments)
       />
 
       <ProblemMode isTrainingMode={isTrainingMode} isViewMode={isViewMode} />

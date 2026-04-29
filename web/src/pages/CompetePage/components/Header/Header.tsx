@@ -6,6 +6,7 @@ import LanguageSelect from "./LanguageSelect";
 import SubmitButton from "./SubmitButton";
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 type ProblemProps = {
   isTrainingMode: boolean,
   isViewMode: boolean,
@@ -16,14 +17,25 @@ type ProblemProps = {
 type LanguageProps = {
 =======
 type HeaderProps = {
+=======
+type ProblemProps = {
+>>>>>>> cfe1066 (fixed some of the comments)
   isTrainingMode: boolean,
+  isViewMode: boolean,
   problemTitle: string,
   isInteractiveProblem: boolean,
+<<<<<<< HEAD
 >>>>>>> def93e2 (Refactored to Header, Left Panel and Right Panel. Still much work to be done)
+=======
+}
+
+type LanguageProps = {
+>>>>>>> cfe1066 (fixed some of the comments)
   selectedLanguageObject: Language | undefined,
   currentLanguage: string,
   setCurrentLanguage: React.Dispatch<React.SetStateAction<string>>,
   languages: Language[],
+<<<<<<< HEAD
 <<<<<<< HEAD
 }
 
@@ -43,12 +55,27 @@ export default function Header({problemProps,languageProps,handleSubmit,isSubmit
   handleSubmit: () => Promise<void>,
   isSubmitting: boolean,
   isViewMode: boolean
+=======
+>>>>>>> cfe1066 (fixed some of the comments)
 }
 
-export default function Header({isTrainingMode,problemTitle,isInteractiveProblem,selectedLanguageObject,currentLanguage,setCurrentLanguage,languages,handleSubmit,isSubmitting,isViewMode}: HeaderProps) {
+type HeaderProps = {
+  problemProps: ProblemProps,
+  languageProps: LanguageProps,
+  
+  handleSubmit: () => Promise<void>,
+  isSubmitting: boolean,
+}
 
+<<<<<<< HEAD
   console.log("interactive: ",isInteractiveProblem);
 >>>>>>> def93e2 (Refactored to Header, Left Panel and Right Panel. Still much work to be done)
+=======
+export default function Header({problemProps,languageProps,handleSubmit,isSubmitting}: HeaderProps) {
+  const {isTrainingMode, isViewMode, problemTitle, isInteractiveProblem} = problemProps;
+  const {selectedLanguageObject, currentLanguage, setCurrentLanguage, languages} = languageProps;
+  
+>>>>>>> cfe1066 (fixed some of the comments)
   return (
     <>
       <div className="flex items-center justify-between mb-3 pb-3 border-b">
