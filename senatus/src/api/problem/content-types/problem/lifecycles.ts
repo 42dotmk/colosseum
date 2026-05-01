@@ -7,7 +7,13 @@ async function getNextPosition(eventId: string){
     },
   });
   console.log("problems: ", problems?.length);
-  return (problems?.length || 0) + 1;
+  let maxPosition = 0;
+  problems?.forEach((problem) => {
+    maxPosition = Math.max(maxPosition, problem.position || 0);
+    console.log("problem: ", problem.title, problem.position);
+  });
+
+  return maxPosition + 1;
 }
 
 export default {
@@ -45,23 +51,5 @@ export default {
         position: await getNextPosition(event.documentId),
       },
     })
-  },
-
-  async beforeUpdate(lifecycle) {
-    const { data, where } = lifecycle.params;
-
-    if (data.event) {
-      const existingProblem = await strapi.documents('api::problem.problem').findOne({
-        documentId: where.documentId,
-        populate: ['event'],
-      });
-
-      const oldEventId = existingProblem?.event?.documentId;
-      const newEventId = typeof data.event === 'string' ? data.event : data.event?.documentId;
-
-      if (newEventId && oldEventId !== newEventId) {
-        data.position = await getNextPosition(newEventId);
-      }
-    }
   },
 }
