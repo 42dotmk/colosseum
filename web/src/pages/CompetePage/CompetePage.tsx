@@ -293,7 +293,7 @@ export default function CompetePage() {
   }, [languages, currentLanguage]);
 
   useEffect(() => {
-    const fetchPastEvents = async () => {
+    const fetchEvents = async () => {
       try {
         const token = localStorage.getItem('jwt');
         const response = await fetch(
@@ -318,7 +318,7 @@ export default function CompetePage() {
     };
 
     if (isTrainingMode) {
-      fetchPastEvents();
+      fetchEvents();
     }
   }, [isTrainingMode]);
 
