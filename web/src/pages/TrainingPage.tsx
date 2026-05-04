@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { REST_URL } from '@/config';
 import { Badge } from '@/components/ui/badge';
@@ -7,18 +7,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ChevronRight, Circle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-interface EventProblem {
-  documentId: string;
-  title: string;
-  points?: number;
-  difficulty?: string;
-}
-
 interface EventItem {
   documentId: string;
   title: string;
   end: string;
-  problems?: EventProblem[];
+  eventId: string;
+  eventTitle: string;
+  difficulty?: string;
+  points: number;
 }
 
 interface SubmissionExecution {
@@ -48,7 +44,7 @@ type ProblemStatus = 'not_tried' | 'zero' | 'partial' | 'full';
 
 export default function TrainingPage() {
   const navigate = useNavigate();
-  const [events, setEvents] = useState<EventItem[]>([]);
+  const [problems, setProblems] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [problemStatusById, setProblemStatusById] = useState<Record<string, ProblemStatus>>({});
@@ -79,11 +75,11 @@ export default function TrainingPage() {
   };
 
   useEffect(() => {
-    const fetchPastEvents = async () => {
+    const fetchTrainingProblems = async () => {
       try {
         const token = localStorage.getItem('jwt');
         const response = await fetch(
-          `${REST_URL}/events?fields[0]=documentId&fields[1]=title&fields[2]=end&populate[problems][fields][0]=documentId&populate[problems][fields][1]=title&populate[problems][fields][2]=points&sort=end:desc`,
+          `${REST_URL}/training`,
           {
           headers: {
             Authorization: token ? `Bearer ${token}` : '',
@@ -96,8 +92,8 @@ export default function TrainingPage() {
         }
 
         const data = await response.json();
-        const allEvents = Array.isArray(data) ? data : (data.data || []);
-        setEvents(allEvents);
+        const allTrainingProblems = Array.isArray(data) ? data : (data.data || []);
+        setProblems(allTrainingProblems);
       } catch (err) {
         console.error('Failed to load training problems:', err);
         setError('Failed to load training problems');
@@ -106,30 +102,12 @@ export default function TrainingPage() {
       }
     };
 
-    fetchPastEvents();
+    fetchTrainingProblems();
   }, []);
-
-  const pastProblems = useMemo(() => {
-    const now = Date.now();
-
-    return (events || [])
-      .filter((event) => {
-        const endMs = new Date(event.end).getTime();
-        return !Number.isNaN(endMs) && endMs < now;
-      })
-      .flatMap((event) =>
-        (event.problems || []).map((problem) => ({
-          ...problem,
-          eventId: event.documentId,
-          eventTitle: event.title,
-          eventEnd: event.end,
-        })),
-      );
-  }, [events]);
 
   useEffect(() => {
     const fetchStatuses = async () => {
-      const uniqueProblemIds = Array.from(new Set(pastProblems.map((problem) => problem.documentId)));
+      const uniqueProblemIds = (problems.map((problem) => problem.documentId));
       if (uniqueProblemIds.length === 0) {
         setProblemStatusById({});
         return;
@@ -209,7 +187,7 @@ export default function TrainingPage() {
     };
 
     fetchStatuses();
-  }, [pastProblems]);
+  }, [problems]);
 
   if (loading) {
     return (
@@ -243,7 +221,7 @@ export default function TrainingPage() {
         </div>
       </div>
 
-      {pastProblems.length === 0 ? (
+      {problems.length === 0 ? (
         <div className="text-center py-16 border rounded-lg text-muted-foreground text-sm">
           No past-event problems available yet.
         </div>
@@ -261,7 +239,9 @@ export default function TrainingPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {pastProblems.map((item) => (
+              {problems.map((item) => {
+                console.log(item);
+                return (
                 <TableRow
                   key={`${item.eventId}-${item.documentId}`}
                   className="group cursor-pointer"
@@ -295,7 +275,7 @@ export default function TrainingPage() {
                     <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary" />
                   </TableCell>
                 </TableRow>
-              ))}
+              )})}
             </TableBody>
           </Table>
         </div>
