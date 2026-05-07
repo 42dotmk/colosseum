@@ -240,7 +240,6 @@ export default function TrainingPage() {
             </TableHeader>
             <TableBody>
               {problems.map((item) => {
-                console.log(item);
                 return (
                 <TableRow
                   key={`${item.eventId}-${item.documentId}`}
