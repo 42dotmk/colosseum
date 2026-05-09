@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useState } from 'react';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -10,7 +11,7 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Home, Terminal, Trophy, LogOut, User, GraduationCap, BookOpenText } from 'lucide-react';
+import { Home, Terminal, Trophy, LogOut, User, GraduationCap, BookOpenText, X, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface LayoutProps {
@@ -20,6 +21,7 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navigation = [
     { name: 'Events', href: '/', icon: Home },
@@ -34,7 +36,7 @@ export default function Layout({ children }: LayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center justify-between">
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2">
@@ -67,6 +69,13 @@ export default function Layout({ children }: LayoutProps) {
           </div>
 
           <div className="flex items-center gap-2">
+            <div className='container flex items-center gap-2'>
+              <nav className="md:hidden gap-1">
+                <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                  { mobileMenuOpen ? ( <X className="h-5 w-5" /> ) : (<Menu className="h-5 w-5" />) }
+                </Button>
+              </nav>
+            </div>
             {user && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -105,6 +114,31 @@ export default function Layout({ children }: LayoutProps) {
             )}
           </div>
         </div>
+        {mobileMenuOpen &&(
+          <div className='md:hidden px-4'>
+            <nav className='flex flex-col gap-2 py-3'>
+              {navigation.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    onClick={()=>setMobileMenuOpen(false)}
+                    className={cn(
+                      "flex justify-center items-center gap-3 px-3 py-2 text-sm font-medium rounded-[10px] transition-colors",
+                      isActive(item.href) 
+                        ? "bg-secondary text-foreground" 
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                    )}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        )}
       </header>
 
       {/* Main content */}
