@@ -8,11 +8,11 @@ import LoginPage from '@/pages/login/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import EventsPage from '@/pages/EventsPage';
 import EventDetailPage from '@/pages/EventDetailPage';
-import CompetePage from '@/pages/CompetePage';
+import CompetePage from '@/pages/CompetePage/CompetePage';
 import ProfilePage from '@/pages/ProfilePage';
 import TrainingPage from '@/pages/TrainingPage';
 import TrainingLeaderboardPage from '@/pages/TrainingLeaderboardPage';
-import TutorialsPage from '@/pages/TutorialsPage';
+import TutorialsPage from '@/pages/TutorialsPage/TutorialsPage';
 import TutorialDetailPage from '@/pages/TutorialDetailPage';
 
 function App() {
