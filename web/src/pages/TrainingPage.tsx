@@ -126,7 +126,7 @@ export default function TrainingPage() {
         })),
       );
   }, [events]);
-
+  
   useEffect(() => {
     const fetchStatuses = async () => {
       const uniqueProblemIds = Array.from(new Set(pastProblems.map((problem) => problem.documentId)));
