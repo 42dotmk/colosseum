@@ -9,7 +9,6 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
     paths:
-      - 'client/**'
       - 'senatus/**'
       - 'executioner/**'
       - 'web/**'
@@ -23,7 +22,6 @@ jobs:
     name: Find modified files
     runs-on: ubuntu-latest
     outputs:
-      client: ${{ steps.changes.outputs.client }}
       web: ${{ steps.changes.outputs.web }}
       senatus: ${{ steps.changes.outputs.senatus }}
       executioner: ${{ steps.changes.outputs.executioner }}
@@ -46,8 +44,6 @@ jobs:
         uses: dorny/paths-filter@v3.0.1
         with:
           filters: |
-            client:
-              - 'client/**'
             web:
               - 'web/**'
             senatus:
@@ -77,17 +73,8 @@ jobs:
     with:
       docker-context: ./
       docker-file-path: ./senatus/Dockerfile
+      image-name: ghcr.io/42dotmk/colosseum-senatus
       docker-tags: ghcr.io/42dotmk/colosseum-senatus:latest
-
-  client:
-    name: Client
-    needs: find_modified_files
-    uses: ./.github/workflows/build-push-docker-image.yml
-    if: needs.find_modified_files.outputs.client == 'true'
-    with:
-      docker-context: ./client
-      docker-file-path: ./client/Dockerfile
-      docker-tags: ghcr.io/42dotmk/colosseum-client-prod:latest
 
   web:
     name: Web (Production)
@@ -97,6 +84,7 @@ jobs:
     with:
       docker-context: ./web
       docker-file-path: ./web/Dockerfile
+      image-name: ghcr.io/42dotmk/colosseum-web
       docker-tags: ghcr.io/42dotmk/colosseum-web:latest
       docker-build-args: VITE_SENATUS_URL=https://senatus.colosseum.dev
 
@@ -108,6 +96,7 @@ jobs:
     with:
       docker-context: ./web
       docker-file-path: ./web/Dockerfile
+      image-name: ghcr.io/42dotmk/colosseum-web
       docker-tags: ghcr.io/42dotmk/colosseum-web:dev
       docker-build-args: VITE_SENATUS_URL=https://senatus-dev.colosseum.dev
 
@@ -119,6 +108,7 @@ jobs:
     with:
       docker-context: ./
       docker-file-path: ./executioner/Dockerfile
+      image-name: ghcr.io/42dotmk/colosseum-executioner
       docker-tags: ghcr.io/42dotmk/colosseum-executioner:latest
 
   gcc_executioner:
@@ -129,6 +119,7 @@ jobs:
     with:
       docker-context: ./executioner/runtimes/languages/gcc/
       docker-file-path: ./executioner/runtimes/languages/gcc/Dockerfile
+      image-name: ghcr.io/42dotmk/colosseum-executioner-gcc
       docker-tags: ghcr.io/42dotmk/colosseum-executioner-gcc:latest
 
   node_executioner:
@@ -139,6 +130,7 @@ jobs:
     with:
       docker-context: ./executioner/runtimes/languages/nodejs/
       docker-file-path: ./executioner/runtimes/languages/nodejs/Dockerfile
+      image-name: ghcr.io/42dotmk/colosseum-executioner-nodejs
       docker-tags: ghcr.io/42dotmk/colosseum-executioner-nodejs:latest
 
   python_executioner:
@@ -149,6 +141,7 @@ jobs:
     with:
       docker-context: ./executioner/runtimes/languages/python/
       docker-file-path: ./executioner/runtimes/languages/python/Dockerfile
+      image-name: ghcr.io/42dotmk/colosseum-executioner-python
       docker-tags: ghcr.io/42dotmk/colosseum-executioner-python:latest
 
   java_executioner:
@@ -159,6 +152,7 @@ jobs:
     with:
       docker-context: ./executioner/runtimes/languages/java/
       docker-file-path: ./executioner/runtimes/languages/java/Dockerfile
+      image-name: ghcr.io/42dotmk/colosseum-executioner-java
       docker-tags: ghcr.io/42dotmk/colosseum-executioner-java:latest
 
   csharp_executioner:
@@ -169,6 +163,7 @@ jobs:
     with:
       docker-context: ./executioner/runtimes/languages/csharp/
       docker-file-path: ./executioner/runtimes/languages/csharp/Dockerfile
+      image-name: ghcr.io/42dotmk/colosseum-executioner-csharp
       docker-tags: ghcr.io/42dotmk/colosseum-executioner-csharp:latest
 
   rust_executioner:
@@ -179,6 +174,7 @@ jobs:
     with:
       docker-context: ./executioner/runtimes/languages/rust/
       docker-file-path: ./executioner/runtimes/languages/rust/Dockerfile
+      image-name: ghcr.io/42dotmk/colosseum-executioner-rust
       docker-tags: ghcr.io/42dotmk/colosseum-executioner-rust:latest
     
 
@@ -190,5 +186,6 @@ jobs:
     with:
       docker-context: ./executioner/runtimes/languages/golang/
       docker-file-path: ./executioner/runtimes/languages/golang/Dockerfile
+      image-name: ghcr.io/42dotmk/colosseum-executioner-golang
       docker-tags: ghcr.io/42dotmk/colosseum-executioner-golang:latest
     
