@@ -30,14 +30,11 @@ export default function CompetePage() {
   const [code, setCode] = useState('// Write your solution here\n');
   const [currentLanguage, setCurrentLanguage] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [problem, setProblem] = useState<Problem | null>(null);
   const [languages, setLanguages] = useState<Language[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [activeTab, setActiveTab] = useState<'description' | 'testcases' | 'results'>('description');
-
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [executionIdsBySubmission, setExecutionIdsBySubmission] = useState<Record<string, string[]>>({});
   const [executionOverrides, setExecutionOverrides] = useState<Record<string, Execution[]>>({});
@@ -294,10 +291,14 @@ export default function CompetePage() {
 
   useEffect(() => {
 <<<<<<< HEAD
+<<<<<<< HEAD
     const fetchEvents = async () => {
 =======
     const fetchPastEvents = async () => {
 >>>>>>> def93e2 (Refactored to Header, Left Panel and Right Panel. Still much work to be done)
+=======
+    const fetchEvents = async () => {
+>>>>>>> 270f0fc (added timer)
       try {
         const token = localStorage.getItem('jwt');
         const response = await fetch(
@@ -317,10 +318,11 @@ export default function CompetePage() {
         const allEvents = Array.isArray(data) ? data : (data.data || []);
         setEvents(allEvents);
       } catch (err) {
-        console.error('Failed to load training problems:', err);
+        console.error('Failed to load problems:', err);
       }
     };
 
+<<<<<<< HEAD
     if (isTrainingMode) {
 <<<<<<< HEAD
       fetchEvents();
@@ -328,6 +330,9 @@ export default function CompetePage() {
       fetchPastEvents();
 >>>>>>> def93e2 (Refactored to Header, Left Panel and Right Panel. Still much work to be done)
     }
+=======
+    fetchEvents();
+>>>>>>> 270f0fc (added timer)
   }, [isTrainingMode]);
 
   const pastProblems = useMemo(() => {
@@ -581,6 +586,17 @@ export default function CompetePage() {
     }
   };
 
+
+  console.log(events);
+  const currentEvent = events.find((event) => {
+    console.log('checking event', event.title);
+    return event.problems?.some((p) => {
+      console.log('Checking problem', p.documentId, 'against', problemId);
+      return p.documentId === problemId
+    })});
+  console.log('currentEvent', currentEvent);
+
+  
   if (loading) {
     return <Loading />;
   }
@@ -598,6 +614,7 @@ export default function CompetePage() {
         problemProps={{isTrainingMode, isViewMode, problemTitle: problem.title, isInteractiveProblem}}
         handleSubmit={handleSubmit}
         isSubmitting={isSubmitting}
+<<<<<<< HEAD
 =======
         isTrainingMode={isTrainingMode}
         problemTitle={problem.title}
@@ -616,6 +633,9 @@ export default function CompetePage() {
         handleSubmit={handleSubmit}
         isSubmitting={isSubmitting}
 >>>>>>> cfe1066 (fixed some of the comments)
+=======
+        endDate={currentEvent ? new Date(currentEvent.end) : undefined}
+>>>>>>> 270f0fc (added timer)
       />
 
       <ProblemMode isTrainingMode={isTrainingMode} isViewMode={isViewMode} />

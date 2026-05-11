@@ -4,6 +4,7 @@ import Title from "./Title";
 import ProblemLimits from "./ProblemLimits";
 import LanguageSelect from "./LanguageSelect";
 import SubmitButton from "./SubmitButton";
+import TimeRemaining from "@/components/TimeRemaining";
 
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -42,12 +43,12 @@ type LanguageProps = {
 type HeaderProps = {
   problemProps: ProblemProps,
   languageProps: LanguageProps,
-  
+  endDate: Date | undefined,
   handleSubmit: () => Promise<void>,
   isSubmitting: boolean,
 }
 
-export default function Header({problemProps,languageProps,handleSubmit,isSubmitting}: HeaderProps) {
+export default function Header({problemProps,languageProps, endDate,handleSubmit,isSubmitting}: HeaderProps) {
   const {isTrainingMode, isViewMode, problemTitle, isInteractiveProblem} = problemProps;
   const {selectedLanguageObject, currentLanguage, setCurrentLanguage, languages} = languageProps;
   
@@ -84,6 +85,7 @@ export default function Header({problemProps,languageProps,handleSubmit,isSubmit
           <Title problemTitle={problemTitle} isInteractiveProblem={isInteractiveProblem} />
         </div>
         <div className="flex items-center gap-2">
+          {!isTrainingMode && endDate && <TimeRemaining endDate={endDate} variant="compete" />}
           <ProblemLimits selectedLanguageObject={selectedLanguageObject} />
           <LanguageSelect currentLanguage={currentLanguage} setCurrentLanguage={setCurrentLanguage} languages={languages} />
           <SubmitButton handleSubmit={handleSubmit} isSubmitting={isSubmitting} isViewMode={isViewMode} />
