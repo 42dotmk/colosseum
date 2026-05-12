@@ -290,15 +290,7 @@ export default function CompetePage() {
   }, [languages, currentLanguage]);
 
   useEffect(() => {
-<<<<<<< HEAD
-<<<<<<< HEAD
     const fetchEvents = async () => {
-=======
-    const fetchPastEvents = async () => {
->>>>>>> def93e2 (Refactored to Header, Left Panel and Right Panel. Still much work to be done)
-=======
-    const fetchEvents = async () => {
->>>>>>> 270f0fc (added timer)
       try {
         const token = localStorage.getItem('jwt');
         const response = await fetch(
@@ -322,17 +314,7 @@ export default function CompetePage() {
       }
     };
 
-<<<<<<< HEAD
-    if (isTrainingMode) {
-<<<<<<< HEAD
-      fetchEvents();
-=======
-      fetchPastEvents();
->>>>>>> def93e2 (Refactored to Header, Left Panel and Right Panel. Still much work to be done)
-    }
-=======
     fetchEvents();
->>>>>>> 270f0fc (added timer)
   }, [isTrainingMode]);
 
   const pastProblems = useMemo(() => {
@@ -608,34 +590,11 @@ export default function CompetePage() {
   return (
     <div className="h-[calc(100vh-7rem)] flex flex-col">
       <Header
-<<<<<<< HEAD
-<<<<<<< HEAD
         languageProps={{selectedLanguageObject, currentLanguage, setCurrentLanguage, languages}}
         problemProps={{isTrainingMode, isViewMode, problemTitle: problem.title, isInteractiveProblem}}
         handleSubmit={handleSubmit}
         isSubmitting={isSubmitting}
-<<<<<<< HEAD
-=======
-        isTrainingMode={isTrainingMode}
-        problemTitle={problem.title}
-        isInteractiveProblem={isInteractiveProblem}
-        selectedLanguageObject={selectedLanguageObject}
-        currentLanguage={currentLanguage}
-        setCurrentLanguage={setCurrentLanguage}
-        languages={languages}
-        handleSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
-        isViewMode={isViewMode}
->>>>>>> def93e2 (Refactored to Header, Left Panel and Right Panel. Still much work to be done)
-=======
-        languageProps={{selectedLanguageObject, currentLanguage, setCurrentLanguage, languages}}
-        problemProps={{isTrainingMode, isViewMode, problemTitle: problem.title, isInteractiveProblem}}
-        handleSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
->>>>>>> cfe1066 (fixed some of the comments)
-=======
         endDate={currentEvent ? new Date(currentEvent.end) : undefined}
->>>>>>> 270f0fc (added timer)
       />
 
       <ProblemMode isTrainingMode={isTrainingMode} isViewMode={isViewMode} />
@@ -643,12 +602,8 @@ export default function CompetePage() {
       <div className="flex-1 grid grid-cols-2 gap-3 min-h-0">
         <LeftPanel
           isViewMode={isViewMode}
-<<<<<<< HEAD
-=======
           problemDescription={problem.description}
->>>>>>> def93e2 (Refactored to Header, Left Panel and Right Panel. Still much work to be done)
           isInteractiveProblem={isInteractiveProblem}
-          problem={problem}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           submissions={submissions}
@@ -657,6 +612,7 @@ export default function CompetePage() {
           isTrainingMode={isTrainingMode}
           previousProblem={previousProblem}
           nextProblem={nextProblem}
+          testCases={problem.testCases || []}
         />
 
         <RightPanel

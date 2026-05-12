@@ -126,19 +126,8 @@ export default function TrainingPage() {
         })),
       );
   }, [events]);
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-  
-=======
 console.log("pastProblems:",pastProblems)
->>>>>>> 6c5f602 (Adding previous and next buttons in training navigation)
-=======
 
->>>>>>> fbbd36c (removing the word between the buttons)
-=======
-  
->>>>>>> cfe1066 (fixed some of the comments)
   useEffect(() => {
     const fetchStatuses = async () => {
       const uniqueProblemIds = Array.from(new Set(pastProblems.map((problem) => problem.documentId)));

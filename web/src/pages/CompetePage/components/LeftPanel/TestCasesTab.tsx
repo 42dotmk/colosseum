@@ -15,9 +15,9 @@ export default function TestCasesTab({ publicTestCases }: TestCasesTabProps) {
             No public test cases available
           </p>
         ) : (
-          publicTestCases.map((tc: TestCase, index: number) => (
+          publicTestCases.map((tc: TestCase, index: number) => 
             <PublicTestCase tc={tc} index={index} />
-          ))
+          )
         )}
       </div>
     </TabsContent>
