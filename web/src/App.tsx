@@ -7,7 +7,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import RegisterPage from '@/pages/register/RegisterPage';
 import LoginPage from '@/pages/login/LoginPage';
 import EventsPage from '@/pages/EventsPage';
-import EventDetailPage from '@/pages/EventDetailPage';
+import EventDetailPage from '@/pages/EventDetail/EventDetailPage';
 import ProfilePage from '@/pages/profile/ProfilePage';
 import CompetePage from '@/pages/CompetePage/CompetePage';
 import TrainingPage from '@/pages/TrainingPage';
