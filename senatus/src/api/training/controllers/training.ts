@@ -17,18 +17,12 @@ export default {
 			},
 			populate: ['problems'],
 		});
-		/*
-		 const problems = ((endedEvents || []) as any[])
-			.flatMap((event) => event.problems || [])
-			.filter((problem: any) => !!problem?.documentId) as TrainingProblemLike[]; 
-		*/
-		///*
 		const problems = ((endedEvents || []) as any[])
 			.flatMap((event) => (event.problems || [])
 			  .map((problem: any) => ({...problem, eventId: event.id, eventTitle: event.title})))
 			.filter((problem: any) => !!problem?.documentId) as TrainingProblemLike[];
 		//*/
 
-		ctx.body = problems;		
+		ctx.body = problems;
 	},
 };
