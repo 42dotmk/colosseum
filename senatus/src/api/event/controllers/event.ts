@@ -56,7 +56,7 @@ type SubmissionLike = {
 	executions?: ExecutionLike[];
 };
 
-type TrainingProblemLike = {
+export type TrainingProblemLike = {
 	documentId: string;
 	testCases?: TestCaseLike[];
 };
