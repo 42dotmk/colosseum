@@ -17,7 +17,6 @@ export default function ProblemResultsTab({
 
   return (
     <>
-      (
       <TabsContent value="results" className="mt-0 h-full">
         <div className="space-y-4">
           {submissions.length === 0 ? (
@@ -38,7 +37,6 @@ export default function ProblemResultsTab({
           )}
         </div>
       </TabsContent>
-      )
     </>
   )
 }

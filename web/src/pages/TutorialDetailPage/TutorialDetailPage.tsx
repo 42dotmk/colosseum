@@ -1,15 +1,15 @@
 import { useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 
-import { resolveThumbnail } from './TutorialDetailPage/utils/resolveThumbnail';
-import useTutorialDetail from './TutorialDetailPage/hooks/useTutorialDetail';
+import { resolveThumbnail } from './utils/resolveThumbnail';
+import useTutorialDetail from './hooks/useTutorialDetail';
 
-import BackToTutorialsButton from './TutorialDetailPage/components/BackToTutorialsButton';
-import TutorialThumbnail from './TutorialDetailPage/components/TutorialThumbnail';
-import TutorialContent from './TutorialDetailPage/components/TutorialContent';
-import Loading from './TutorialDetailPage/components/Loading';
-import ErrorState from './TutorialDetailPage/components/ErrorState';
-import TutorialDetails from './TutorialDetailPage/components/TutorialDetails';
+import BackToTutorialsButton from './components/BackToTutorialsButton';
+import TutorialThumbnail from './components/TutorialThumbnail';
+import TutorialContent from './components/TutorialContent';
+import Loading from './components/Loading';
+import ErrorState from './components/ErrorState';
+import TutorialDetails from './components/TutorialDetails';
 
 export default function TutorialDetailPage() {
   const { tutorialId } = useParams();

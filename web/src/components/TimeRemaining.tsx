@@ -1,14 +1,10 @@
 import { useEffect, useState } from "react";
-import { getTimeRemaining } from "../utils";
+import { getTimeRemaining } from "../pages/EventDetail/utils";
 
-export default function TimeRemaining({ endDate }: {endDate: Date}) {
+export default function TimeRemaining({ endDate, variant }: {endDate: Date, variant: 'event-detail' | 'compete'}) {
   const [timeRemaining, setTimeRemaining] = useState('');
 
-
   useEffect(() => {
-    if (!event) return;
-
-    //const endDate = new Date(event.end);
     const updateTimer = () => {
       setTimeRemaining(getTimeRemaining(endDate));
     };
@@ -20,7 +16,7 @@ export default function TimeRemaining({ endDate }: {endDate: Date}) {
 
   return (
     <div className="text-right shrink-0">
-      <div className="text-xs text-muted-foreground mb-1">Time Remaining</div>
+      {variant==='event-detail' && <div className="text-xs text-muted-foreground mb-1">Time Remaining</div>}
       <div className="font-mono text-2xl font-semibold text-amber-500 tabular-nums">
         {timeRemaining}
       </div>

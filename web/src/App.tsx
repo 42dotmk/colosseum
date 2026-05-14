@@ -13,7 +13,7 @@ import CompetePage from '@/pages/CompetePage/CompetePage';
 import TrainingPage from '@/pages/TrainingPage';
 import TrainingLeaderboardPage from '@/pages/TrainingLeaderboardPage';
 import TutorialsPage from '@/pages/TutorialsPage/TutorialsPage';
-import TutorialDetailPage from '@/pages/TutorialDetailPage';
+import TutorialDetailPage from '@/pages/TutorialDetailPage/TutorialDetailPage';
 
 function App() {
   useEffect(() => {

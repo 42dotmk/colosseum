@@ -1,5 +1,5 @@
 import BackToContests from "./BackToContests";
-import TimeRemaining from "./TimeRemaining";
+import TimeRemaining from "../../../components/TimeRemaining";
 import EventMeta from "./EventMeta";
 import EventRegistration from "./EventRegistration";
 import Title from "./Title";
@@ -57,7 +57,7 @@ export default function EventDetailHeader({
             visibleProblemsLength={visibleProblemsLength} />
         </div>
 
-        {isActive && <TimeRemaining endDate={endDate} />}
+        {isActive && <TimeRemaining endDate={endDate} variant="event-detail" />}
 
         <EventRegistration
           registrationLoading={registrationLoading}

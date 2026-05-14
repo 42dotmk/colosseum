@@ -30,14 +30,11 @@ export default function CompetePage() {
   const [code, setCode] = useState('// Write your solution here\n');
   const [currentLanguage, setCurrentLanguage] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [problem, setProblem] = useState<Problem | null>(null);
   const [languages, setLanguages] = useState<Language[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [activeTab, setActiveTab] = useState<'description' | 'testcases' | 'results'>('description');
-
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [executionIdsBySubmission, setExecutionIdsBySubmission] = useState<Record<string, string[]>>({});
   const [executionOverrides, setExecutionOverrides] = useState<Record<string, Execution[]>>({});
@@ -293,7 +290,7 @@ export default function CompetePage() {
   }, [languages, currentLanguage]);
 
   useEffect(() => {
-    const fetchPastEvents = async () => {
+    const fetchEvents = async () => {
       try {
         const token = localStorage.getItem('jwt');
         const response = await fetch(
@@ -313,13 +310,11 @@ export default function CompetePage() {
         const allEvents = Array.isArray(data) ? data : (data.data || []);
         setEvents(allEvents);
       } catch (err) {
-        console.error('Failed to load training problems:', err);
+        console.error('Failed to load problems:', err);
       }
     };
 
-    if (isTrainingMode) {
-      fetchPastEvents();
-    }
+    fetchEvents();
   }, [isTrainingMode]);
 
   const pastProblems = useMemo(() => {
@@ -573,6 +568,17 @@ export default function CompetePage() {
     }
   };
 
+
+  console.log(events);
+  const currentEvent = events.find((event) => {
+    console.log('checking event', event.title);
+    return event.problems?.some((p) => {
+      console.log('Checking problem', p.documentId, 'against', problemId);
+      return p.documentId === problemId
+    })});
+  console.log('currentEvent', currentEvent);
+
+  
   if (loading) {
     return <Loading />;
   }
@@ -588,6 +594,7 @@ export default function CompetePage() {
         problemProps={{isTrainingMode, isViewMode, problemTitle: problem.title, isInteractiveProblem}}
         handleSubmit={handleSubmit}
         isSubmitting={isSubmitting}
+        endDate={currentEvent ? new Date(currentEvent.end) : undefined}
       />
 
       <ProblemMode isTrainingMode={isTrainingMode} isViewMode={isViewMode} />
@@ -595,8 +602,8 @@ export default function CompetePage() {
       <div className="flex-1 grid grid-cols-2 gap-3 min-h-0">
         <LeftPanel
           isViewMode={isViewMode}
+          problemDescription={problem.description}
           isInteractiveProblem={isInteractiveProblem}
-          problem={problem}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           submissions={submissions}
@@ -605,6 +612,7 @@ export default function CompetePage() {
           isTrainingMode={isTrainingMode}
           previousProblem={previousProblem}
           nextProblem={nextProblem}
+          testCases={problem.testCases || []}
         />
 
         <RightPanel

@@ -5,7 +5,6 @@ import TrainingNavigation from "../ProblemNavigationButtons/TrainingNavigation";
 import type { Submission } from "../../types/Submission";
 import type { Execution } from "../../types/Execution";
 import type { TestCase } from "../../types/TestCase";
-import type { Problem } from "../../types/Problem";
 import type { EventProblem } from "../../types/EventProblem";
 
 import { useEffect } from "react";
@@ -16,8 +15,9 @@ import ProblemResultsTab from "./ProblemResultsTab";
 
 type LeftPanelProps = {
   isViewMode: boolean;
+  problemDescription: string;
   isInteractiveProblem: boolean;
-  problem: Problem | null;
+  testCases: TestCase[];
 
   activeTab: 'description' | 'testcases' | 'results';
   setActiveTab: React.Dispatch<
@@ -35,8 +35,8 @@ type LeftPanelProps = {
 
 export default function LeftPanel({
   isViewMode,
+  problemDescription,
   isInteractiveProblem,
-  problem,
   activeTab,
   setActiveTab,
   submissions,
@@ -45,9 +45,9 @@ export default function LeftPanel({
   isTrainingMode,
   previousProblem,
   nextProblem,
+  testCases,
 }: LeftPanelProps) {
 
-  const testCases = problem?.testCases || [];
   const publicTestCases = testCases.filter((tc: TestCase) => !tc.hidden && !tc.locked);
 
   useEffect(() => {
@@ -82,7 +82,7 @@ export default function LeftPanel({
 
         <div className="flex-1 overflow-auto p-4">
           <ProblemTab 
-            problemDescription={problem?.description} 
+            problemDescription={problemDescription} 
             testCasesLength={testCases.length} 
             publicTestCasesLength={publicTestCases.length} />
 
