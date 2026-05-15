@@ -11,4 +11,6 @@ export interface Problem {
   checkerSource?: string;
   testCases?: TestCase[];
   starterCodes?: any[];
+  timeLimit: number;
+  memoryLimit: number;
 }

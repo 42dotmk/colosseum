@@ -689,6 +689,14 @@ export interface ApiProblemProblem extends Struct.CollectionTypeSchema {
       'oneToMany',
       'api::problem.problem'
     >;
+    memoryLimit: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<256>;
     points: Schema.Attribute.Integer &
       Schema.Attribute.SetMinMax<
         {
@@ -718,6 +726,14 @@ export interface ApiProblemProblem extends Struct.CollectionTypeSchema {
       'oneToMany',
       'api::test-case.test-case'
     >;
+    timeLimit: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<1000>;
     title: Schema.Attribute.String &
       Schema.Attribute.SetPluginOptions<{
         i18n: {

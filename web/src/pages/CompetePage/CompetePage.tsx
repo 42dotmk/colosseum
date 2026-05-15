@@ -38,16 +38,16 @@ export default function CompetePage() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [executionIdsBySubmission, setExecutionIdsBySubmission] = useState<Record<string, string[]>>({});
   const [executionOverrides, setExecutionOverrides] = useState<Record<string, Execution[]>>({});
+  const [events, setEvents] = useState<EventItem[]>([]);
 
   const initialCodeLoadedRef = useRef(false);
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const [events, setEvents] = useState<EventItem[]>([]);
 
   const selectedLanguageObject = languages.find(
     (l: Language) => l.documentId === currentLanguage
   );
-  const isInteractiveProblem = !!problem?.isInteractive;
+  const isInteractiveProblem = problem?.isInteractive || false;
 
   const getSubmissionExecutions = (submission: Submission) =>
     executionOverrides[submission.documentId]?.length
@@ -568,16 +568,11 @@ export default function CompetePage() {
     }
   };
 
-
-  console.log(events);
   const currentEvent = events.find((event) => {
-    console.log('checking event', event.title);
     return event.problems?.some((p) => {
-      console.log('Checking problem', p.documentId, 'against', problemId);
       return p.documentId === problemId
-    })});
-  console.log('currentEvent', currentEvent);
-
+    })
+  });
   
   if (loading) {
     return <Loading />;
@@ -590,8 +585,8 @@ export default function CompetePage() {
   return (
     <div className="h-[calc(100vh-7rem)] flex flex-col">
       <Header
-        languageProps={{selectedLanguageObject, currentLanguage, setCurrentLanguage, languages}}
-        problemProps={{isTrainingMode, isViewMode, problemTitle: problem.title, isInteractiveProblem}}
+        languageProps={{ currentLanguage, setCurrentLanguage, languages}}
+        problemProps={{isTrainingMode, isViewMode, problemTitle: problem.title, isInteractiveProblem, timeLimit: problem.timeLimit, memoryLimit: problem.memoryLimit}}
         handleSubmit={handleSubmit}
         isSubmitting={isSubmitting}
         endDate={currentEvent ? new Date(currentEvent.end) : undefined}

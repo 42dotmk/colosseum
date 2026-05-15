@@ -2,15 +2,15 @@ import fs from 'fs';
 import path from 'path';
 import cp from 'child_process';
 import { v4 } from 'uuid';
-
 import { readFile, writeFile } from 'fs/promises';
 
 type LanguageOptions = {
   [key: string]: string | undefined;
   language: string;
   entrypointFile: string;
-  // Interactive problem support
-  interactive?: string; // '1' when interactive
+  timeLimitMs: string;
+  memoryLimitMb: string;
+  interactive?: string;
   interactorSource?: string;
   checkerSource?: string;
 };
@@ -23,22 +23,16 @@ type File = {
 };
 
 const CPU_LIMIT_PER_EXECUTION = process.env.CPU_LIMIT_PER_EXECUTION;
-const MEMORY_LIMIT_PER_EXECUTION = process.env.MEMORY_LIMIT_PER_EXECUTION ?? '1G';
 const ENABLE_NETWORK_IN_EXECUTION = process.env.ENABLE_NETWORK_IN_EXECUTION === 'true';
 const IMAGE_BASE = process.env.IMAGE_BASE || 'ghcr.io/42dotmk/colosseum-executioner-';
 const WORKDIR = process.env.WORKDIR || '_work';
 
 const normalizeRuntimeLanguage = (language: string) => {
-  if (!language) {
-    return language;
-  }
-
+  if (!language) return language;
   const normalized = language.toLowerCase();
-
   if (normalized === 'cpp' || normalized === 'c++' || normalized === 'cxx') {
     return 'gcc';
   }
-
   return normalized;
 };
 
@@ -47,56 +41,40 @@ if (!fs.existsSync(WORKDIR)) {
 }
 
 function parseDuration(duration: string) {
-  if (!duration) {
-    console.error(`Received invalid duration '${duration}'`);
-    return null;
-  }
+  if (!duration) return null;
   const match = duration.match(/(\d+)m(\d+(?:\.\d+)?)s/);
   if (!match) return null;
 
   const minutes = Number(match[1]);
   const seconds = Number(match[2]);
-
   return minutes * 60 + seconds;
 }
 
-const readIfExists = async (path: string) => {
-  if (fs.existsSync(path)) {
-    return (await readFile(path)).toString();
+const readIfExists = async (filePath: string) => {
+  if (fs.existsSync(filePath)) {
+    return (await readFile(filePath)).toString();
   }
   return '';
-}
+};
 
 export const execute = async (files: File[], input: File[], options: LanguageOptions) => {
   const id = v4();
-
   const subWorkspace = path.join(WORKDIR, id);
   const srcDir = path.resolve(path.join(subWorkspace, "src"));
   const inputDir = path.resolve(path.join(subWorkspace, "input"));
   const outputDir = path.resolve(path.join(subWorkspace, "output"));
   const lang = normalizeRuntimeLanguage(options.language);
 
-  if (!fs.existsSync(subWorkspace)) {
-    fs.mkdirSync(subWorkspace);
-  }
-
-  if (!fs.existsSync(srcDir)) {
-    fs.mkdirSync(srcDir);
-  }
-
-  if (!fs.existsSync(inputDir)) {
-    fs.mkdirSync(inputDir);
-  }
-
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir);
-  }
+  // Ensure workspace directories exist
+  [subWorkspace, srcDir, inputDir, outputDir].forEach(dir => {
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+  });
 
   const timeFilename = `time`;
   const stdoutFilename = `stdout`;
+  const stderrFilename = `stderr`;
   const compileStdoutFilename = `compile.stdout`;
   const compileStderrFilename = `compile.stderr`;
-  const stderrFilename = `stderr`;
 
   const timePath = path.resolve(path.join(subWorkspace, timeFilename));
   const stdoutPath = path.resolve(path.join(subWorkspace, stdoutFilename));
@@ -104,13 +82,11 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
   const compileStdoutPath = path.resolve(path.join(subWorkspace, compileStdoutFilename));
   const compileStderrPath = path.resolve(path.join(subWorkspace, compileStderrFilename));
 
+  // Write source files
   for (const file of files) {
-    const filePath = path.resolve(path.join(srcDir, file.filename));
-    console.log(`Writing file to ${filePath}`)
-    await writeFile(filePath, file.content);
+    await writeFile(path.resolve(path.join(srcDir, file.filename)), file.content);
   }
 
-  // Write interactor and checker sources for interactive problems
   if (options.interactive === '1') {
     if (options.interactorSource) {
       await writeFile(path.resolve(path.join(srcDir, 'interactor.cpp')), options.interactorSource);
@@ -120,27 +96,29 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
     }
   }
 
+  // Write input files
   for (const file of input) {
-    const filePath = path.resolve(path.join(inputDir, file.filename));
-    await writeFile(filePath, file.content);
+    await writeFile(path.resolve(path.join(inputDir, file.filename)), file.content);
   }
 
   try {
-    return await new Promise(async (resolve) => {
+    // Pass BOTH resolve and reject to the execution Promise
+    return await new Promise(async (resolve, reject) => {
       await writeFile(timePath, "");
       await writeFile(stdoutPath, "");
       await writeFile(stderrPath, "");
       await writeFile(compileStdoutPath, "");
       await writeFile(compileStderrPath, "");
 
+      const timeLimitMs = options.timeLimitMs;
+      const memoryLimitMb = options.memoryLimitMb;
       const extraArgs = [];
+
+      extraArgs.push(`--memory=${memoryLimitMb}m`);
+      extraArgs.push(`--memory-swap=${memoryLimitMb}m`);
 
       if (CPU_LIMIT_PER_EXECUTION) {
         extraArgs.push(`--cpus=${CPU_LIMIT_PER_EXECUTION}`);
-      }
-
-      if (MEMORY_LIMIT_PER_EXECUTION) {
-        extraArgs.push(`--memory=${MEMORY_LIMIT_PER_EXECUTION}`);
       }
 
       if (!ENABLE_NETWORK_IN_EXECUTION) {
@@ -155,51 +133,44 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
       const args = [
         'run',
         "--rm",
-        "-v",
-        `${srcDir}:/exc/src`,
-        "-v",
-        `${inputDir}:/exc/input`,
-        "-v",
-        `${outputDir}:/exc/output`,
-        "-v",
-        `${timePath}:/exc/${timeFilename}`,
-        "-v",
-        `${stdoutPath}:/exc/${stdoutFilename}`,
-        "-v",
-        `${stderrPath}:/exc/${stderrFilename}`,
-        "-v",
-        `${compileStdoutPath}:/exc/${compileStdoutFilename}`,
-        "-v",
-        `${compileStderrPath}:/exc/${compileStderrFilename}`,
+        "-v", `${srcDir}:/exc/src`,
+        "-v", `${inputDir}:/exc/input`,
+        "-v", `${outputDir}:/exc/output`,
+        "-v", `${timePath}:/exc/${timeFilename}`,
+        "-v", `${stdoutPath}:/exc/${stdoutFilename}`,
+        "-v", `${stderrPath}:/exc/${stderrFilename}`,
+        "-v", `${compileStdoutPath}:/exc/${compileStdoutFilename}`,
+        "-v", `${compileStderrPath}:/exc/${compileStderrFilename}`,
         ...extraArgs,
-        "-i",
-        `${IMAGE_BASE}${lang}`
+        `${IMAGE_BASE}${lang}` // Removed "-i" to prevent stalling unless explicit stdin is provided
       ];
 
-      const child = cp.spawn('docker', args);
-      console.log(child.spawnargs.join(' '))
+      let child: cp.ChildProcess;
+      let isTimeout = false;
+
+      try {
+        child = cp.spawn('docker', args);
+      } catch (err) {
+        reject(err);
+        return;
+      }
+
+      const timeout = setTimeout(() => {
+        isTimeout = true;
+        console.log(`Execution timed out after ${timeLimitMs} ms, killing container...`);
+        child.kill('SIGKILL');
+      }, parseInt(timeLimitMs) + 2000);
 
       let runtimeStdout = '';
       let runtimeStderr = '';
       let spawnError: string | null = null;
 
-      child.stdout.on('data', (data) => {
-        console.log(`stdout: ${data}`);
-        runtimeStdout += data;
-      });
+      child.stdout?.on('data', (data) => { runtimeStdout += data; });
+      child.stderr?.on('data', (data) => { runtimeStderr += data; });
+      child.on('error', (err) => { spawnError = err.message; });
 
-      child.stderr.on('data', (data) => {
-        console.error(`stderr: ${data}`);
-        runtimeStderr += data;
-      });
-
-      child.on('error', (err) => {
-        spawnError = err instanceof Error ? err.message : String(err);
-        console.error(`docker spawn error: ${spawnError}`);
-      });
-
-      child.on('close', async (code) => {
-        console.log(`child process exited with code ${code}`);
+      child.on('close', async (code, signal) => {
+        clearTimeout(timeout);
 
         const output = [];
         const dockerErrorDetails = [spawnError, runtimeStderr.trim(), runtimeStdout.trim()]
@@ -207,29 +178,36 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
           .join("\n")
           .trim();
 
+        // Fallback global compilation errors from container lifecycle
+        const compilationErr = await readIfExists(compileStderrPath);
+
         for (const inp of input) {
-          const stdoutPath = path.resolve(path.join(outputDir, `${inp.filename}.stdout`));
-          const stderrPath = path.resolve(path.join(outputDir, `${inp.filename}.stderr`));
-          const timePath = path.resolve(path.join(outputDir, `${inp.filename}.time`));
-          const stdout = await readIfExists(stdoutPath);
-          
-          let stderr = await readIfExists(stderrPath);
+          // Double-check path generation scheme matching your image's output location
+          const specStdoutPath = path.resolve(path.join(outputDir, `${inp.filename}.stdout`));
+          const specStderrPath = path.resolve(path.join(outputDir, `${inp.filename}.stderr`));
+          const specTimePath = path.resolve(path.join(outputDir, `${inp.filename}.time`));
+
+          // Try reading problem-specific output, fall back to global volume logs if empty
+          let stdout = await readIfExists(specStdoutPath);
+          if (!stdout && !compilationErr) stdout = await readIfExists(stdoutPath);
+
+          let stderr = await readIfExists(specStderrPath);
+          if (!stderr) stderr = await readIfExists(stderrPath);
 
           if (!stdout && !stderr && code !== 0) {
-            stderr = dockerErrorDetails
-              ? `Execution runtime failed (exit code ${code}):\n${dockerErrorDetails}`
-              : `Execution runtime failed (exit code ${code})`;
+            if (signal === 'SIGKILL' || code === 137) stderr = "Time limit exceeded";
+            else if (isTimeout) stderr = "Time limit exceeded";
+            else if (compilationErr) stderr = `Compilation Error:\n${compilationErr}`;
+            else if (dockerErrorDetails) stderr = `Execution failed: ${dockerErrorDetails}`;
+            else stderr = `Execution failed with exit code ${code}`;
           }
 
-          const time = await readIfExists(timePath);
-
+          const time = await readIfExists(specTimePath) || await readIfExists(timePath);
           let parsedTime = null;
           if (time) {
             const timeSplits = time.split("\n").map((t) => t.trim()).filter(x => x).map(x => x.split("\t"));
-            const [ realTime ] = timeSplits;
-            parsedTime = parseDuration(realTime[1]);
-            if (!parsedTime) {
-              console.error(`Failed to parse time from ${time}`);
+            if (timeSplits.length > 0 && timeSplits[0][1]) {
+              parsedTime = parseDuration(timeSplits[0][1]);
             }
           }
 
@@ -242,15 +220,18 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
         }
 
         resolve(output);
-      });
 
-      console.log('child', child.pid);
+        // Cleanup workspace
+        if (fs.existsSync(subWorkspace)) {
+          fs.rmSync(subWorkspace, { recursive: true });
+        }
+      });
     });
-  } catch (e) {
-    console.error(e);
-  } finally {
+  } catch (err) {
+    console.error('execution error', err);
     if (fs.existsSync(subWorkspace)) {
       fs.rmSync(subWorkspace, { recursive: true });
     }
+    return [];
   }
 };

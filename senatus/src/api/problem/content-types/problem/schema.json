@@ -48,6 +48,16 @@
         }
       }
     },
+    "timeLimit": {
+      "type": "integer",
+      "default": 1000,
+      "min": 0
+    },
+    "memoryLimit": {
+      "type": "integer",
+      "default": 256,
+      "min": 0
+    },
     "points": {
       "type": "integer",
       "default": 100,

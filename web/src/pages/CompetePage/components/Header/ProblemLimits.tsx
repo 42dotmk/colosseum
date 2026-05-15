@@ -1,11 +1,16 @@
 import Language from "../../types/Language";
 import { formatMemoryLimit, formatTimeLimit } from "./utils";
 
-export default function ProblemLimits({selectedLanguageObject}: {selectedLanguageObject: Language | undefined}) {
+type ProblemLimitsProps = {
+  timeLimit: number | undefined;
+  memoryLimit: number | undefined;
+}
+
+export default function ProblemLimits({timeLimit, memoryLimit}: ProblemLimitsProps) {
   return (
     <div className="hidden md:flex items-center gap-3 text-xs text-muted-foreground mr-1">
-      <span>Time limit: {formatTimeLimit(selectedLanguageObject?.defaultMaxCpuTime)}</span>
-      <span>Memory limit: {formatMemoryLimit(selectedLanguageObject?.defaultMaxMemory)}</span>
+      <span>Time limit: {formatTimeLimit(timeLimit)}</span>
+      <span>Memory limit: {formatMemoryLimit(memoryLimit)}</span>
     </div>
   )
 }

@@ -11,10 +11,11 @@ type ProblemProps = {
   isViewMode: boolean,
   problemTitle: string,
   isInteractiveProblem: boolean,
+  timeLimit: number | undefined;
+  memoryLimit: number | undefined;
 }
 
 type LanguageProps = {
-  selectedLanguageObject: Language | undefined,
   currentLanguage: string,
   setCurrentLanguage: React.Dispatch<React.SetStateAction<string>>,
   languages: Language[],
@@ -29,8 +30,8 @@ type HeaderProps = {
 }
 
 export default function Header({problemProps,languageProps, endDate,handleSubmit,isSubmitting}: HeaderProps) {
-  const {isTrainingMode, isViewMode, problemTitle, isInteractiveProblem} = problemProps;
-  const {selectedLanguageObject, currentLanguage, setCurrentLanguage, languages} = languageProps;
+  const {isTrainingMode, isViewMode, problemTitle, isInteractiveProblem, timeLimit, memoryLimit} = problemProps;
+  const { currentLanguage, setCurrentLanguage, languages} = languageProps;
   
   return (
     <>
@@ -41,7 +42,7 @@ export default function Header({problemProps,languageProps, endDate,handleSubmit
         </div>
         <div className="flex items-center gap-2">
           {!isTrainingMode && !isViewMode && endDate && <TimeRemaining endDate={endDate} variant="compete" />}
-          <ProblemLimits selectedLanguageObject={selectedLanguageObject} />
+          <ProblemLimits timeLimit={timeLimit} memoryLimit={memoryLimit} />
           <LanguageSelect currentLanguage={currentLanguage} setCurrentLanguage={setCurrentLanguage} languages={languages} />
           <SubmitButton handleSubmit={handleSubmit} isSubmitting={isSubmitting} isViewMode={isViewMode} />
         </div>

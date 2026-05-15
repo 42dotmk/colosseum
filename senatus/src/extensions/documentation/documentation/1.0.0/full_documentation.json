@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2026-05-11T18:31:08.439Z"
+    "x-generation-date": "2026-05-15T22:31:54.269Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -6831,6 +6831,12 @@
                 "title": {
                   "type": "string"
                 },
+                "timeLimit": {
+                  "type": "integer"
+                },
+                "memoryLimit": {
+                  "type": "integer"
+                },
                 "points": {
                   "type": "integer"
                 },
@@ -8117,6 +8123,12 @@
                     },
                     "title": {
                       "type": "string"
+                    },
+                    "timeLimit": {
+                      "type": "integer"
+                    },
+                    "memoryLimit": {
+                      "type": "integer"
                     },
                     "points": {
                       "type": "integer"
@@ -9678,6 +9690,12 @@
                     "title": {
                       "type": "string"
                     },
+                    "timeLimit": {
+                      "type": "integer"
+                    },
+                    "memoryLimit": {
+                      "type": "integer"
+                    },
                     "points": {
                       "type": "integer"
                     },
@@ -10647,6 +10665,12 @@
                   },
                   "title": {
                     "type": "string"
+                  },
+                  "timeLimit": {
+                    "type": "integer"
+                  },
+                  "memoryLimit": {
+                    "type": "integer"
                   },
                   "points": {
                     "type": "integer"
@@ -12424,6 +12448,12 @@
               "title": {
                 "type": "string"
               },
+              "timeLimit": {
+                "type": "integer"
+              },
+              "memoryLimit": {
+                "type": "integer"
+              },
               "points": {
                 "type": "integer"
               },
@@ -12634,6 +12664,12 @@
                     },
                     "title": {
                       "type": "string"
+                    },
+                    "timeLimit": {
+                      "type": "integer"
+                    },
+                    "memoryLimit": {
+                      "type": "integer"
                     },
                     "points": {
                       "type": "integer"
@@ -12994,6 +13030,12 @@
           },
           "title": {
             "type": "string"
+          },
+          "timeLimit": {
+            "type": "integer"
+          },
+          "memoryLimit": {
+            "type": "integer"
           },
           "points": {
             "type": "integer"
@@ -13949,6 +13991,12 @@
                     },
                     "title": {
                       "type": "string"
+                    },
+                    "timeLimit": {
+                      "type": "integer"
+                    },
+                    "memoryLimit": {
+                      "type": "integer"
                     },
                     "points": {
                       "type": "integer"
@@ -15252,6 +15300,12 @@
               },
               "title": {
                 "type": "string"
+              },
+              "timeLimit": {
+                "type": "integer"
+              },
+              "memoryLimit": {
+                "type": "integer"
               },
               "points": {
                 "type": "integer"
@@ -16728,6 +16782,12 @@
               },
               "title": {
                 "type": "string"
+              },
+              "timeLimit": {
+                "type": "integer"
+              },
+              "memoryLimit": {
+                "type": "integer"
               },
               "points": {
                 "type": "integer"

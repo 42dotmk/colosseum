@@ -24,8 +24,8 @@ export default function SubmissionResult({
 
   const sortExecutionsForDisplay = (executions: Execution[]) => {
     const rank = (execution: Execution) => {
-      const hidden = !!execution.testCase?.hidden;
-      const locked = !!execution.testCase?.locked;
+      const hidden = execution.testCase?.hidden;
+      const locked = execution.testCase?.locked;
 
       if (!hidden && !locked) return 0;
       if (!hidden && locked) return 1;

@@ -21,11 +21,8 @@ export default function ExecutionResult({
   const isPassed = isExecutionPassed(execution);
   const isFailed = execution.processed && !isPassed;
   const isRunning = !execution.processed;
-  const detailsVisible =
-    !execution.testCase?.hidden && !execution.testCase?.locked;
-
+  const detailsVisible = !execution.testCase?.hidden && !execution.testCase?.locked;
   
-
   return (
     <div
       className={cn(
