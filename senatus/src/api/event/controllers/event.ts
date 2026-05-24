@@ -138,7 +138,7 @@ const shouldUseTestCaseInLiveScore = (
 		return true;
 	}
 
-	return !testCase.hidden && !testCase.locked;
+	return !testCase.locked;
 };
 
 const getEventRegistrations = async (strapi: any, eventDocumentId: string) =>
@@ -554,7 +554,7 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
 		);
 
 		const eligibleProblemIds = uniqueProblems
-			.filter((problem) => (problem.testCases || []).some((testCase) => !testCase.hidden && !testCase.locked))
+			.filter((problem) => (problem.testCases || []).some((testCase) => !testCase.locked))
 			.map((problem) => problem.documentId);
 
 		if (eligibleProblemIds.length === 0) {
@@ -608,7 +608,7 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
 				continue;
 			}
 
-			const scopedCases = (problem.testCases || []).filter((testCase) => !testCase.hidden && !testCase.locked);
+			const scopedCases = (problem.testCases || []).filter((testCase) => !testCase.locked);
 			if (scopedCases.length === 0) {
 				continue;
 			}

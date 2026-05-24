@@ -33,27 +33,6 @@ interface Event {
   supportedLanguages?: any[];
 }
 
-interface SubmissionExecution {
-  processed: boolean;
-  passed?: boolean;
-  stdout?: string;
-  testCase?: {
-    output?: string;
-    hidden?: boolean;
-    locked?: boolean;
-  };
-}
-
-interface ProblemSubmission {
-  documentId: string;
-  createdAt: string;
-  problem?: {
-    documentId: string;
-    leaderboardVisibilityMode?: 'public_only_live' | 'full_live';
-  };
-  executions?: SubmissionExecution[];
-}
-
 type ProblemStatus = 'not_tried' | 'zero' | 'partial' | 'full';
 
 interface LeaderboardProblem {
@@ -158,18 +137,6 @@ export default function EventDetailPage() {
   const [questionsError, setQuestionsError] = useState<string | null>(null);
   const [questionDraft, setQuestionDraft] = useState('');
   const [isSubmittingQuestion, setIsSubmittingQuestion] = useState(false);
-
-  const isExecutionPassed = (execution: SubmissionExecution) => {
-    if (!execution?.processed) {
-      return false;
-    }
-
-    if (typeof execution.passed === 'boolean') {
-      return execution.passed;
-    }
-
-    return (execution.stdout || '').trim() === (execution.testCase?.output || '').trim();
-  };
 
   const getProblemStatusClass = (status: ProblemStatus | undefined) => {
     switch (status) {
@@ -426,7 +393,7 @@ export default function EventDetailPage() {
       try {
         const token = localStorage.getItem('jwt');
         const response = await fetch(
-          `${REST_URL}/submissions?filters[event][documentId][$eq]=${eventId}&populate[problem][fields][0]=documentId&populate[problem][fields][1]=leaderboardVisibilityMode&populate[executions][fields][0]=processed&populate[executions][fields][1]=passed&populate[executions][fields][2]=stdout&populate[executions][populate][testCase][fields][0]=output&populate[executions][populate][testCase][fields][1]=hidden&populate[executions][populate][testCase][fields][2]=locked&sort=createdAt:desc`,
+          `${REST_URL}/submissions/statuses?eventId=${eventId}`,
           {
             headers: {
               Authorization: token ? `Bearer ${token}` : '',
@@ -439,62 +406,11 @@ export default function EventDetailPage() {
         }
 
         const data = await response.json();
-        const submissions = (Array.isArray(data) ? data : (data.data || [])) as ProblemSubmission[];
-
-        const latestByProblem = new Map<string, ProblemSubmission>();
-        for (const submission of submissions) {
-          const problemDocumentId = submission.problem?.documentId;
-          if (!problemDocumentId || latestByProblem.has(problemDocumentId)) {
-            continue;
-          }
-
-          latestByProblem.set(problemDocumentId, submission);
-        }
-
         const nextStatusById: Record<string, ProblemStatus> = {};
-        const eventEnded = event.end ? new Date(event.end).getTime() <= Date.now() : false;
-
-        for (const problem of event.problems || []) {
-          const latestSubmission = latestByProblem.get(problem.documentId);
-          if (!latestSubmission) {
-            nextStatusById[problem.documentId] = 'not_tried';
-            continue;
-          }
-
-          const mode = problem.leaderboardVisibilityMode || 'public_only_live';
-          const shouldUseInLiveStatus = (testCase?: { hidden?: boolean; locked?: boolean }) => {
-            // Some interactive execution payloads can miss testCase relation in this
-            // endpoint. Treat them as visible fallback so solved statuses are counted.
-            if (!testCase) {
-              return true;
-            }
-
-            if (eventEnded || mode === 'full_live') {
-              return true;
-            }
-
-            return !testCase.hidden && !testCase.locked;
-          };
-
-          const scopedCountFromProblem = (problem.testCases || []).filter((testCase: any) =>
-            shouldUseInLiveStatus(testCase)
-          ).length;
-          const scopedExecutionResults = (latestSubmission.executions || []).filter(
-            (execution) => shouldUseInLiveStatus(execution.testCase),
-          );
-
-          const visibleCount = scopedCountFromProblem || scopedExecutionResults.length;
-          const passedCount = scopedExecutionResults.filter((execution) => isExecutionPassed(execution)).length;
-
-          if (visibleCount <= 0) {
-            nextStatusById[problem.documentId] = 'zero';
-          } else if (passedCount <= 0) {
-            nextStatusById[problem.documentId] = 'zero';
-          } else if (passedCount >= visibleCount) {
-            nextStatusById[problem.documentId] = 'full';
-          } else {
-            nextStatusById[problem.documentId] = 'partial';
-          }
+        if (data && data.statuses) {
+          Object.entries(data.statuses).forEach(([problemId, statusValue]) => {
+            nextStatusById[problemId] = statusValue as ProblemStatus;
+          });
         }
 
         setProblemStatusById(nextStatusById);

@@ -21,29 +21,6 @@ interface EventItem {
   problems?: EventProblem[];
 }
 
-interface SubmissionExecution {
-  processed: boolean;
-  passed?: boolean;
-  stdout?: string;
-  testCase?: {
-    output?: string;
-    hidden?: boolean;
-    locked?: boolean;
-  };
-}
-
-interface TrainingSubmission {
-  documentId: string;
-  createdAt: string;
-  metadata?: {
-    mode?: string;
-  };
-  problem?: {
-    documentId: string;
-  };
-  executions?: SubmissionExecution[];
-}
-
 type ProblemStatus = 'not_tried' | 'zero' | 'partial' | 'full';
 
 export default function TrainingPage() {
@@ -52,18 +29,6 @@ export default function TrainingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [problemStatusById, setProblemStatusById] = useState<Record<string, ProblemStatus>>({});
-
-  const isExecutionPassed = (execution: SubmissionExecution) => {
-    if (!execution?.processed) {
-      return false;
-    }
-
-    if (typeof execution.passed === 'boolean') {
-      return execution.passed;
-    }
-
-    return (execution.stdout || '').trim() === (execution.testCase?.output || '').trim();
-  };
 
   const getProblemStatusClass = (status: ProblemStatus | undefined) => {
     switch (status) {
@@ -137,22 +102,8 @@ export default function TrainingPage() {
 
       try {
         const token = localStorage.getItem('jwt');
-        const params = new URLSearchParams();
 
-        uniqueProblemIds.forEach((id, index) => {
-          params.append(`filters[problem][documentId][$in][${index}]`, id);
-        });
-
-        params.append('populate[problem][fields][0]', 'documentId');
-        params.append('populate[executions][fields][0]', 'processed');
-        params.append('populate[executions][fields][1]', 'passed');
-        params.append('populate[executions][fields][2]', 'stdout');
-        params.append('populate[executions][populate][testCase][fields][0]', 'output');
-        params.append('populate[executions][populate][testCase][fields][1]', 'hidden');
-        params.append('populate[executions][populate][testCase][fields][2]', 'locked');
-        params.append('sort', 'createdAt:desc');
-
-        const response = await fetch(`${REST_URL}/submissions?${params.toString()}`, {
+        const response = await fetch(`${REST_URL}/submissions/statuses?mode=training`, {
           headers: {
             Authorization: token ? `Bearer ${token}` : '',
           },
@@ -164,42 +115,12 @@ export default function TrainingPage() {
         }
 
         const data = await response.json();
-        const submissions = (Array.isArray(data) ? data : (data.data || [])) as TrainingSubmission[];
-        const practiceSubmissions = submissions.filter((submission) => submission?.metadata?.mode === 'practice');
-
-        const latestByProblem = new Map<string, TrainingSubmission>();
-        for (const submission of practiceSubmissions) {
-          const problemId = submission.problem?.documentId;
-          if (!problemId || latestByProblem.has(problemId)) {
-            continue;
-          }
-
-          latestByProblem.set(problemId, submission);
-        }
-
         const nextStatuses: Record<string, ProblemStatus> = {};
-        uniqueProblemIds.forEach((problemId) => {
-          const latest = latestByProblem.get(problemId);
-          if (!latest) {
-            nextStatuses[problemId] = 'not_tried';
-            return;
-          }
-
-          const visibleExecutions = (latest.executions || []).filter(
-            (execution) => execution.testCase && !execution.testCase.hidden && !execution.testCase.locked,
-          );
-
-          const visibleCount = visibleExecutions.length;
-          const passedCount = visibleExecutions.filter((execution) => isExecutionPassed(execution)).length;
-
-          if (visibleCount <= 0 || passedCount <= 0) {
-            nextStatuses[problemId] = 'zero';
-          } else if (passedCount >= visibleCount) {
-            nextStatuses[problemId] = 'full';
-          } else {
-            nextStatuses[problemId] = 'partial';
-          }
-        });
+        if (data && data.statuses) {
+          Object.entries(data.statuses).forEach(([problemId, statusValue]) => {
+            nextStatuses[problemId] = statusValue as ProblemStatus;
+          });
+        }
 
         setProblemStatusById(nextStatuses);
       } catch (err) {
