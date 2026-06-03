@@ -3,13 +3,15 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "start": "tsx index.ts"
+    "start": "tsx index.ts",
+    "test": "vitest run"
   },
   "devDependencies": {
     "@types/dockerode": "^3.3.24",
     "@types/uuid": "^9.0.8",
     "bun-types": "latest",
-    "tsx": "^4.7.1"
+    "tsx": "^4.7.1",
+    "vitest": "^4.1.8"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"

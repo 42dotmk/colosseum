@@ -6,13 +6,14 @@ import { v4 } from 'uuid';
 import { readFile, writeFile } from 'fs/promises';
 
 type LanguageOptions = {
-  [key: string]: string | undefined;
   language: string;
   entrypointFile: string;
-  // Interactive problem support
-  interactive?: string; // '1' when interactive
+  timeLimitSeconds?: number;
+  memoryLimitMb?: number;
+  interactive?: string;
   interactorSource?: string;
   checkerSource?: string;
+  [key: string]: string | number | undefined;
 };
 
 type File = {
@@ -22,8 +23,22 @@ type File = {
   metadata?: any;
 };
 
+type ExecutionResult = {
+  stdout: string;
+  stderr: string;
+  time: number | null;
+  memoryKb: number | null;
+  verdict: string | null;
+  metadata: any;
+};
+
+// Extra MB added to --memory so bash/time/timeout overhead doesn't eat into
+// the problem's stated limit. The soft RSS check below enforces the actual limit.
+const MEMORY_OVERHEAD_MB = 16;
+
 const CPU_LIMIT_PER_EXECUTION = process.env.CPU_LIMIT_PER_EXECUTION;
-const MEMORY_LIMIT_PER_EXECUTION = process.env.MEMORY_LIMIT_PER_EXECUTION ?? '1G';
+const DEFAULT_MEMORY_LIMIT = process.env.MEMORY_LIMIT_PER_EXECUTION ?? '256m';
+const DEFAULT_TIME_LIMIT_SECONDS = parseFloat(process.env.EXECUTION_TIMEOUT ?? '10');
 const ENABLE_NETWORK_IN_EXECUTION = process.env.ENABLE_NETWORK_IN_EXECUTION === 'true';
 const IMAGE_BASE = process.env.IMAGE_BASE || 'ghcr.io/42dotmk/colosseum-executioner-';
 const WORKDIR = process.env.WORKDIR || '_work';
@@ -46,19 +61,6 @@ if (!fs.existsSync(WORKDIR)) {
   fs.mkdirSync(WORKDIR);
 }
 
-function parseDuration(duration: string) {
-  if (!duration) {
-    console.error(`Received invalid duration '${duration}'`);
-    return null;
-  }
-  const match = duration.match(/(\d+)m(\d+(?:\.\d+)?)s/);
-  if (!match) return null;
-
-  const minutes = Number(match[1]);
-  const seconds = Number(match[2]);
-
-  return minutes * 60 + seconds;
-}
 
 const readIfExists = async (path: string) => {
   if (fs.existsSync(path)) {
@@ -126,7 +128,7 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
   }
 
   try {
-    return await new Promise(async (resolve) => {
+    return await new Promise<ExecutionResult[]>(async (resolve) => {
       await writeFile(timePath, "");
       await writeFile(stdoutPath, "");
       await writeFile(stderrPath, "");
@@ -139,9 +141,19 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
         extraArgs.push(`--cpus=${CPU_LIMIT_PER_EXECUTION}`);
       }
 
-      if (MEMORY_LIMIT_PER_EXECUTION) {
-        extraArgs.push(`--memory=${MEMORY_LIMIT_PER_EXECUTION}`);
-      }
+      const effectiveMemoryMb = options.memoryLimitMb
+        ? options.memoryLimitMb + MEMORY_OVERHEAD_MB
+        : DEFAULT_MEMORY_LIMIT;
+      const effectiveMemoryStr = typeof effectiveMemoryMb === 'number'
+        ? `${effectiveMemoryMb}m`
+        : effectiveMemoryMb;
+      extraArgs.push(`--memory=${effectiveMemoryStr}`);
+      // Setting memory-swap equal to memory disables swap, so OOM kill is
+      // immediate and deterministic rather than relying on the host's swap space.
+      extraArgs.push(`--memory-swap=${effectiveMemoryStr}`);
+
+      const effectiveTimeout = options.timeLimitSeconds ?? DEFAULT_TIME_LIMIT_SECONDS;
+      extraArgs.push(`-e`, `EXECUTION_TIMEOUT=${effectiveTimeout}`);
 
       if (!ENABLE_NETWORK_IN_EXECUTION) {
         extraArgs.push("--network=none");
@@ -211,8 +223,9 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
           const stdoutPath = path.resolve(path.join(outputDir, `${inp.filename}.stdout`));
           const stderrPath = path.resolve(path.join(outputDir, `${inp.filename}.stderr`));
           const timePath = path.resolve(path.join(outputDir, `${inp.filename}.time`));
+          const verdictPath = path.resolve(path.join(outputDir, `${inp.filename}.verdict`));
           const stdout = await readIfExists(stdoutPath);
-          
+
           let stderr = await readIfExists(stderrPath);
 
           if (!stdout && !stderr && code !== 0) {
@@ -221,22 +234,58 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
               : `Execution runtime failed (exit code ${code})`;
           }
 
-          const time = await readIfExists(timePath);
-
-          let parsedTime = null;
-          if (time) {
-            const timeSplits = time.split("\n").map((t) => t.trim()).filter(x => x).map(x => x.split("\t"));
-            const [ realTime ] = timeSplits;
-            parsedTime = parseDuration(realTime[1]);
-            if (!parsedTime) {
-              console.error(`Failed to parse time from ${time}`);
+          const timeContent = await readIfExists(timePath);
+          let parsedTime: number | null = null;
+          let parsedMemoryKb: number | null = null;
+          if (timeContent) {
+            // GNU time may prepend "Command exited with non-zero status N\n"
+            // on non-zero exits. Scan lines in reverse for the "seconds kb" line.
+            const lines = timeContent.trim().split('\n').reverse();
+            for (const line of lines) {
+              const parts = line.trim().split(/\s+/);
+              if (parts.length === 2) {
+                const t = parseFloat(parts[0]);
+                const m = parseInt(parts[1], 10);
+                if (!isNaN(t) && !isNaN(m)) {
+                  parsedTime = t;
+                  parsedMemoryKb = m;
+                  break;
+                }
+              }
             }
+            if (parsedTime === null) {
+              console.error(`Failed to parse time from: ${timeContent}`);
+            }
+          }
+
+          const verdictContent = await readIfExists(verdictPath);
+          let verdict = verdictContent.trim() || (code === 137 ? 'MLE' : null);
+
+          const memoryLimitKb = options.memoryLimitMb != null ? options.memoryLimitMb * 1024 : null;
+
+          // Soft RSS check: program completed cleanly but exceeded the problem's
+          // memory limit. The overhead buffer means Docker won't hard-kill it in
+          // that case, so we enforce the limit here.
+          let isSoftMle = false;
+          if (verdict === 'OK' && memoryLimitKb !== null && parsedMemoryKb !== null && parsedMemoryKb > memoryLimitKb) {
+            verdict = 'MLE';
+            isSoftMle = true;
+          }
+
+          // Hard MLE (OOM kill): the RSS at kill time reflects the Docker ceiling
+          // (memoryLimitMb + MEMORY_OVERHEAD_MB), not the program's real peak, so
+          // it's misleadingly high. Cap at the problem limit so callers see a clean
+          // lower-bound value ("used at least N KB") rather than Docker internals.
+          if (verdict === 'MLE' && !isSoftMle && memoryLimitKb !== null && parsedMemoryKb !== null && parsedMemoryKb > memoryLimitKb) {
+            parsedMemoryKb = memoryLimitKb;
           }
 
           output.push({
             stdout: stdout.toString(),
             stderr: stderr.toString(),
             time: parsedTime,
+            memoryKb: parsedMemoryKb,
+            verdict,
             metadata: inp.metadata,
           });
         }

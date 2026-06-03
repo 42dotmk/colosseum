@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2026-05-20T12:55:21.868Z"
+    "x-generation-date": "2026-06-03T22:32:16.752Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -7015,6 +7015,13 @@
                     }
                   }
                 },
+                "timeLimitSeconds": {
+                  "type": "number",
+                  "format": "float"
+                },
+                "memoryLimitMb": {
+                  "type": "integer"
+                },
                 "isSnapshot": {
                   "type": "boolean"
                 },
@@ -8157,6 +8164,13 @@
                           "type": "string"
                         }
                       }
+                    },
+                    "timeLimitSeconds": {
+                      "type": "number",
+                      "format": "float"
+                    },
+                    "memoryLimitMb": {
+                      "type": "integer"
                     },
                     "isSnapshot": {
                       "type": "boolean"
@@ -9718,6 +9732,13 @@
                         }
                       }
                     },
+                    "timeLimitSeconds": {
+                      "type": "number",
+                      "format": "float"
+                    },
+                    "memoryLimitMb": {
+                      "type": "integer"
+                    },
                     "isSnapshot": {
                       "type": "boolean"
                     },
@@ -10489,6 +10510,21 @@
               "code": {
                 "type": "string"
               },
+              "memoryUsed": {
+                "type": "integer"
+              },
+              "verdict": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "accepted",
+                  "wrong_answer",
+                  "time_limit_exceeded",
+                  "memory_limit_exceeded",
+                  "runtime_error",
+                  "compilation_error"
+                ]
+              },
               "locale": {
                 "type": "string"
               },
@@ -10831,6 +10867,13 @@
                         }
                       }
                     }
+                  },
+                  "timeLimitSeconds": {
+                    "type": "number",
+                    "format": "float"
+                  },
+                  "memoryLimitMb": {
+                    "type": "integer"
                   },
                   "isSnapshot": {
                     "type": "boolean"
@@ -11509,6 +11552,21 @@
                     "code": {
                       "type": "string"
                     },
+                    "memoryUsed": {
+                      "type": "integer"
+                    },
+                    "verdict": {
+                      "type": "string",
+                      "enum": [
+                        "pending",
+                        "accepted",
+                        "wrong_answer",
+                        "time_limit_exceeded",
+                        "memory_limit_exceeded",
+                        "runtime_error",
+                        "compilation_error"
+                      ]
+                    },
                     "createdAt": {
                       "type": "string",
                       "format": "date-time"
@@ -11674,6 +11732,21 @@
           },
           "code": {
             "type": "string"
+          },
+          "memoryUsed": {
+            "type": "integer"
+          },
+          "verdict": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "accepted",
+              "wrong_answer",
+              "time_limit_exceeded",
+              "memory_limit_exceeded",
+              "runtime_error",
+              "compilation_error"
+            ]
           },
           "createdAt": {
             "type": "string",
@@ -12457,6 +12530,13 @@
                 ],
                 "example": "string or id"
               },
+              "timeLimitSeconds": {
+                "type": "number",
+                "format": "float"
+              },
+              "memoryLimitMb": {
+                "type": "integer"
+              },
               "isSnapshot": {
                 "type": "boolean"
               },
@@ -12819,6 +12899,13 @@
                         }
                       }
                     },
+                    "timeLimitSeconds": {
+                      "type": "number",
+                      "format": "float"
+                    },
+                    "memoryLimitMb": {
+                      "type": "integer"
+                    },
                     "isSnapshot": {
                       "type": "boolean"
                     },
@@ -13034,6 +13121,13 @@
                 "type": "string"
               }
             }
+          },
+          "timeLimitSeconds": {
+            "type": "number",
+            "format": "float"
+          },
+          "memoryLimitMb": {
+            "type": "integer"
           },
           "isSnapshot": {
             "type": "boolean"
@@ -13990,6 +14084,13 @@
                         }
                       }
                     },
+                    "timeLimitSeconds": {
+                      "type": "number",
+                      "format": "float"
+                    },
+                    "memoryLimitMb": {
+                      "type": "integer"
+                    },
                     "isSnapshot": {
                       "type": "boolean"
                     },
@@ -14808,6 +14909,21 @@
                 "code": {
                   "type": "string"
                 },
+                "memoryUsed": {
+                  "type": "integer"
+                },
+                "verdict": {
+                  "type": "string",
+                  "enum": [
+                    "pending",
+                    "accepted",
+                    "wrong_answer",
+                    "time_limit_exceeded",
+                    "memory_limit_exceeded",
+                    "runtime_error",
+                    "compilation_error"
+                  ]
+                },
                 "createdAt": {
                   "type": "string",
                   "format": "date-time"
@@ -15436,6 +15552,13 @@
                     }
                   }
                 }
+              },
+              "timeLimitSeconds": {
+                "type": "number",
+                "format": "float"
+              },
+              "memoryLimitMb": {
+                "type": "integer"
               },
               "isSnapshot": {
                 "type": "boolean"
@@ -16912,6 +17035,13 @@
                     }
                   }
                 }
+              },
+              "timeLimitSeconds": {
+                "type": "number",
+                "format": "float"
+              },
+              "memoryLimitMb": {
+                "type": "integer"
               },
               "isSnapshot": {
                 "type": "boolean"

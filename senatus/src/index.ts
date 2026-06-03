@@ -114,15 +114,30 @@ export default {
           const expectedOutput = normalizeOutput(existing?.testCase?.output);
           const actualOutput = normalizeOutput(result.stdout);
 
-          const execution = await strapi.documents('api::execution.execution').update({
-            documentId: result.metadata.executionId,
+          const rawVerdict: string | null = result.verdict ?? null;
+          let verdict: string;
+          if (rawVerdict === 'TLE') {
+            verdict = 'time_limit_exceeded';
+          } else if (rawVerdict === 'MLE') {
+            verdict = 'memory_limit_exceeded';
+          } else if (rawVerdict === 'RTE') {
+            verdict = 'runtime_error';
+          } else if (rawVerdict === 'CE') {
+            verdict = 'compilation_error';
+          } else {
+            verdict = expectedOutput === actualOutput ? 'accepted' : 'wrong_answer';
+          }
 
+          await strapi.documents('api::execution.execution').update({
+            documentId: result.metadata.executionId,
             data: {
               stdout: result.stdout,
               stderr: result.stderr,
               executionTime: result.time,
+              memoryUsed: result.memoryKb ?? null,
+              verdict,
               processed: true,
-              passed: expectedOutput === actualOutput,
+              passed: verdict === 'accepted',
               processedAt: new Date(),
               publishedAt: new Date(),
             },

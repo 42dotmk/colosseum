@@ -33,6 +33,7 @@ if [ "${INTERACTIVE}" = "1" ]; then
     for inputFile in "${files[@]}"; do
       filename="${inputFile:6}"
       echo "" > "output/$filename.stdout"
+      echo "CE" > "output/$filename.verdict"
       {
         [ -n "$SOL_COMPILE_ERR" ] && echo "=== solution ===" && echo "$SOL_COMPILE_ERR"
         [ -n "$INT_COMPILE_ERR" ] && echo "=== interactor ===" && echo "$INT_COMPILE_ERR"
@@ -68,11 +69,12 @@ if [ "${INTERACTIVE}" = "1" ]; then
       2>"output/${filename}.int_stderr" &
     INT_PID=$!
 
-    { time (timeout "${TIMEOUT}" ./solution \
+    /usr/bin/time -f "%e %M" -o "output/${filename}.time" \
+      timeout "${TIMEOUT}" ./solution \
       <"${INT_TO_SOL}" \
       2>"output/${filename}.stderr" \
-      | tee "${USER_OUT_FILE}" >"${SOL_TO_INT}"); } 2>"output/${filename}.time"
-    SOL_EXIT=$?
+      | tee "${USER_OUT_FILE}" >"${SOL_TO_INT}"
+    SOL_EXIT=${PIPESTATUS[0]}
     set +o pipefail
 
     wait "${INT_PID}" 2>/dev/null
@@ -91,14 +93,22 @@ if [ "${INTERACTIVE}" = "1" ]; then
     rm -f "${INT_OUT_FILE}"
 
     if [ "${SOL_EXIT}" -eq 124 ]; then
+      echo "TLE" > "output/${filename}.verdict"
       echo "Wrong Answer" > "output/${filename}.stdout"
       echo "Time Limit Exceeded (solution exceeded ${TIMEOUT}s)" >> "output/${filename}.stderr"
+    elif [ "${SOL_EXIT}" -eq 137 ]; then
+      echo "MLE" > "output/${filename}.verdict"
+      echo "Wrong Answer" > "output/${filename}.stdout"
+      echo "Memory Limit Exceeded" >> "output/${filename}.stderr"
     elif [ "${INT_EXIT}" -eq 124 ]; then
+      echo "TLE" > "output/${filename}.verdict"
       echo "Wrong Answer" > "output/${filename}.stdout"
       echo "Time Limit Exceeded (interactor exceeded ${TIMEOUT}s)" >> "output/${filename}.stderr"
     elif [ "${INT_EXIT}" -eq 0 ]; then
+      echo "OK" > "output/${filename}.verdict"
       echo "Accepted" > "output/${filename}.stdout"
     else
+      echo "RTE" > "output/${filename}.verdict"
       echo "Wrong Answer" > "output/${filename}.stdout"
     fi
 
@@ -132,6 +142,7 @@ if [ "${INTERACTIVE}" = "1" ]; then
       CHECKER_OUT=$(./checker "${inputFile}" 2>&1)
       CHECKER_EXIT=$?
       if [ "${CHECKER_EXIT}" -ne 0 ]; then
+        echo "RTE" > "output/${filename}.verdict"
         echo "Wrong Answer" > "output/${filename}.stdout"
         echo "${CHECKER_OUT}" >> "output/${filename}.stderr"
       fi
@@ -140,7 +151,7 @@ if [ "${INTERACTIVE}" = "1" ]; then
 
 else
   # ---------------------------------------------------------------------------
-  # Standard non-interactive mode (unchanged)
+  # Standard non-interactive mode
   # ---------------------------------------------------------------------------
   ERROR=$(g++ -O2 -static src/main.cpp -o ./main 2>&1)
 
@@ -148,17 +159,24 @@ else
   for inputFile in "${files[@]}"; do
     filename="${inputFile:6}"
     echo "Running $inputFile"
-    echo "output/$filename.stdout"
     if [ -n "$ERROR" ]; then
       echo "Compilation error:\\n $ERROR" > "output/$filename.stderr"
+      echo "CE" > "output/$filename.verdict"
       continue
     fi
-    { time (cat "${inputFile}" | timeout "${TIMEOUT}" ./main 1>"output/${filename}.stdout" 2>"output/${filename}.stderr"); } 2>"output/${filename}.time"
+    cat "$inputFile" | /usr/bin/time -f "%e %M" -o "output/$filename.time" timeout "${TIMEOUT}" ./main 1>"output/$filename.stdout" 2>"output/$filename.stderr"
     EXIT_CODE=$?
     echo "Run resulted in $EXIT_CODE"
     if [ $EXIT_CODE -eq 124 ]; then
-      echo "Execution exceeded ${TIMEOUT}s" > "output/${filename}.stderr"
+      echo "TLE" > "output/$filename.verdict"
+      echo "Execution exceeded ${TIMEOUT}s" > "output/$filename.stderr"
+    elif [ $EXIT_CODE -eq 137 ]; then
+      echo "MLE" > "output/$filename.verdict"
+      echo "Memory Limit Exceeded" > "output/$filename.stderr"
+    elif [ $EXIT_CODE -ne 0 ]; then
+      echo "RTE" > "output/$filename.verdict"
+    else
+      echo "OK" > "output/$filename.verdict"
     fi
   done
 fi
-

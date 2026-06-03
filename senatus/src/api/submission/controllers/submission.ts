@@ -528,6 +528,8 @@ export default factories.createCoreController('api::submission.submission', ({ s
         options: {
           language: submission.language.codeName,
           entrypointFile: submission.language.entrypoint,
+          timeLimitSeconds: (problem as any).timeLimitSeconds ?? 10,
+          memoryLimitMb: (problem as any).memoryLimitMb ?? 256,
           ...(isInteractiveProblem(problem) ? {
             interactive: '1',
             interactorSource: (problem as any).interactorSource || '',

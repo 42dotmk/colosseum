@@ -599,6 +599,7 @@ export interface ApiExecutionExecution extends Struct.CollectionTypeSchema {
       'api::execution.execution'
     > &
       Schema.Attribute.Private;
+    memoryUsed: Schema.Attribute.Integer;
     passed: Schema.Attribute.Boolean;
     processed: Schema.Attribute.Boolean;
     processedAt: Schema.Attribute.DateTime;
@@ -613,6 +614,18 @@ export interface ApiExecutionExecution extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    verdict: Schema.Attribute.Enumeration<
+      [
+        'pending',
+        'accepted',
+        'wrong_answer',
+        'time_limit_exceeded',
+        'memory_limit_exceeded',
+        'runtime_error',
+        'compilation_error',
+      ]
+    > &
+      Schema.Attribute.DefaultTo<'pending'>;
   };
 }
 
@@ -689,6 +702,14 @@ export interface ApiProblemProblem extends Struct.CollectionTypeSchema {
       'oneToMany',
       'api::problem.problem'
     >;
+    memoryLimitMb: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 16;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<256>;
     points: Schema.Attribute.Integer &
       Schema.Attribute.SetMinMax<
         {
@@ -718,6 +739,14 @@ export interface ApiProblemProblem extends Struct.CollectionTypeSchema {
       'oneToMany',
       'api::test-case.test-case'
     >;
+    timeLimitSeconds: Schema.Attribute.Float &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0.1;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<10>;
     title: Schema.Attribute.String &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
