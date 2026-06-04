@@ -4,16 +4,16 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
 import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import LoginPage from '@/pages/LoginPage';
-import RegisterPage from '@/pages/RegisterPage';
+import RegisterPage from '@/pages/register/RegisterPage';
+import LoginPage from '@/pages/login/LoginPage';
 import EventsPage from '@/pages/EventsPage';
-import EventDetailPage from '@/pages/EventDetailPage';
-import CompetePage from '@/pages/CompetePage';
-import ProfilePage from '@/pages/ProfilePage';
+import EventDetailPage from '@/pages/EventDetail/EventDetailPage';
+import ProfilePage from '@/pages/profile/ProfilePage';
+import CompetePage from '@/pages/CompetePage/CompetePage';
 import TrainingPage from '@/pages/TrainingPage';
 import TrainingLeaderboardPage from '@/pages/TrainingLeaderboardPage';
-import TutorialsPage from '@/pages/TutorialsPage';
-import TutorialDetailPage from '@/pages/TutorialDetailPage';
+import TutorialsPage from '@/pages/TutorialsPage/TutorialsPage';
+import TutorialDetailPage from '@/pages/TutorialDetailPage/TutorialDetailPage';
 
 function App() {
   useEffect(() => {
