@@ -70,7 +70,11 @@ export default function SubmissionResult({
         <SubmissionHeader
           submissionsLength={submissionsLength}
           subIndex={subIndex}
-          submission={submission} />
+          submission={submission} 
+          score={submission.score}
+          maxScore={submission.maxScore}
+          hasUnprocessed={hasUnprocessed}
+          />
 
         <div className="flex items-center gap-2">
           <button onClick={() => setShowExecutionDetails(prev => !prev)}>
@@ -81,7 +85,8 @@ export default function SubmissionResult({
             executionsLength={executions.length}
             passedCount={passedCount}
             hasUnprocessed={hasUnprocessed}
-            hasQueueFailure={hasQueueFailure} />
+            hasQueueFailure={hasQueueFailure}
+          />
         </div>
 
 

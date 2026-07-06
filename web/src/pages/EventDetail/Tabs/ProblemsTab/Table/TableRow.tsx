@@ -41,7 +41,8 @@ export default function TableRowComponent({ problem, index, isRegisteredForEvent
       <ProblemStats
         points={problem.points}
         difficulty={problem.difficulty}
-        problemStatusClass={problemStatusClass} />
+        problemStatusClass={problemStatusClass}
+        lastSubmission={problem.lastSubmission} />
       <TableCell>
         <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition-colors" />
       </TableCell>

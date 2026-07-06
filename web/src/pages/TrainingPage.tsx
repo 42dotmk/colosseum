@@ -7,6 +7,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ChevronRight, Circle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+interface SubmissionStats {
+  score: number;
+  maxScore: number;
+}
+
 interface EventItem {
   documentId: string;
   title: string;
@@ -15,6 +20,7 @@ interface EventItem {
   eventTitle: string;
   difficulty?: string;
   points: number;
+  bestSubmission?: SubmissionStats | null;
 }
 
 interface SubmissionExecution {
@@ -232,7 +238,7 @@ export default function TrainingPage() {
               <TableRow className="hover:bg-transparent">
                 <TableHead>Problem</TableHead>
                 <TableHead>Event</TableHead>
-                <TableHead className="w-24 text-center">Points</TableHead>
+                <TableHead className="w-30 text-center">Score</TableHead>
                 <TableHead className="w-32">Difficulty</TableHead>
                 <TableHead className="w-20 text-center">Status</TableHead>
                 <TableHead className="w-12"></TableHead>
@@ -252,7 +258,7 @@ export default function TrainingPage() {
                     </span>
                   </TableCell>
                   <TableCell>{item.eventTitle}</TableCell>
-                  <TableCell className="text-center font-mono">{item.points ?? '—'}</TableCell>
+                  <TableCell className="text-center font-mono">{item.bestSubmission?.score ?? '-'} / {item.points ?? '—'}</TableCell>
                   <TableCell>
                     {item.difficulty ? (
                       <Badge variant="outline" className="text-[10px] h-5 px-1.5">

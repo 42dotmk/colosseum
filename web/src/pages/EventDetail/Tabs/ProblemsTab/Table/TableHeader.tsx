@@ -7,7 +7,7 @@ export default function TableHeaderComponent() {
         <TableHead className="w-12 text-center">#</TableHead>
         <TableHead>Problem</TableHead>
         <TableHead className="w-24 text-center">Difficulty</TableHead>
-        <TableHead className="w-20 text-center">Points</TableHead>
+        <TableHead className="w-28 text-center">Score</TableHead>
         <TableHead className="w-20 text-center">Status</TableHead>
         <TableHead className="w-12"></TableHead>
       </TableRow>

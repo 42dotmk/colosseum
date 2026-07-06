@@ -10,6 +10,7 @@ import {
 	isRegistrationOpenNow,
 } from '../../../utils/event-registration';
 import { getCurrentUser } from '../../../utils/current-user';
+import { calculateSubmissionScore, calculateProblemSubmissionStats } from '../../../utils/scoring';
 
 type LeaderboardVisibilityMode = 'public_only_live' | 'full_live';
 
@@ -50,10 +51,11 @@ type SubmissionLike = {
 		username?: string;
 		email?: string;
 	};
-	problem?: {
+	problem?: ProblemLike;
+	executions?: ExecutionLike[];
+	event?: {
 		documentId: string;
 	};
-	executions?: ExecutionLike[];
 };
 
 export type TrainingProblemLike = {
@@ -103,12 +105,12 @@ type EventQuestionLike = {
 
 const DEFAULT_POINTS = 100;
 
-const getSafeWeight = (value?: number) =>
+export const getSafeWeight = (value?: number) =>
 	typeof value === 'number' && value > 0 ? value : 1;
 
-const round2 = (value: number) => Math.round(value * 100) / 100;
+export const round2 = (value: number) => Math.round(value * 100) / 100;
 
-const isExecutionPassed = (execution?: ExecutionLike) => {
+export const isExecutionPassed = (execution?: ExecutionLike) => {
 	if (!execution?.processed) {
 		return false;
 	}
@@ -122,7 +124,7 @@ const isExecutionPassed = (execution?: ExecutionLike) => {
 	return stdout.length > 0 && stdout === expected;
 };
 
-const shouldUseTestCaseInLiveScore = (
+export const shouldUseTestCaseInLiveScore = (
 	problem: ProblemLike,
 	testCase: TestCaseLike,
 	eventEnded: boolean,
@@ -278,9 +280,63 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
 			return ctx.notFound('Event not found');
 		}
 
-		response.data = sanitizeEventForCompetitionView(event) as any;
+		const eventEnded = event.end ? new Date(event.end).getTime() <= Date.now() : false;
+
+		const submissions = (await strapi.documents('api::submission.submission').findMany({
+			filters: {
+				event: {
+					documentId:  event.documentId
+				},
+				user: {
+					documentId: user.documentId
+				}
+			},
+			populate: {
+				event:true,
+				problem: {
+					populate: {
+						testCases: true
+					}
+				},
+				executions: {
+					populate: {
+						testCase: true
+					}
+				}
+			},
+			sort: ['createdAt:asc'],
+			pagination: {
+				page: 1,
+				pageSize: 10000,
+			},
+		}) as SubmissionLike[]);
+
+		const sanitizedEvent = sanitizeEventForCompetitionView(event) as any;
+		sanitizedEvent.problems = (sanitizedEvent.problems || []).map((problem: any) => {
+			const submissionsForProblem=submissions
+				.filter((submission) => submission.problem?.documentId === problem.documentId)
+				.map((submission: any) => {
+					const result = calculateSubmissionScore(submission.problem, submission.executions || [], eventEnded);
+					return {
+						...submission,
+						score: result.score,
+						maxScore: result.problemMaxScore
+					}
+				}
+			);
+			return {
+				...problem,
+				...calculateProblemSubmissionStats(submissionsForProblem)
+			}	
+		});
+		
+		response.data=sanitizedEvent;
 
 		return response;
+
+		/*response.data = sanitizeEventForCompetitionView(event) as any;
+
+		return response;*/
 	},
 
 	async registrationStatus(ctx) {
@@ -831,45 +887,12 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
 			if (!problem) {
 				continue;
 			}
-
-			const scopedCases = (problem.testCases || []).filter((testCase) =>
-				shouldUseTestCaseInLiveScore(problem, testCase, eventEnded),
+						
+			const { score, totalExecutionTime, problemMaxScore } = calculateSubmissionScore(
+				problem,
+				submission.executions || [],
+				eventEnded,
 			);
-
-			const totalWeight = scopedCases.reduce(
-				(sum, testCase) => sum + getSafeWeight(testCase.weight),
-				0,
-			);
-
-			const executionMap = new Map(
-				(submission.executions || [])
-					.filter((execution) => execution.testCase?.documentId)
-					.map((execution) => [execution.testCase!.documentId, execution]),
-			);
-
-			let passedWeight = 0;
-			let totalExecutionTime = 0;
-
-			for (const testCase of scopedCases) {
-				const execution = executionMap.get(testCase.documentId);
-				if (!execution?.processed) {
-					continue;
-				}
-
-				const testWeight = getSafeWeight(testCase.weight);
-
-				if (isExecutionPassed(execution)) {
-					passedWeight += testWeight;
-				}
-
-				if (typeof execution.executionTime === 'number' && execution.executionTime >= 0) {
-					totalExecutionTime += execution.executionTime;
-				}
-			}
-
-			const problemMaxScore = problem.points || DEFAULT_POINTS;
-			const rawScore = totalWeight > 0 ? (passedWeight / totalWeight) * problemMaxScore : 0;
-			const score = round2(rawScore);
 			const createdAtTs = submission.createdAt ? new Date(submission.createdAt).getTime() : Number.MAX_SAFE_INTEGER;
 
 			const key = `${submission.user.documentId}::${problem.documentId}`;

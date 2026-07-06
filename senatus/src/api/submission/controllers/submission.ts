@@ -6,6 +6,7 @@ import { connect } from '@colosseum/queue';
 import { factories } from '@strapi/strapi'
 import { canUserRegisterForEvent, normalizeComparableIdentifiers } from '../../../utils/event-registration';
 import { getCurrentUser } from '../../../utils/current-user';
+import { calculateSubmissionScore } from '../../../utils/scoring';
 
 let queueClientPromise: Promise<Awaited<ReturnType<typeof connect>>> | null = null;
 
@@ -263,6 +264,32 @@ const sanitizeExecutionForParticipant = (execution: any) => {
 
   return nextExecution;
 };
+const isEventEnded = (event: any) => {
+  if (!event?.end) 
+    return false;
+  const endMs = new Date(event.end).getTime();
+  return !Number.isNaN(endMs) && endMs <= Date.now();
+};
+
+const submissionWithScore = (submission: any) => {
+  if (!submission?.problem) {
+    return submission;
+  }
+
+  const eventEnded = isEventEnded(submission.problem.event);
+
+  const { score, problemMaxScore } = calculateSubmissionScore(
+    submission.problem,
+    submission.executions || [],
+    eventEnded,
+  );
+
+  return {
+    ...submission,
+    score,
+    maxScore: problemMaxScore,
+  };
+};
 
 const sanitizeExecutionsForParticipant = (executions: any[]) =>
   (executions || [])
@@ -274,9 +301,16 @@ const sanitizeSubmissionForParticipant = (submission: any) => {
     return submission;
   }
 
+  const withScore =submissionWithScore(submission);
+  
+  if(!Array.isArray(withScore.executions))
+  {
+    return withScore;
+  }
+
   return {
-    ...submission,
-    executions: sanitizeExecutionsForParticipant(submission.executions),
+    ...withScore,
+    executions: sanitizeExecutionsForParticipant(withScore.executions),
   };
 };
 
@@ -299,7 +333,23 @@ export default factories.createCoreController('api::submission.submission', ({ s
     if (!user) {
       return ctx.unauthorized('Authentication required');
     }
-
+    ctx.query = {
+      ...ctx.query,
+      populate: {
+        ...(typeof ctx.query.populate === 'object' ? ctx.query.populate : {}),
+        language: true,
+        user: true,
+        problem: {
+          populate: {
+            testCases: true,
+            event: { fields: ['end'] },
+          },
+        },
+        executions: {
+          populate: { testCase: true },
+        },
+      },
+    };
     const response = (await super.find(ctx)) as any;
     const entries = Array.isArray(response?.data)
       ? response.data
