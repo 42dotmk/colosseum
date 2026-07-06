@@ -14,4 +14,6 @@ export interface Submission {
     codeName: string;
   };
   executions: Execution[];
+  score: number;
+  maxScore: number;
 }

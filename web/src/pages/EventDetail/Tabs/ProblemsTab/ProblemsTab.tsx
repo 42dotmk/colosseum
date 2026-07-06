@@ -33,7 +33,7 @@ export default function ProblemsTab({ isRegisteredForEvent, isViewOnlyEvent, vis
   };
 
   useEffect(() => {
-    if (!eventId || !event || !isRegisteredForEvent) {
+    if (!eventId || !isRegisteredForEvent) {
       setProblemStatusById({});
       return;
     }
@@ -119,7 +119,7 @@ export default function ProblemsTab({ isRegisteredForEvent, isViewOnlyEvent, vis
     };
 
     fetchProblemStatuses();
-  }, [eventId, event, isRegisteredForEvent]);
+  }, [eventId, isRegisteredForEvent]);
 
   const getProblemStatusClass = (status: ProblemStatus | undefined) => {
     switch (status) {

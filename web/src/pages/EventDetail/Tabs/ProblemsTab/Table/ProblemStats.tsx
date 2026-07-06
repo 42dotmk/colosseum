@@ -7,10 +7,14 @@ type ProblemStats = {
   difficulty: string | undefined;
   points: number | undefined;
   problemStatusClass: string;
+  lastSubmission?: {
+    score: number,
+    maxScore: number
+  } | null
 }
 
 
-export default function ProblemStats({ difficulty, points, problemStatusClass}: ProblemStats) {
+export default function ProblemStats({ difficulty, points, problemStatusClass, lastSubmission}: ProblemStats) {
   return (
     <>
       <TableCell className="text-center">
@@ -19,7 +23,7 @@ export default function ProblemStats({ difficulty, points, problemStatusClass}: 
         </span>
       </TableCell>
       <TableCell className="text-center font-mono">
-        {points ?? "N/A"}
+        {lastSubmission?.score ?? "-"} / {points ?? "N/A"}
       </TableCell>
       <TableCell className="text-center">
         <Circle

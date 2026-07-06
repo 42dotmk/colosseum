@@ -11,6 +11,10 @@ export interface Problem {
   checkerSource?: string;
   leaderboardVisibilityMode?: 'public_only_live' | 'full_live';
   testCases?: any[];
+  lastSubmission: {
+    score: number,
+    maxScore: number
+  }
 }
 
 export interface SupportedLanguage {

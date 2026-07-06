@@ -32,7 +32,7 @@ export default function SubmissionStatusBadge({
             "text-xs",
             passedCount === executionsLength
               ? "border-emerald-500/50 text-emerald-500"
-              : "border-destructive/50 text-destructive"
+              : passedCount<=0 ? "border-destructive/50 text-destructive" : "border-amber-500/50 text-amber-500"
           )}
         >
           {passedCount}/{executionsLength}
