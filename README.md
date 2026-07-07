@@ -29,6 +29,7 @@ Join us every Tuesday at 5:30 PM in Base42 as we embark on the journey of crafti
 * Vasilaki Tocili [@VasilakiG](https://github.com/VasilakiG)
 * Gjorgi Krenkov [@gjorgi-krenkov](https://github.com/gjorgi-krenkov)
 * Jovan Mihov [@jovanmihov](https://github.com/jovanmihov)
+* Antonela Vladeva [@Vladeva](https://https://github.com/Vladeva)
 
 ### Design
 * Bojana Dimitrova
