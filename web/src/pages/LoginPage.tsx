@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,19 @@ export default function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (sessionStorage.getItem('auth:sessionExpired') !== '1') {
+      return;
+    }
+
+    sessionStorage.removeItem('auth:sessionExpired');
+    toast({
+      title: 'Session expired',
+      description: 'Please sign in again to continue the contest.',
+      variant: 'destructive',
+    });
+  }, [toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
