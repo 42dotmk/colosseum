@@ -12,6 +12,8 @@ import CompetePage from '@/pages/CompetePage';
 import ProfilePage from '@/pages/ProfilePage';
 import TrainingPage from '@/pages/TrainingPage';
 import TrainingLeaderboardPage from '@/pages/TrainingLeaderboardPage';
+import TutorialsPage from '@/pages/TutorialsPage';
+import TutorialDetailPage from '@/pages/TutorialDetailPage';
 
 function App() {
   useEffect(() => {
@@ -84,6 +86,26 @@ function App() {
               <ProtectedRoute>
                 <Layout>
                   <TrainingLeaderboardPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tutorials"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <TutorialsPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tutorials/:tutorialId"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <TutorialDetailPage />
                 </Layout>
               </ProtectedRoute>
             }

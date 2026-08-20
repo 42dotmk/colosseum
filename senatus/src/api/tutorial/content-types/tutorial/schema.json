@@ -1,0 +1,48 @@
+{
+  "kind": "collectionType",
+  "collectionName": "tutorials",
+  "info": {
+    "singularName": "tutorial",
+    "pluralName": "tutorials",
+    "displayName": "Tutorial",
+    "description": "Learning articles and task-solving explanations"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "thumbnail": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "thumbnailUrl": {
+      "type": "string"
+    },
+    "readTimeMinutes": {
+      "type": "integer",
+      "required": true,
+      "min": 1,
+      "default": 5
+    },
+    "summary": {
+      "type": "text"
+    },
+    "content": {
+      "type": "richtext",
+      "required": true
+    },
+    "relatedProblem": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::problem.problem"
+    }
+  }
+}

@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { Home, Terminal, Trophy, LogOut, User, GraduationCap } from 'lucide-react';
+import { Home, Terminal, Trophy, LogOut, User, GraduationCap, BookOpenText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface LayoutProps {
@@ -24,6 +24,7 @@ export default function Layout({ children }: LayoutProps) {
   const navigation = [
     { name: 'Events', href: '/', icon: Home },
     { name: 'Training', href: '/training', icon: GraduationCap },
+    { name: 'Tutorials', href: '/tutorials', icon: BookOpenText },
     { name: 'Leaderboard', href: '/training/leaderboard', icon: Trophy },
     // { name: 'Leaderboard', href: '/leaderboard', icon: Trophy },
   ];

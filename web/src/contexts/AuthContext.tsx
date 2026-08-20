@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { REST_URL } from '@/config';
 
 interface User {
@@ -66,6 +66,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const clearAuthState = useCallback(() => {
+    localStorage.removeItem('jwt');
+    localStorage.removeItem('user');
+    setUser(null);
+  }, []);
+
   useEffect(() => {
     // Check if user is already logged in
     const token = localStorage.getItem('jwt');
@@ -81,6 +87,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setIsLoading(false);
   }, []);
+
+  useEffect(() => {
+    const originalFetch = window.fetch.bind(window);
+
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+      const response = await originalFetch(input, init);
+
+      if (response.status !== 401) {
+        return response;
+      }
+
+      const requestUrl = typeof input === 'string'
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : input.url;
+
+      const isAuthEndpoint =
+        requestUrl.includes('/auth/local') ||
+        requestUrl.includes('/auth/local/register') ||
+        requestUrl.includes('/auth/forgot-password') ||
+        requestUrl.includes('/auth/reset-password');
+
+      if (!isAuthEndpoint && localStorage.getItem('jwt')) {
+        clearAuthState();
+        sessionStorage.setItem('auth:sessionExpired', '1');
+
+        if (window.location.pathname !== '/login') {
+          window.location.assign('/login');
+        }
+      }
+
+      return response;
+    };
+
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, [clearAuthState]);
 
   const login = async (identifier: string, password: string) => {
     const response = await fetch(`${REST_URL}/auth/local`, {
@@ -152,9 +197,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    localStorage.removeItem('jwt');
-    localStorage.removeItem('user');
-    setUser(null);
+    clearAuthState();
   };
 
   return (
