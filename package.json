@@ -2,9 +2,37 @@
   "name": "colosseum",
   "version": "1.0.0",
   "devDependencies": {
-    "husky": "^9.0.10"
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.2.0",
+    "concurrently": "^9.2.4",
+    "eslint": "^10.8.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.4",
+    "globals": "^17.11.0",
+    "husky": "^9.0.10",
+    "typescript-eslint": "^8.67.0"
   },
   "scripts": {
+    "install:all": "npm ci && npm --prefix senatus ci && npm --prefix executioner ci && npm --prefix web ci && npm --prefix lib/queue ci",
+    "dev": "npm run dev:infra && npm run build:queue && concurrently --kill-others-on-fail --names \"QUEUE,SENATUS,EXECUTIONER,WEB\" \"npm run dev:queue\" \"npm run dev:senatus\" \"npm run dev:executioner\" \"npm run dev:web\"",
+    "dev:infra": "docker compose -f docker-compose.q.yml up -d",
+    "dev:down": "docker compose -f docker-compose.q.yml down",
+    "dev:infra:logs": "docker compose -f docker-compose.q.yml logs -f",
+    "dev:queue": "npm --prefix lib/queue run watch",
+    "dev:senatus": "npm --prefix senatus run develop",
+    "dev:executioner": "npm --prefix executioner start",
+    "dev:web": "npm --prefix web run dev",
+    "build": "npm run build:queue && npm run build:senatus && npm run build:web",
+    "build:queue": "npm --prefix lib/queue run build",
+    "build:senatus": "npm --prefix senatus run build",
+    "build:web": "npm --prefix web run build",
+    "lint": "eslint senatus executioner lib/queue web",
+    "lint:fix": "eslint senatus executioner lib/queue web --fix",
+    "lint:senatus": "eslint senatus",
+    "lint:executioner": "eslint executioner",
+    "lint:queue": "eslint lib/queue",
+    "lint:web": "eslint web",
+    "typecheck:senatus": "npm --prefix senatus run typecheck",
     "prepareClientHusky": "husky client/.husky",
     "prepareSenatusHusky": "husky senatus/.husky"
   }
