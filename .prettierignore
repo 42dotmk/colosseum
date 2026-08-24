@@ -28,4 +28,3 @@ senatus/src/extensions/documentation/public/**
 # Minified/generated assets
 **/*.min.js
 **/*.min.css
-clear
