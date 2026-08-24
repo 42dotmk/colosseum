@@ -35,7 +35,7 @@ export default factories.createCoreController('api::submission.submission', ({ s
 
       if (!submission.language) {
         ctx.status = 400;
-        ctx.body = { error: 'Submission has no source code' };
+        ctx.body = { error: 'Submission has no language' };
         return;
       }
 
