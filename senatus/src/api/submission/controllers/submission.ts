@@ -23,7 +23,7 @@ export default factories.createCoreController('api::submission.submission', ({ s
 
       if (!submission) {
         ctx.status = 404;
-        ctx.body = { erorr: 'Submission not found' };
+        ctx.body = { error: 'Submission not found' };
         return;
       }
 
