@@ -1,0 +1,31 @@
+# Dependencies
+**/node_modules/**
+
+# Build output
+**/dist/**
+**/build/**
+
+# Tool caches
+**/.cache/**
+**/.tmp/**
+**/.strapi/**
+**/coverage/**
+
+# Generated GraphQL code
+**/src/__generated__/**
+
+# Generated Strapi code
+senatus/types/generated/**
+senatus/.strapi-updater.json
+
+# Generated Strapi documentation
+senatus/src/extensions/documentation/documentation/**
+senatus/src/extensions/documentation/public/**
+
+# Package manager generated files
+**/package-lock.json
+
+# Minified/generated assets
+**/*.min.js
+**/*.min.css
+clear

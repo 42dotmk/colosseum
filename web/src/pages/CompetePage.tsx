@@ -1,31 +1,23 @@
-import { useState, useEffect, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
-import Editor from "@monaco-editor/react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useCallback, useState, useEffect, useRef } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import Editor from '@monaco-editor/react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/components/ui/use-toast";
-import {
-  ArrowLeft,
-  Play,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  Loader2,
-  AlertCircle,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { REST_URL } from "@/config";
-import Markdown from "@/components/Markdown";
+} from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/components/ui/use-toast';
+import { ArrowLeft, Play, CheckCircle2, XCircle, Clock, Loader2, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { REST_URL } from '@/config';
+import Markdown from '@/components/Markdown';
 
 interface Problem {
   title: string;
@@ -33,7 +25,7 @@ interface Problem {
   slug: string;
   points: number;
   testCases?: TestCase[];
-  starterCodes?: any[];
+  starterCodes?: unknown[];
 }
 
 interface TestCase {
@@ -81,65 +73,66 @@ interface Submission {
 export default function CompetePage() {
   const { problemId } = useParams();
   const { toast } = useToast();
-  const [code, setCode] = useState("// Write your solution here\n");
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("");
+  const [code, setCode] = useState('// Write your solution here\n');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [problem, setProblem] = useState<Problem | null>(null);
   const [languages, setLanguages] = useState<Language[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
-  const [activeTab, setActiveTab] = useState("description");
-  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
-    null,
-  );
+  const [activeTab, setActiveTab] = useState('description');
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const initialCodeLoadedRef = useRef(false);
 
   // Fetch submissions from API
-  const fetchSubmissions = async (loadCodeFromSubmission = false) => {
-    try {
-      const token = localStorage.getItem("jwt");
-      const headers = {
-        Authorization: token ? `Bearer ${token}` : "",
-      };
+  const fetchSubmissions = useCallback(
+    async (loadCodeFromSubmission = false) => {
+      try {
+        const token = localStorage.getItem('jwt');
+        const headers = {
+          Authorization: token ? `Bearer ${token}` : '',
+        };
 
-      const submissionsRes = await fetch(
-        `${REST_URL}/submissions?filters[problem][documentId][$eq]=${problemId}&populate[language]=*&populate[executions][populate][testCase][fields][0]=documentId&populate[executions][populate][testCase][fields][1]=input&populate[executions][populate][testCase][fields][2]=output&populate[executions][populate][testCase][fields][3]=hidden&sort=createdAt:desc`,
-        { headers },
-      );
+        const submissionsRes = await fetch(
+          `${REST_URL}/submissions?filters[problem][documentId][$eq]=${problemId}&populate[language]=*&populate[executions][populate][testCase][fields][0]=documentId&populate[executions][populate][testCase][fields][1]=input&populate[executions][populate][testCase][fields][2]=output&populate[executions][populate][testCase][fields][3]=hidden&sort=createdAt:desc`,
+          { headers },
+        );
 
-      if (submissionsRes.ok) {
-        const submissionsData = await submissionsRes.json();
-        const submissionsArray = Array.isArray(submissionsData)
-          ? submissionsData
-          : submissionsData.data || [];
-        setSubmissions(submissionsArray);
+        if (submissionsRes.ok) {
+          const submissionsData = await submissionsRes.json();
+          const submissionsArray = Array.isArray(submissionsData)
+            ? submissionsData
+            : submissionsData.data || [];
+          setSubmissions(submissionsArray);
 
-        // Load code from latest submission only on initial load or when explicitly requested
-        if (
-          loadCodeFromSubmission &&
-          submissionsArray.length > 0 &&
-          submissionsArray[0].code &&
-          !initialCodeLoadedRef.current
-        ) {
-          setCode(submissionsArray[0].code);
-          if (submissionsArray[0].language?.documentId) {
-            setSelectedLanguage(submissionsArray[0].language.documentId);
+          // Load code from latest submission only on initial load or when explicitly requested
+          if (
+            loadCodeFromSubmission &&
+            submissionsArray.length > 0 &&
+            submissionsArray[0].code &&
+            !initialCodeLoadedRef.current
+          ) {
+            setCode(submissionsArray[0].code);
+            if (submissionsArray[0].language?.documentId) {
+              setSelectedLanguage(submissionsArray[0].language.documentId);
+            }
+            initialCodeLoadedRef.current = true;
           }
-          initialCodeLoadedRef.current = true;
         }
+      } catch (err) {
+        console.error('Failed to fetch submissions:', err);
       }
-    } catch (err) {
-      console.error("Failed to fetch submissions:", err);
-    }
-  };
+    },
+    [problemId],
+  );
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const token = localStorage.getItem("jwt");
+        const token = localStorage.getItem('jwt');
         const headers = {
-          Authorization: token ? `Bearer ${token}` : "",
+          Authorization: token ? `Bearer ${token}` : '',
         };
 
         const [problemRes, languagesRes] = await Promise.all([
@@ -148,14 +141,11 @@ export default function CompetePage() {
         ]);
 
         if (!problemRes.ok || !languagesRes.ok) {
-          throw new Error("HTTP error fetching data");
+          throw new Error('HTTP error fetching data');
         }
 
         const problemData = await problemRes.json();
         const languagesData = await languagesRes.json();
-
-        console.log("Problem API response:", problemData);
-        console.log("Languages API response:", languagesData);
 
         // Handle both wrapped and unwrapped responses
         setProblem(problemData.data || problemData);
@@ -165,21 +155,19 @@ export default function CompetePage() {
           : languagesData.data || [];
         setLanguages(fetchedLanguages);
 
-        setSelectedLanguage(
-          (current) => current || fetchedLanguages[0]?.documentId || "",
-        );
+        setSelectedLanguage((current) => current || fetchedLanguages[0]?.documentId || '');
 
         // Fetch user's submissions and load code from latest submission
         await fetchSubmissions(true);
       } catch (err) {
-        console.error("Failed to load problem:", err);
-        setError("Failed to load problem");
+        console.error('Failed to load problem:', err);
+        setError('Failed to load problem');
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, [problemId]);
+  }, [problemId, fetchSubmissions]);
 
   const testCases = problem?.testCases || [];
   const publicTestCases = testCases.filter((tc: TestCase) => !tc.hidden);
@@ -188,19 +176,19 @@ export default function CompetePage() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Alt+1, Alt+2, Alt+3 for tab switching
-      if (e.altKey && ["1", "2", "3"].includes(e.key)) {
+      if (e.altKey && ['1', '2', '3'].includes(e.key)) {
         e.preventDefault();
         const tabMap: Record<string, string> = {
-          "1": "description",
-          "2": "testcases",
-          "3": "results",
+          '1': 'description',
+          '2': 'testcases',
+          '3': 'results',
         };
         setActiveTab(tabMap[e.key]);
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   // Poll submissions for updates
@@ -234,16 +222,12 @@ export default function CompetePage() {
         const latestSub = submissions[0];
         if (latestSub.executions) {
           const passed = latestSub.executions.filter(
-            (exec: Execution) =>
-              exec.stdout?.trim() === exec.testCase?.output?.trim(),
+            (exec: Execution) => exec.stdout?.trim() === exec.testCase?.output?.trim(),
           ).length;
           toast({
-            title: "Execution Complete",
+            title: 'Execution Complete',
             description: `${passed}/${latestSub.executions.length} test cases passed`,
-            variant:
-              passed === latestSub.executions.length
-                ? "default"
-                : "destructive",
+            variant: passed === latestSub.executions.length ? 'default' : 'destructive',
           });
         }
       }
@@ -256,29 +240,29 @@ export default function CompetePage() {
         clearInterval(pollingIntervalRef.current);
       }
     };
-  }, [submissions, toast]);
+  }, [submissions, toast, fetchSubmissions]);
 
   const handleSubmit = async () => {
     if (!selectedLanguage) {
       toast({
-        title: "No language selected",
-        description: "Please select a programming language",
-        variant: "destructive",
+        title: 'No language selected',
+        description: 'Please select a programming language',
+        variant: 'destructive',
       });
       return;
     }
 
     setIsSubmitting(true);
     try {
-      const token = localStorage.getItem("jwt");
+      const token = localStorage.getItem('jwt');
       const headers = {
-        "Content-Type": "application/json",
-        Authorization: token ? `Bearer ${token}` : "",
+        'Content-Type': 'application/json',
+        Authorization: token ? `Bearer ${token}` : '',
       };
 
       // Create submission
       const submissionRes = await fetch(`${REST_URL}/submissions`, {
-        method: "POST",
+        method: 'POST',
         headers,
         body: JSON.stringify({
           data: {
@@ -293,33 +277,29 @@ export default function CompetePage() {
       const submissionId = submissionData.data.documentId;
 
       // Submit for execution
-      const submitRes = await fetch(
-        `${REST_URL}/submissions/submit?id=${submissionId}`,
-        {
-          headers,
-        },
-      );
+      const submitRes = await fetch(`${REST_URL}/submissions/submit?id=${submissionId}`, {
+        headers,
+      });
 
       const submitData = await submitRes.json();
-      console.log("Submit response:", submitData);
 
       if (submitData.executions && submitData.executions.length > 0) {
         // Fetch updated submissions
         await fetchSubmissions();
         // Switch to submissions tab
-        setActiveTab("results");
+        setActiveTab('results');
         toast({
-          title: "Submitted!",
-          description: "Your code is being executed...",
+          title: 'Submitted!',
+          description: 'Your code is being executed...',
         });
       } else {
-        throw new Error("No executions returned");
+        throw new Error('No executions returned');
       }
     } catch (err) {
       toast({
-        title: "Submission failed",
-        description: err instanceof Error ? err.message : "Please try again",
-        variant: "destructive",
+        title: 'Submission failed',
+        description: err instanceof Error ? err.message : 'Please try again',
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
@@ -337,16 +317,12 @@ export default function CompetePage() {
   if (error || !problem) {
     return (
       <div className="text-center py-12">
-        <p className="text-destructive">
-          Failed to load problem. Please try again later.
-        </p>
+        <p className="text-destructive">Failed to load problem. Please try again later.</p>
       </div>
     );
   }
 
-  const selectedLang = languages.find(
-    (language) => language.documentId === selectedLanguage,
-  );
+  const selectedLang = languages.find((language) => language.documentId === selectedLanguage);
 
   return (
     <div className="h-[calc(100vh-7rem)] flex flex-col">
@@ -375,7 +351,7 @@ export default function CompetePage() {
           </Select>
           <Button onClick={handleSubmit} disabled={isSubmitting} size="sm">
             <Play className="mr-1.5 h-3.5 w-3.5" />
-            {isSubmitting ? "Running..." : "Run"}
+            {isSubmitting ? 'Running...' : 'Run'}
           </Button>
         </div>
       </div>
@@ -384,11 +360,7 @@ export default function CompetePage() {
       <div className="flex-1 grid grid-cols-2 gap-3 min-h-0">
         {/* Left Panel - Problem Description */}
         <Card className="flex flex-col overflow-hidden">
-          <Tabs
-            value={activeTab}
-            onValueChange={setActiveTab}
-            className="flex flex-col h-full"
-          >
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
             <div className="border-b px-4 py-2">
               <TabsList className="h-8">
                 <TabsTrigger value="description" className="text-xs px-3 h-7">
@@ -412,14 +384,13 @@ export default function CompetePage() {
               <TabsContent value="description" className="mt-0 h-full">
                 <div className="space-y-4">
                   <div className="prose prose-sm prose-invert max-w-none">
-                    <Markdown content={problem.description || ""} />
+                    <Markdown content={problem.description || ''} />
                   </div>
 
                   <Separator />
 
                   <div className="text-xs text-muted-foreground">
-                    {testCases.length} test cases ({publicTestCases.length}{" "}
-                    visible)
+                    {testCases.length} test cases ({publicTestCases.length} visible)
                   </div>
                 </div>
               </TabsContent>
@@ -427,30 +398,21 @@ export default function CompetePage() {
               <TabsContent value="testcases" className="mt-0 h-full">
                 <div className="space-y-3">
                   {publicTestCases.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      No public test cases available
-                    </p>
+                    <p className="text-sm text-muted-foreground">No public test cases available</p>
                   ) : (
                     publicTestCases.map((tc, index: number) => (
-                      <div
-                        key={tc.documentId}
-                        className="rounded-lg border p-3 space-y-2"
-                      >
+                      <div key={tc.documentId} className="rounded-lg border p-3 space-y-2">
                         <div className="text-xs font-medium text-muted-foreground">
                           Test {index + 1}
                         </div>
                         <div>
-                          <div className="text-xs text-muted-foreground mb-1">
-                            Input
-                          </div>
+                          <div className="text-xs text-muted-foreground mb-1">Input</div>
                           <pre className="text-xs bg-muted p-2 rounded font-mono overflow-x-auto">
                             {tc.input}
                           </pre>
                         </div>
                         <div>
-                          <div className="text-xs text-muted-foreground mb-1">
-                            Expected
-                          </div>
+                          <div className="text-xs text-muted-foreground mb-1">Expected</div>
                           <pre className="text-xs bg-muted p-2 rounded font-mono overflow-x-auto">
                             {tc.output}
                           </pre>
@@ -466,20 +428,15 @@ export default function CompetePage() {
                   {submissions.length === 0 ? (
                     <div className="text-center py-12">
                       <AlertCircle className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        No submissions yet
-                      </p>
+                      <p className="text-sm text-muted-foreground">No submissions yet</p>
                     </div>
                   ) : (
                     submissions.map((submission, subIndex) => {
                       const executions = submission.executions || [];
-                      const hasUnprocessed = executions.some(
-                        (exec) => !exec.processed,
-                      );
+                      const hasUnprocessed = executions.some((exec) => !exec.processed);
                       const passedCount = executions.filter(
                         (exec: Execution) =>
-                          exec.processed &&
-                          exec.stdout?.trim() === exec.testCase?.output?.trim(),
+                          exec.processed && exec.stdout?.trim() === exec.testCase?.output?.trim(),
                       ).length;
 
                       return (
@@ -490,18 +447,13 @@ export default function CompetePage() {
                                 #{submissions.length - subIndex}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                {new Date(
-                                  submission.createdAt,
-                                ).toLocaleTimeString()}{" "}
-                                • {submission.language?.name}
+                                {new Date(submission.createdAt).toLocaleTimeString()} •{' '}
+                                {submission.language?.name}
                               </p>
                             </div>
                             <div>
                               {hasUnprocessed ? (
-                                <Badge
-                                  variant="secondary"
-                                  className="gap-1 text-xs"
-                                >
+                                <Badge variant="secondary" className="gap-1 text-xs">
                                   <Loader2 className="h-3 w-3 animate-spin" />
                                   Running
                                 </Badge>
@@ -509,10 +461,10 @@ export default function CompetePage() {
                                 <Badge
                                   variant="outline"
                                   className={cn(
-                                    "text-xs",
+                                    'text-xs',
                                     passedCount === executions.length
-                                      ? "border-emerald-500/50 text-emerald-500"
-                                      : "border-destructive/50 text-destructive",
+                                      ? 'border-emerald-500/50 text-emerald-500'
+                                      : 'border-destructive/50 text-destructive',
                                   )}
                                 >
                                   {passedCount}/{executions.length}
@@ -525,8 +477,7 @@ export default function CompetePage() {
                             {executions.map((execution, index) => {
                               const isPassed =
                                 execution.processed &&
-                                execution.stdout?.trim() ===
-                                  execution.testCase?.output?.trim();
+                                execution.stdout?.trim() === execution.testCase?.output?.trim();
                               const isFailed = execution.processed && !isPassed;
                               const isRunning = !execution.processed;
 
@@ -534,32 +485,24 @@ export default function CompetePage() {
                                 <div
                                   key={execution.documentId}
                                   className={cn(
-                                    "rounded-lg border p-3 space-y-2",
-                                    isPassed && "border-emerald-500/30",
-                                    isFailed && "border-destructive/30",
+                                    'rounded-lg border p-3 space-y-2',
+                                    isPassed && 'border-emerald-500/30',
+                                    isFailed && 'border-destructive/30',
                                   )}
                                 >
                                   <div className="flex items-center justify-between">
                                     <span className="text-xs font-medium">
-                                      {execution.testCase?.hidden
-                                        ? "Hidden"
-                                        : ""}{" "}
-                                      Test {index + 1}
+                                      {execution.testCase?.hidden ? 'Hidden' : ''} Test {index + 1}
                                     </span>
                                     {isRunning && (
-                                      <Badge
-                                        variant="secondary"
-                                        className="gap-1 text-xs h-5"
-                                      >
+                                      <Badge variant="secondary" className="gap-1 text-xs h-5">
                                         <Loader2 className="h-3 w-3 animate-spin" />
                                       </Badge>
                                     )}
                                     {isPassed && (
                                       <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                                     )}
-                                    {isFailed && (
-                                      <XCircle className="h-4 w-4 text-destructive" />
-                                    )}
+                                    {isFailed && <XCircle className="h-4 w-4 text-destructive" />}
                                   </div>
 
                                   {execution.processed && (
@@ -591,21 +534,19 @@ export default function CompetePage() {
                                         </div>
                                         <pre
                                           className={cn(
-                                            "text-xs p-2 rounded font-mono overflow-x-auto",
+                                            'text-xs p-2 rounded font-mono overflow-x-auto',
                                             isPassed
-                                              ? "bg-emerald-500/10 text-emerald-400"
-                                              : "bg-destructive/10 text-destructive",
+                                              ? 'bg-emerald-500/10 text-emerald-400'
+                                              : 'bg-destructive/10 text-destructive',
                                           )}
                                         >
-                                          {execution.stdout || "(empty)"}
+                                          {execution.stdout || '(empty)'}
                                         </pre>
                                       </div>
 
                                       {execution.stderr && (
                                         <div>
-                                          <div className="text-xs text-destructive mb-1">
-                                            Error
-                                          </div>
+                                          <div className="text-xs text-destructive mb-1">Error</div>
                                           <pre className="text-xs bg-destructive/10 text-destructive p-2 rounded font-mono overflow-x-auto">
                                             {execution.stderr}
                                           </pre>
@@ -637,21 +578,19 @@ export default function CompetePage() {
         {/* Right Panel - Code Editor */}
         <Card className="flex flex-col overflow-hidden">
           <div className="border-b px-4 py-2">
-            <span className="text-xs font-medium text-muted-foreground">
-              Editor
-            </span>
+            <span className="text-xs font-medium text-muted-foreground">Editor</span>
           </div>
           <div className="flex-1 min-h-0">
             <Editor
               height="100%"
               language={getEditorLanguage(selectedLang?.codeName)}
               value={code}
-              onChange={(value) => setCode(value || "")}
+              onChange={(value) => setCode(value || '')}
               theme="vs-dark"
               options={{
                 minimap: { enabled: false },
                 fontSize: 13,
-                lineNumbers: "on",
+                lineNumbers: 'on',
                 roundedSelection: false,
                 scrollBeyondLastLine: false,
                 automaticLayout: true,
@@ -659,12 +598,9 @@ export default function CompetePage() {
                 padding: { top: 12 },
               }}
               onMount={(editor, monaco) => {
-                editor.addCommand(
-                  monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
-                  () => {
-                    handleSubmit();
-                  },
-                );
+                editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+                  handleSubmit();
+                });
               }}
             />
           </div>
@@ -676,20 +612,20 @@ export default function CompetePage() {
 
 function getEditorLanguage(codeName: string | undefined): string {
   if (!codeName) {
-    return "javascript";
+    return 'javascript';
   }
 
   const languageMap: Record<string, string> = {
-    python: "python",
-    javascript: "javascript",
-    typescript: "typescript",
-    java: "java",
-    cpp: "cpp",
-    c: "c",
-    csharp: "csharp",
-    go: "go",
-    rust: "rust",
+    python: 'python',
+    javascript: 'javascript',
+    typescript: 'typescript',
+    java: 'java',
+    cpp: 'cpp',
+    c: 'c',
+    csharp: 'csharp',
+    go: 'go',
+    rust: 'rust',
   };
 
-  return languageMap[codeName] || "javascript";
+  return languageMap[codeName] || 'javascript';
 }

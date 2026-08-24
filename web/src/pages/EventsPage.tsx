@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Clock, ChevronRight } from "lucide-react";
-import { Link } from "react-router-dom";
-import { REST_URL } from "@/config";
+import { useState, useEffect } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Calendar, Clock, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { REST_URL } from '@/config';
+import { Language } from '@/types';
 
 interface Event {
   documentId: string;
@@ -12,8 +13,8 @@ interface Event {
   start: string;
   end: string;
   slug: string;
-  problems?: any[];
-  supportedLanguages?: any[];
+  problems?: unknown[];
+  supportedLanguages?: Language[];
   publishedAt: string;
 }
 
@@ -21,14 +22,20 @@ function getTimeRemaining(date: Date): string {
   const now = new Date();
   const diff = date.getTime() - now.getTime();
 
-  if (diff < 0) {return "Started";}
+  if (diff < 0) {
+    return 'Started';
+  }
 
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
-  if (days > 0) {return `${days}d ${hours}h`;}
-  if (hours > 0) {return `${hours}h ${minutes}m`;}
+  if (days > 0) {
+    return `${days}d ${hours}h`;
+  }
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
   return `${minutes}m`;
 }
 
@@ -37,8 +44,12 @@ function formatDuration(start: Date, end: Date): string {
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
-  if (hours > 0 && minutes > 0) {return `${hours}h ${minutes}m`;}
-  if (hours > 0) {return `${hours}h`;}
+  if (hours > 0 && minutes > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  if (hours > 0) {
+    return `${hours}h`;
+  }
   return `${minutes}m`;
 }
 
@@ -58,15 +69,15 @@ export default function EventsPage() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("active");
+  const [activeTab, setActiveTab] = useState('active');
 
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const token = localStorage.getItem("jwt");
+        const token = localStorage.getItem('jwt');
         const response = await fetch(`${REST_URL}/events?populate=*`, {
           headers: {
-            Authorization: token ? `Bearer ${token}` : "",
+            Authorization: token ? `Bearer ${token}` : '',
           },
         });
 
@@ -78,8 +89,8 @@ export default function EventsPage() {
         const eventsData = Array.isArray(data) ? data : data.data || [];
         setEvents(eventsData);
       } catch (err) {
-        console.error("Failed to load events:", err);
-        setError("Failed to load events");
+        console.error('Failed to load events:', err);
+        setError('Failed to load events');
       } finally {
         setLoading(false);
       }
@@ -134,9 +145,7 @@ export default function EventsPage() {
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                     </span>
-                    <span className="text-xs text-emerald-500 font-medium">
-                      LIVE
-                    </span>
+                    <span className="text-xs text-emerald-500 font-medium">LIVE</span>
                   </span>
                 )}
               </div>
@@ -146,9 +155,9 @@ export default function EventsPage() {
                   <Calendar className="h-3.5 w-3.5" />
                   <span>
                     {startDate.toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
                     })}
                   </span>
                 </div>
@@ -158,29 +167,28 @@ export default function EventsPage() {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <span className="font-mono">{problemCount}</span>
-                  <span>{problemCount === 1 ? "problem" : "problems"}</span>
+                  <span>{problemCount === 1 ? 'problem' : 'problems'}</span>
                 </div>
               </div>
 
-              {event.supportedLanguages &&
-                event.supportedLanguages.length > 0 && (
-                  <div className="flex items-center gap-1.5 mt-3">
-                    {event.supportedLanguages.slice(0, 5).map((lang: any) => (
-                      <Badge
-                        key={lang.documentId}
-                        variant="outline"
-                        className="text-[10px] px-1.5 py-0 h-5 font-normal"
-                      >
-                        {lang.name}
-                      </Badge>
-                    ))}
-                    {event.supportedLanguages.length > 5 && (
-                      <span className="text-xs text-muted-foreground">
-                        +{event.supportedLanguages.length - 5}
-                      </span>
-                    )}
-                  </div>
-                )}
+              {event.supportedLanguages && event.supportedLanguages.length > 0 && (
+                <div className="flex items-center gap-1.5 mt-3">
+                  {event.supportedLanguages.slice(0, 5).map((lang) => (
+                    <Badge
+                      key={lang.documentId}
+                      variant="outline"
+                      className="text-[10px] px-1.5 py-0 h-5 font-normal"
+                    >
+                      {lang.name}
+                    </Badge>
+                  ))}
+                  {event.supportedLanguages.length > 5 && (
+                    <span className="text-xs text-muted-foreground">
+                      +{event.supportedLanguages.length - 5}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex flex-col items-end gap-2 shrink-0">
@@ -242,9 +250,7 @@ export default function EventsPage() {
           {activeEvents.length === 0 ? (
             <EmptyState message="No active contests right now" />
           ) : (
-            activeEvents.map((event) => (
-              <EventCard key={event.documentId} event={event} />
-            ))
+            activeEvents.map((event) => <EventCard key={event.documentId} event={event} />)
           )}
         </TabsContent>
 
@@ -252,9 +258,7 @@ export default function EventsPage() {
           {upcomingEvents.length === 0 ? (
             <EmptyState message="No upcoming contests scheduled" />
           ) : (
-            upcomingEvents.map((event) => (
-              <EventCard key={event.documentId} event={event} />
-            ))
+            upcomingEvents.map((event) => <EventCard key={event.documentId} event={event} />)
           )}
         </TabsContent>
 
@@ -262,9 +266,7 @@ export default function EventsPage() {
           {pastEvents.length === 0 ? (
             <EmptyState message="No past contests" />
           ) : (
-            pastEvents.map((event) => (
-              <EventCard key={event.documentId} event={event} />
-            ))
+            pastEvents.map((event) => <EventCard key={event.documentId} event={event} />)
           )}
         </TabsContent>
       </Tabs>

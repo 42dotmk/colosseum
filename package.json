@@ -1,15 +1,21 @@
 {
   "name": "colosseum",
   "version": "1.0.0",
+  "engines": {
+    "node": "20.x"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^26.2.0",
     "concurrently": "^9.2.4",
     "eslint": "^10.8.1",
+    "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.4",
     "globals": "^17.11.0",
     "husky": "^9.0.10",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3.9.6",
     "typescript-eslint": "^8.67.0"
   },
   "scripts": {
@@ -28,11 +34,19 @@
     "build:web": "npm --prefix web run build",
     "lint": "eslint senatus executioner lib/queue web",
     "lint:fix": "eslint senatus executioner lib/queue web --fix",
+    "lint:strict": "eslint senatus executioner lib/queue web --max-warnings=0",
+    "lint:client": "eslint client",
     "lint:senatus": "eslint senatus",
     "lint:executioner": "eslint executioner",
     "lint:queue": "eslint lib/queue",
     "lint:web": "eslint web",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run lint && npm run format:check && npm run build",
+    "quality": "npm run lint && npm run format:check",
+    "quality:strict": "npm run lint:strict && npm run format:check",
     "typecheck:senatus": "npm --prefix senatus run typecheck",
+    "prepare": "husky",
     "prepareClientHusky": "husky client/.husky",
     "prepareSenatusHusky": "husky senatus/.husky"
   }

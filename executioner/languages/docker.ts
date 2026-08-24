@@ -1,9 +1,9 @@
-import fs from "fs";
-import path from "path";
-import cp from "child_process";
-import { v4 } from "uuid";
+import fs from 'fs';
+import path from 'path';
+import cp from 'child_process';
+import { v4 } from 'uuid';
 
-import { readFile, writeFile } from "fs/promises";
+import { readFile, writeFile } from 'fs/promises';
 
 type LanguageOptions = {
   [key: string]: string;
@@ -15,17 +15,14 @@ type File = {
   id?: string;
   filename: string;
   content: string;
-  metadata?: any;
+  metadata?: unknown;
 };
 
 const CPU_LIMIT_PER_EXECUTION = process.env.CPU_LIMIT_PER_EXECUTION;
-const MEMORY_LIMIT_PER_EXECUTION =
-  process.env.MEMORY_LIMIT_PER_EXECUTION ?? "1G";
-const ENABLE_NETWORK_IN_EXECUTION =
-  process.env.ENABLE_NETWORK_IN_EXECUTION === "true";
-const IMAGE_BASE =
-  process.env.IMAGE_BASE || "ghcr.io/42dotmk/colosseum-executioner-";
-const WORKDIR = process.env.WORKDIR || "_work";
+const MEMORY_LIMIT_PER_EXECUTION = process.env.MEMORY_LIMIT_PER_EXECUTION ?? '1G';
+const ENABLE_NETWORK_IN_EXECUTION = process.env.ENABLE_NETWORK_IN_EXECUTION === 'true';
+const IMAGE_BASE = process.env.IMAGE_BASE || 'ghcr.io/42dotmk/colosseum-executioner-';
+const WORKDIR = process.env.WORKDIR || '_work';
 
 if (!fs.existsSync(WORKDIR)) {
   fs.mkdirSync(WORKDIR);
@@ -51,20 +48,16 @@ const readIfExists = async (path: string) => {
   if (fs.existsSync(path)) {
     return (await readFile(path)).toString();
   }
-  return "";
+  return '';
 };
 
-export const execute = async (
-  files: File[],
-  input: File[],
-  options: LanguageOptions,
-) => {
+export const execute = async (files: File[], input: File[], options: LanguageOptions) => {
   const id = v4();
 
   const subWorkspace = path.join(WORKDIR, id);
-  const srcDir = path.resolve(path.join(subWorkspace, "src"));
-  const inputDir = path.resolve(path.join(subWorkspace, "input"));
-  const outputDir = path.resolve(path.join(subWorkspace, "output"));
+  const srcDir = path.resolve(path.join(subWorkspace, 'src'));
+  const inputDir = path.resolve(path.join(subWorkspace, 'input'));
+  const outputDir = path.resolve(path.join(subWorkspace, 'output'));
   const lang = options.language;
 
   if (!fs.existsSync(subWorkspace)) {
@@ -92,12 +85,8 @@ export const execute = async (
   const timePath = path.resolve(path.join(subWorkspace, timeFilename));
   const stdoutPath = path.resolve(path.join(subWorkspace, stdoutFilename));
   const stderrPath = path.resolve(path.join(subWorkspace, stderrFilename));
-  const compileStdoutPath = path.resolve(
-    path.join(subWorkspace, compileStdoutFilename),
-  );
-  const compileStderrPath = path.resolve(
-    path.join(subWorkspace, compileStderrFilename),
-  );
+  const compileStdoutPath = path.resolve(path.join(subWorkspace, compileStdoutFilename));
+  const compileStderrPath = path.resolve(path.join(subWorkspace, compileStderrFilename));
 
   for (const file of files) {
     const filePath = path.resolve(path.join(srcDir, file.filename));
@@ -111,11 +100,11 @@ export const execute = async (
   }
 
   try {
-    await writeFile(timePath, "");
-    await writeFile(stdoutPath, "");
-    await writeFile(stderrPath, "");
-    await writeFile(compileStdoutPath, "");
-    await writeFile(compileStderrPath, "");
+    await writeFile(timePath, '');
+    await writeFile(stdoutPath, '');
+    await writeFile(stderrPath, '');
+    await writeFile(compileStdoutPath, '');
+    await writeFile(compileStderrPath, '');
     return await new Promise((resolve) => {
       const extraArgs = [];
 
@@ -128,59 +117,53 @@ export const execute = async (
       }
 
       if (!ENABLE_NETWORK_IN_EXECUTION) {
-        extraArgs.push("--network=none");
+        extraArgs.push('--network=none');
       }
 
       const args = [
-        "run",
-        "--rm",
-        "-v",
+        'run',
+        '--rm',
+        '-v',
         `${srcDir}:/exc/src`,
-        "-v",
+        '-v',
         `${inputDir}:/exc/input`,
-        "-v",
+        '-v',
         `${outputDir}:/exc/output`,
-        "-v",
+        '-v',
         `${timePath}:/exc/${timeFilename}`,
-        "-v",
+        '-v',
         `${stdoutPath}:/exc/${stdoutFilename}`,
-        "-v",
+        '-v',
         `${stderrPath}:/exc/${stderrFilename}`,
-        "-v",
+        '-v',
         `${compileStdoutPath}:/exc/${compileStdoutFilename}`,
-        "-v",
+        '-v',
         `${compileStderrPath}:/exc/${compileStderrFilename}`,
         ...extraArgs,
-        "-i",
+        '-i',
         `${IMAGE_BASE}${lang}`,
       ];
 
-      const child = cp.spawn("docker", args);
-      console.log(child.spawnargs.join(" "));
+      const child = cp.spawn('docker', args);
+      console.log(child.spawnargs.join(' '));
 
-      child.stdout.on("data", (data) => {
+      child.stdout.on('data', (data) => {
         console.log(`stdout: ${data}`);
       });
 
-      child.stderr.on("data", (data) => {
+      child.stderr.on('data', (data) => {
         console.error(`stderr: ${data}`);
       });
 
-      child.on("close", async (code) => {
+      child.on('close', async (code) => {
         console.log(`child process exited with code ${code}`);
 
         const output = [];
 
         for (const inp of input) {
-          const stdoutPath = path.resolve(
-            path.join(outputDir, `${inp.filename}.stdout`),
-          );
-          const stderrPath = path.resolve(
-            path.join(outputDir, `${inp.filename}.stderr`),
-          );
-          const timePath = path.resolve(
-            path.join(outputDir, `${inp.filename}.time`),
-          );
+          const stdoutPath = path.resolve(path.join(outputDir, `${inp.filename}.stdout`));
+          const stderrPath = path.resolve(path.join(outputDir, `${inp.filename}.stderr`));
+          const timePath = path.resolve(path.join(outputDir, `${inp.filename}.time`));
           const stdout = await readIfExists(stdoutPath);
 
           const stderr = await readIfExists(stderrPath);
@@ -189,10 +172,10 @@ export const execute = async (
           let parsedTime = null;
           if (time) {
             const timeSplits = time
-              .split("\n")
+              .split('\n')
               .map((t) => t.trim())
               .filter((x) => x)
-              .map((x) => x.split("\t"));
+              .map((x) => x.split('\t'));
             const [realTime] = timeSplits;
             parsedTime = parseDuration(realTime[1]);
             if (!parsedTime) {
@@ -211,7 +194,7 @@ export const execute = async (
         resolve(output);
       });
 
-      console.log("child", child.pid);
+      console.log('child', child.pid);
     });
   } catch (e) {
     console.error(e);

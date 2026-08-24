@@ -1,30 +1,33 @@
-import js from "@eslint/js";
-import globals from "globals";
-import tseslint from "typescript-eslint";
-import reactHooks from "eslint-plugin-react-hooks";
-import reactRefresh from "eslint-plugin-react-refresh";
+import js from '@eslint/js';
+import { defineConfig, globalIgnores } from 'eslint/config';
+import eslintConfigPrettier from 'eslint-config-prettier';
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
-export default [
-  {
-    ignores: [
-      "**/node_modules/**",
-      "**/dist/**",
-      "**/build/**",
-      "**/.cache/**",
-      "**/.strapi/**",
-      "**/.tmp/**",
-      "**/coverage/**",
+export default defineConfig([
+  globalIgnores([
+    '**/node_modules/**',
+    '**/dist/**',
+    '**/build/**',
+    '**/.cache/**',
+    '**/.strapi/**',
+    '**/.tmp/**',
+    '**/coverage/**',
 
-      "senatus/types/generated/**",
+    '**/src/__generated__/**',
 
-      // Strapi-generated/example files that aren't application code.
-      "senatus/src/admin/*.example.*",
-    ],
-  },
+    'senatus/types/generated/**',
+
+    'senatus/src/admin/*.example.*',
+
+    'senatus/src/extensions/documentation/documentation/**',
+  ]),
 
   {
     linterOptions: {
-      reportUnusedDisableDirectives: "error",
+      reportUnusedDisableDirectives: 'error',
     },
   },
 
@@ -33,61 +36,50 @@ export default [
   ...tseslint.configs.recommended,
 
   {
-    files: ["**/*.{js,mjs,cjs,ts,tsx}"],
+    files: ['**/*.{js,mjs,cjs,ts,tsx}'],
 
     rules: {
-      // Avoid coercion bugs.
-      eqeqeq: ["error", "always"],
+      eqeqeq: ['error', 'always'],
 
-      // Require braces around control-flow statements.
-      curly: ["error", "all"],
+      curly: ['error', 'all'],
 
-      // Avoid duplicate imports from the same module.
-      "no-duplicate-imports": [
-        "error",
+      'no-duplicate-imports': [
+        'error',
         {
           allowSeparateTypeImports: true,
         },
       ],
 
-      // Modern JavaScript basics.
-      "no-var": "error",
-      "prefer-const": "error",
-      "@typescript-eslint/no-require-imports": "off",
+      'no-var': 'error',
+
+      'prefer-const': 'error',
+
+      'no-debugger': 'error',
     },
   },
-
   {
-    files: ["**/*.{ts,tsx}"],
+    files: ['**/*.{ts,tsx}'],
 
     rules: {
-      "@typescript-eslint/no-unused-vars": [
-        "error",
+      '@typescript-eslint/no-unused-vars': [
+        'error',
         {
-          argsIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
-          caughtErrorsIgnorePattern: "^_",
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
         },
       ],
 
-      // Keep visible, but don't block existing code.
-      "@typescript-eslint/no-explicit-any": "warn",
-
-      // Allow both `type` and `interface`.
-      "@typescript-eslint/consistent-type-definitions": "off",
-
-      // Variable shadowing is allowed for now.
-      "@typescript-eslint/no-shadow": "off",
-      "no-shadow": "off",
-
-      // Existing CommonJS require() imports are allowed.
-      "@typescript-eslint/no-require-imports": "off",
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/consistent-type-definitions': 'off',
+      '@typescript-eslint/no-shadow': 'off',
+      'no-shadow': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
     },
   },
-
-  // Browser / React application.
   {
-    files: ["web/**/*.{ts,tsx}"],
+    files: ['client/src/**/*.{js,jsx,ts,tsx}', 'web/src/**/*.{js,jsx,ts,tsx}'],
 
     languageOptions: {
       globals: {
@@ -97,36 +89,32 @@ export default [
     },
 
     plugins: {
-      "react-hooks": reactHooks,
-      "react-refresh": reactRefresh,
+      'react-hooks': reactHooks,
+      'react-refresh': reactRefresh,
     },
 
     rules: {
       ...reactHooks.configs.recommended.rules,
 
-      "react-refresh/only-export-components": [
-        "warn",
+      'react-refresh/only-export-components': [
+        'warn',
         {
           allowConstantExport: true,
         },
       ],
-
-      // Allow warn/error, but flag leftover console.log calls.
-      "no-console": [
-        "warn",
+      'no-console': [
+        'warn',
         {
-          allow: ["warn", "error"],
+          allow: ['warn', 'error'],
         },
       ],
     },
   },
-
-  // Node / backend / infrastructure code.
   {
     files: [
-      "senatus/**/*.{ts,tsx}",
-      "executioner/**/*.ts",
-      "lib/queue/**/*.ts",
+      'senatus/**/*.{js,mjs,cjs,ts}',
+      'executioner/**/*.{js,mjs,cjs,ts}',
+      'lib/queue/**/*.{js,mjs,cjs,ts}',
     ],
 
     languageOptions: {
@@ -137,14 +125,20 @@ export default [
     },
 
     rules: {
-      // Backend/service logging is expected.
-      "no-console": "off",
+      'no-console': 'off',
     },
   },
-
-  // Frontend configuration files execute in Node.
   {
-    files: ["web/*.config.{js,mjs,cjs,ts}", "web/codegen.ts"],
+    files: [
+      'client/*.config.{js,mjs,cjs,ts}',
+      'client/codegen.ts',
+
+      'web/*.config.{js,mjs,cjs,ts}',
+      'web/codegen.ts',
+
+      '*.config.{js,mjs,cjs,ts}',
+      '*.mjs',
+    ],
 
     languageOptions: {
       globals: {
@@ -154,7 +148,8 @@ export default [
     },
 
     rules: {
-      "no-console": "off",
+      'no-console': 'off',
     },
   },
-];
+  eslintConfigPrettier,
+]);

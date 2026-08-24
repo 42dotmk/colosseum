@@ -1,4 +1,4 @@
-export default ({ env }) => ({
+export default () => ({
   graphql: {
     config: {
       endpoint: '/graphql',
@@ -8,8 +8,8 @@ export default ({ env }) => ({
       amountLimit: 100,
       apolloServer: {
         tracing: false,
-        introspection: true
-      }
-    }
-  }
+        introspection: true,
+      },
+    },
+  },
 });

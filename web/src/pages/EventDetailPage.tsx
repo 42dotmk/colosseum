@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Table,
   TableBody,
@@ -9,17 +9,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import {
-  ArrowLeft,
-  Circle,
-  ChevronRight,
-  FileText,
-  Trophy,
-} from "lucide-react";
-import { REST_URL } from "@/config";
-import Markdown from "@/components/Markdown";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/table';
+import { ArrowLeft, Circle, ChevronRight, FileText, Trophy } from 'lucide-react';
+import { REST_URL } from '@/config';
+import Markdown from '@/components/Markdown';
+import { cn } from '@/lib/utils';
+import type { Language } from '@/types';
 
 interface Problem {
   documentId: string;
@@ -28,7 +23,7 @@ interface Problem {
   slug: string;
   difficulty?: string;
   points: number;
-  testCases?: any[];
+  testCases?: unknown[];
 }
 
 interface Event {
@@ -37,7 +32,7 @@ interface Event {
   start: string;
   end: string;
   problems?: Problem[];
-  supportedLanguages?: any[];
+  supportedLanguages?: Language[];
 }
 
 function getTimeRemaining(date: Date): string {
@@ -45,26 +40,26 @@ function getTimeRemaining(date: Date): string {
   const diff = date.getTime() - now.getTime();
 
   if (diff < 0) {
-    return "0:00:00";
+    return '0:00:00';
   }
 
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
   const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-  return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+  return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
 function getDifficultyColor(difficulty?: string) {
   switch (difficulty?.toLowerCase()) {
-    case "easy":
-      return "text-emerald-500";
-    case "medium":
-      return "text-amber-500";
-    case "hard":
-      return "text-red-500";
+    case 'easy':
+      return 'text-emerald-500';
+    case 'medium':
+      return 'text-amber-500';
+    case 'hard':
+      return 'text-red-500';
     default:
-      return "text-muted-foreground";
+      return 'text-muted-foreground';
   }
 }
 
@@ -73,21 +68,18 @@ export default function EventDetailPage() {
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("problems");
-  const [timeRemaining, setTimeRemaining] = useState("");
+  const [activeTab, setActiveTab] = useState('problems');
+  const [timeRemaining, setTimeRemaining] = useState('');
 
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        const token = localStorage.getItem("jwt");
-        const response = await fetch(
-          `${REST_URL}/events/${eventId}?populate=*`,
-          {
-            headers: {
-              Authorization: token ? `Bearer ${token}` : "",
-            },
+        const token = localStorage.getItem('jwt');
+        const response = await fetch(`${REST_URL}/events/${eventId}?populate=*`, {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : '',
           },
-        );
+        });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -97,8 +89,8 @@ export default function EventDetailPage() {
         const eventData = data.data || data;
         setEvent(eventData);
       } catch (err) {
-        console.error("Failed to load event:", err);
-        setError("Failed to load event");
+        console.error('Failed to load event:', err);
+        setError('Failed to load event');
       } finally {
         setLoading(false);
       }
@@ -161,18 +153,14 @@ export default function EventDetailPage() {
         <div className="flex items-start justify-between gap-6">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-2xl font-semibold tracking-tight">
-                {event.title}
-              </h1>
+              <h1 className="text-2xl font-semibold tracking-tight">{event.title}</h1>
               {isActive && (
                 <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                   </span>
-                  <span className="text-xs text-emerald-500 font-medium">
-                    LIVE
-                  </span>
+                  <span className="text-xs text-emerald-500 font-medium">LIVE</span>
                 </span>
               )}
               {isUpcoming && <Badge variant="secondary">Upcoming</Badge>}
@@ -186,34 +174,31 @@ export default function EventDetailPage() {
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <span>
                 {startDate.toLocaleDateString(undefined, {
-                  weekday: "short",
-                  month: "short",
-                  day: "numeric",
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
                 })}
-                {" · "}
+                {' · '}
                 {startDate.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
+                  hour: '2-digit',
+                  minute: '2-digit',
                 })}
-                {" – "}
+                {' – '}
                 {endDate.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
+                  hour: '2-digit',
+                  minute: '2-digit',
                 })}
               </span>
               <span>·</span>
               <span>
-                {problems.length}{" "}
-                {problems.length === 1 ? "problem" : "problems"}
+                {problems.length} {problems.length === 1 ? 'problem' : 'problems'}
               </span>
             </div>
           </div>
 
           {isActive && (
             <div className="text-right shrink-0">
-              <div className="text-xs text-muted-foreground mb-1">
-                Time Remaining
-              </div>
+              <div className="text-xs text-muted-foreground mb-1">Time Remaining</div>
               <div className="font-mono text-2xl font-semibold text-amber-500 tabular-nums">
                 {timeRemaining}
               </div>
@@ -237,8 +222,8 @@ export default function EventDetailPage() {
               <h3 className="font-medium mb-1">No problems yet</h3>
               <p className="text-sm text-muted-foreground">
                 {isUpcoming
-                  ? "Problems will be revealed when the contest starts"
-                  : "No problems have been added to this contest"}
+                  ? 'Problems will be revealed when the contest starts'
+                  : 'No problems have been added to this contest'}
               </p>
             </div>
           ) : (
@@ -248,9 +233,7 @@ export default function EventDetailPage() {
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="w-12 text-center">#</TableHead>
                     <TableHead>Problem</TableHead>
-                    <TableHead className="w-24 text-center">
-                      Difficulty
-                    </TableHead>
+                    <TableHead className="w-24 text-center">Difficulty</TableHead>
                     <TableHead className="w-20 text-center">Points</TableHead>
                     <TableHead className="w-20 text-center">Status</TableHead>
                     <TableHead className="w-12"></TableHead>
@@ -261,9 +244,7 @@ export default function EventDetailPage() {
                     <TableRow
                       key={problem.documentId}
                       className="group cursor-pointer"
-                      onClick={() =>
-                        (window.location.href = `/compete/${problem.documentId}`)
-                      }
+                      onClick={() => (window.location.href = `/compete/${problem.documentId}`)}
                     >
                       <TableCell className="text-center font-mono text-muted-foreground">
                         {index + 1}
@@ -285,15 +266,15 @@ export default function EventDetailPage() {
                       <TableCell className="text-center">
                         <span
                           className={cn(
-                            "text-sm font-medium",
+                            'text-sm font-medium',
                             getDifficultyColor(problem.difficulty),
                           )}
                         >
-                          {problem.difficulty || "—"}
+                          {problem.difficulty || '—'}
                         </span>
                       </TableCell>
                       <TableCell className="text-center font-mono">
-                        {problem.points ?? "N/A"}
+                        {problem.points ?? 'N/A'}
                       </TableCell>
                       <TableCell className="text-center">
                         <Circle className="h-4 w-4 text-muted-foreground/30 mx-auto" />
@@ -316,30 +297,21 @@ export default function EventDetailPage() {
                 <Markdown content={event.description} />
               </div>
             ) : (
-              <p className="text-muted-foreground text-sm">
-                No description provided.
-              </p>
+              <p className="text-muted-foreground text-sm">No description provided.</p>
             )}
 
-            {event.supportedLanguages &&
-              event.supportedLanguages.length > 0 && (
-                <div className="mt-6 pt-6 border-t">
-                  <h3 className="text-sm font-medium mb-3">
-                    Supported Languages
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {event.supportedLanguages.map((lang: any) => (
-                      <Badge
-                        key={lang.documentId}
-                        variant="secondary"
-                        className="font-normal"
-                      >
-                        {lang.name}
-                      </Badge>
-                    ))}
-                  </div>
+            {event.supportedLanguages && event.supportedLanguages.length > 0 && (
+              <div className="mt-6 pt-6 border-t">
+                <h3 className="text-sm font-medium mb-3">Supported Languages</h3>
+                <div className="flex flex-wrap gap-2">
+                  {event.supportedLanguages.map((lang) => (
+                    <Badge key={lang.documentId} variant="secondary" className="font-normal">
+                      {lang.name}
+                    </Badge>
+                  ))}
                 </div>
-              )}
+              </div>
+            )}
           </div>
         </TabsContent>
 

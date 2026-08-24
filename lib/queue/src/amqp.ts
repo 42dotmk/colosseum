@@ -1,9 +1,4 @@
-import {
-  Connection,
-  Consumer,
-  ConsumerStatus,
-  Publisher,
-} from "rabbitmq-client";
+import { Connection, Consumer, ConsumerStatus, Publisher } from 'rabbitmq-client';
 
 type SubscriptionFn = (msg: string) => Promise<void>;
 type UnsubscribeFn = () => Promise<void>;
@@ -15,25 +10,25 @@ export const connect = async (url: string) => {
   const consumers: Consumer[] = [];
   const publishers: { [key: string]: Publisher } = {};
 
-  rabbit.on("error", (err) => {
-    console.log("RabbitMQ connection error", err);
+  rabbit.on('error', (err) => {
+    console.log('RabbitMQ connection error', err);
   });
 
-  rabbit.on("connection", () => {
-    console.log("Connection successfully (re)established");
+  rabbit.on('connection', () => {
+    console.log('Connection successfully (re)established');
   });
 
   const disconnect = async () => {
-    console.log("Disconnecting");
+    console.log('Disconnecting');
 
-    console.log("Closing consumers" + consumers.length);
+    console.log('Closing consumers' + consumers.length);
     for (const sub of consumers) {
-      console.log("Closing consumer " + sub.consumerTag);
+      console.log('Closing consumer ' + sub.consumerTag);
       await sub.close();
     }
 
     for (const pub of Object.values(publishers)) {
-      console.log("Closing publisher");
+      console.log('Closing publisher');
 
       await pub.close();
     }
@@ -53,22 +48,22 @@ export const connect = async (url: string) => {
         qos: { prefetchCount },
       },
       async (msg) => {
-        console.log("received message (user-events)", msg);
+        console.log('received message (user-events)', msg);
         try {
-          const str = msg.body.toString("utf8");
+          const str = msg.body.toString('utf8');
           await fn?.(str);
           return ConsumerStatus.ACK;
-        } catch (e: any) {
-          console.error("Error in subscription", e);
+        } catch (e) {
+          console.error('Error in subscription', e);
           return ConsumerStatus.DROP;
         }
       },
     );
 
-    sub.on("error", (err) => {
+    sub.on('error', (err) => {
       // Maybe the consumer was cancelled, or the connection was reset before a
       // message could be acknowledged.
-      console.log("consumer error (user-events)", err);
+      console.log('consumer error (user-events)', err);
     });
 
     consumers.push(sub);
