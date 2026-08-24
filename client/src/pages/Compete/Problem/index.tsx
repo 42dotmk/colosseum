@@ -1,14 +1,11 @@
-import { Box, Grid, IconButton, Tooltip, Typography } from "@mui/material";
-import { useState } from "react";
-import {
-  KeyboardDoubleArrowLeft,
-  KeyboardDoubleArrowRight,
-} from "@mui/icons-material";
-import Markdown from "react-markdown";
-import { useGetProblemBySlug } from "../../../data/useGetProblem";
-import SampleTestCases from "../SampleTestCases";
-import CodeEditorPane from "./CodeEditorPane";
-import Paper from "../../../components/Paper";
+import { Box, Grid, IconButton, Tooltip, Typography } from '@mui/material';
+import { useState } from 'react';
+import { KeyboardDoubleArrowLeft, KeyboardDoubleArrowRight } from '@mui/icons-material';
+import Markdown from 'react-markdown';
+import { useGetProblemBySlug } from '../../../data/useGetProblem';
+import SampleTestCases from '../SampleTestCases';
+import CodeEditorPane from './CodeEditorPane';
+import Paper from '../../../components/Paper';
 
 const ProblemTab = () => {
   const { problem } = useGetProblemBySlug();
@@ -18,9 +15,7 @@ const ProblemTab = () => {
   const editorPaneSize = isExpanded ? 8 : 6;
   const descriptionPaneSize = 12 - editorPaneSize;
 
-  const tooltipMessage = isExpanded
-    ? "Minimize code editor"
-    : "Maximize code editor";
+  const tooltipMessage = isExpanded ? 'Minimize code editor' : 'Maximize code editor';
 
   const handleResize = (event: React.MouseEvent) => {
     event.preventDefault();
@@ -28,13 +23,9 @@ const ProblemTab = () => {
   };
 
   const resizeButton = (
-    <Tooltip title={tooltipMessage} key={isExpanded ? "true" : "false"}>
+    <Tooltip title={tooltipMessage} key={isExpanded ? 'true' : 'false'}>
       <IconButton onClick={handleResize}>
-        {isExpanded ? (
-          <KeyboardDoubleArrowRight />
-        ) : (
-          <KeyboardDoubleArrowLeft />
-        )}
+        {isExpanded ? <KeyboardDoubleArrowRight /> : <KeyboardDoubleArrowLeft />}
       </IconButton>
     </Tooltip>
   );
@@ -44,8 +35,8 @@ const ProblemTab = () => {
       container
       spacing={4}
       sx={{
-        position: "relative",
-        height: "76vh",
+        position: 'relative',
+        height: '76vh',
       }}
     >
       <Grid item xs={descriptionPaneSize}>
@@ -61,17 +52,17 @@ const ProblemTab = () => {
         xs={editorPaneSize}
         height="inherit"
         sx={{
-          position: "relative",
+          position: 'relative',
         }}
       >
         <Box
           sx={{
-            position: "absolute",
+            position: 'absolute',
             left: -3,
-            height: "100%",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
+            height: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
           }}
         >
           {resizeButton}

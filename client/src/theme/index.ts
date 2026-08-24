@@ -3,21 +3,21 @@ import { ThemeOptions, createTheme } from '@mui/material/styles';
 declare module '@mui/material/styles' {
   interface Palette {
     editor: {
-      background: string,
-    }
+      background: string;
+    };
   }
 
   interface PaletteOptions {
     editor?: {
-      background: string,
-    }
+      background: string;
+    };
   }
 }
 
 const themeOptions: ThemeOptions = createTheme({
   palette: {
     mode: 'dark',
-    editor: { 
+    editor: {
       background: '#282A36',
     },
     primary: {

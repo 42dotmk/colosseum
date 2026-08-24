@@ -1,6 +1,6 @@
-import { Box, Typography } from "@mui/material";
-import Markdown from "react-markdown";
-import { TestCase } from "../../data/schema";
+import { Box, Typography } from '@mui/material';
+import Markdown from 'react-markdown';
+import { TestCase } from '../../data/schema';
 
 const SampleTestCases = ({ testCases }: { testCases: TestCase[] }) => {
   return (
@@ -9,20 +9,14 @@ const SampleTestCases = ({ testCases }: { testCases: TestCase[] }) => {
         <Box my={2}>
           <Typography>
             Input:
-            <Markdown>
-              {testCase?.input}
-            </Markdown>
+            <Markdown>{testCase?.input}</Markdown>
           </Typography>
           <Typography>
             Output:
-            <Markdown>
-              {testCase?.output}
-            </Markdown>
+            <Markdown>{testCase?.output}</Markdown>
           </Typography>
           <Typography>
-            <Markdown>
-              {testCase?.explanation}
-            </Markdown>
+            <Markdown>{testCase?.explanation}</Markdown>
           </Typography>
         </Box>
       ))}

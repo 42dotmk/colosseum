@@ -2,13 +2,13 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Home, Trophy, Terminal, LogOut, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -36,11 +36,9 @@ export default function Layout({ children }: LayoutProps) {
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2">
               <Terminal className="h-6 w-6 text-primary" />
-              <span className="text-xl font-semibold tracking-tight">
-                Colosseum
-              </span>
+              <span className="text-xl font-semibold tracking-tight">Colosseum</span>
             </Link>
-            
+
             <nav className="hidden md:flex gap-1">
               {navigation.map((item) => {
                 const Icon = item.icon;
@@ -49,10 +47,10 @@ export default function Layout({ children }: LayoutProps) {
                     key={item.name}
                     to={item.href}
                     className={cn(
-                      "flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                      isActive(item.href) 
-                        ? "bg-secondary text-foreground" 
-                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+                      'flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                      isActive(item.href)
+                        ? 'bg-secondary text-foreground'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50',
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -79,9 +77,7 @@ export default function Layout({ children }: LayoutProps) {
                   <DropdownMenuLabel>
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">{user.username}</p>
-                      <p className="text-xs leading-none text-muted-foreground">
-                        {user.email}
-                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
@@ -102,9 +98,7 @@ export default function Layout({ children }: LayoutProps) {
       </header>
 
       {/* Main content */}
-      <main className="container py-8">
-        {children}
-      </main>
+      <main className="container py-8">{children}</main>
     </div>
   );
 }

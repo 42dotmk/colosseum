@@ -1,6 +1,6 @@
 parser: '@typescript-eslint/parser'
 parserOptions:
-  project: 
+  project:
     - './**/client/tsconfig.json'
     - './**/client/tsconfig.node.json'
 plugins:
@@ -19,18 +19,15 @@ settings:
   import/resolver:
     typescript: true
     node: true
-rules: {
-  'react/jsx-filename-extension': 'off',
-  'react/react-in-jsx-scope': 'off',
-  'react/function-component-definition': 'off',
-  'import/extensions': 'off',
-  'react/require-default-props': 'off',
-  "no-restricted-syntax": [
-    "error",
-    "FunctionExpression",
-    "FunctionDeclaration"
-  ]
-}
+rules:
+  {
+    'react/jsx-filename-extension': 'off',
+    'react/react-in-jsx-scope': 'off',
+    'react/function-component-definition': 'off',
+    'import/extensions': 'off',
+    'react/require-default-props': 'off',
+    'no-restricted-syntax': ['error', 'FunctionExpression', 'FunctionDeclaration'],
+  }
 overrides:
   - files: vite.config.ts
     rules:

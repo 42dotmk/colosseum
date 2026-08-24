@@ -1,6 +1,6 @@
 ## Prerequisites
 
-Create a `.env` file in the root of the repository by following the example file: `.env.example` 
+Create a `.env` file in the root of the repository by following the example file: `.env.example`
 
 ### RabbitMQ
 
@@ -55,7 +55,7 @@ Usually you just need to run `pull.sh` to get the images available locally.
 
 ### Senatus
 
-You initially would need to setup the `.env` file by following the example file: `.env.example` 
+You initially would need to setup the `.env` file by following the example file: `.env.example`
 
 ```bash
 cd senatus;

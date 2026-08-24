@@ -4,7 +4,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
 import { Terminal } from 'lucide-react';
 
@@ -47,7 +54,7 @@ export default function LoginPage() {
             <span className="text-2xl font-semibold tracking-tight">Colosseum</span>
           </Link>
         </div>
-        
+
         <Card>
           <CardHeader className="space-y-1">
             <CardTitle className="text-xl">Sign in</CardTitle>

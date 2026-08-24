@@ -1,4 +1,4 @@
-import 'dotenv/config'
+import 'dotenv/config';
 
 import { CodegenConfig } from '@graphql-codegen/cli';
 import { GQL_URL } from './src/config';
@@ -12,8 +12,8 @@ const config: CodegenConfig = {
       plugins: [],
       presetConfig: {
         gqlTagName: 'gql',
-      }
-    }
+      },
+    },
   },
   ignoreNoDocuments: true,
 };

@@ -1,4 +1,4 @@
-# Documentation 
+# Documentation
 
 You can set up husky in 2 ways - automagical, or manual, pick your poision and follow the steps.
 
@@ -17,6 +17,7 @@ It will install husky and set up the pre-commit hooks automagically.
 `npm i -g husky`
 
 > **Notes:**
+>
 > - **IMPORTANT**: Make sure the `Git` version is 2.9 or above
 > - Currently ESLint and TypeScript checks are enabled for the client, should also setup for caesar and senatus as well
 

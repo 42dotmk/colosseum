@@ -1,5 +1,5 @@
-import { connect } from "@colosseum/queue";
-import type { Core } from "@strapi/strapi";
+import { connect } from '@colosseum/queue';
+import type { Core } from '@strapi/strapi';
 
 let disconnectRabbit: (() => Promise<void>) | undefined;
 
@@ -20,46 +20,38 @@ export default {
    * run jobs, or perform some special logic.
    */
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
-    console.log("Senatus is bootstrapping");
-    console.log(strapi.config.get("server.app.rabbitUrl"));
-    const rabbitUrl = strapi.config.get("server.app.rabbitUrl") as string;
-    const prefetchCount = strapi.config.get(
-      "server.app.prefetchResults",
-    ) as number;
+    console.log('Senatus is bootstrapping');
+    console.log(strapi.config.get('server.app.rabbitUrl'));
+    const rabbitUrl = strapi.config.get('server.app.rabbitUrl') as string;
+    const prefetchCount = strapi.config.get('server.app.prefetchResults') as number;
     const { subscribe, disconnect } = await connect(rabbitUrl);
 
     disconnectRabbit = disconnect;
 
-    console.log("Connected to RabbitMQ!");
+    console.log('Connected to RabbitMQ!');
 
     await subscribe(
-      "results",
+      'results',
       async (msg) => {
         try {
           const parsed = JSON.parse(msg);
 
           for (const result of parsed.result) {
-            console.log("Updating execution", result.metadata.executionId);
-            const existing = await strapi
-              .documents("api::execution.execution")
-              .findOne({
-                documentId: result.metadata.executionId,
-                populate: ["testCase"],
-              });
+            console.log('Updating execution', result.metadata.executionId);
+            const existing = await strapi.documents('api::execution.execution').findOne({
+              documentId: result.metadata.executionId,
+              populate: ['testCase'],
+            });
 
             if (!existing) {
-              throw new Error(
-                `Execution ${result.metadata.executionId} was not found`,
-              );
+              throw new Error(`Execution ${result.metadata.executionId} was not found`);
             }
 
             if (!existing.testCase) {
-              throw new Error(
-                `Execution ${result.metadata.executionId} has no test case`,
-              );
+              throw new Error(`Execution ${result.metadata.executionId} has no test case`);
             }
 
-            await strapi.documents("api::execution.execution").update({
+            await strapi.documents('api::execution.execution').update({
               documentId: result.metadata.executionId,
 
               data: {
@@ -71,11 +63,11 @@ export default {
                 processedAt: new Date(),
                 publishedAt: new Date(),
               },
-              status: "published",
+              status: 'published',
             });
           }
         } catch (err) {
-          console.error("Error in processing result", err);
+          console.error('Error in processing result', err);
           console.error(err);
         }
       },
@@ -83,7 +75,7 @@ export default {
     );
   },
   async destroy() {
-    console.log("Destroying Senatus");
+    console.log('Destroying Senatus');
     await disconnectRabbit?.();
   },
 };
