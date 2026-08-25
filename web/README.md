@@ -27,7 +27,7 @@ The app will be available at `http://localhost:3000`
 
 ## 📋 Prerequisites
 
-- Node.js 18+ 
+- Node.js 18+
 - Strapi backend running on `http://localhost:1337`
 
 ## 🛠️ Development

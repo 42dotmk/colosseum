@@ -15,7 +15,7 @@ type File = {
   id?: string;
   filename: string;
   content: string;
-  metadata?: any;
+  metadata?: unknown;
 };
 
 const CPU_LIMIT_PER_EXECUTION = process.env.CPU_LIMIT_PER_EXECUTION;
@@ -34,7 +34,9 @@ function parseDuration(duration: string) {
     return null;
   }
   const match = duration.match(/(\d+)m(\d+(?:\.\d+)?)s/);
-  if (!match) return null;
+  if (!match) {
+    return null;
+  }
 
   const minutes = Number(match[1]);
   const seconds = Number(match[2]);
@@ -47,15 +49,15 @@ const readIfExists = async (path: string) => {
     return (await readFile(path)).toString();
   }
   return '';
-}
+};
 
 export const execute = async (files: File[], input: File[], options: LanguageOptions) => {
   const id = v4();
 
   const subWorkspace = path.join(WORKDIR, id);
-  const srcDir = path.resolve(path.join(subWorkspace, "src"));
-  const inputDir = path.resolve(path.join(subWorkspace, "input"));
-  const outputDir = path.resolve(path.join(subWorkspace, "output"));
+  const srcDir = path.resolve(path.join(subWorkspace, 'src'));
+  const inputDir = path.resolve(path.join(subWorkspace, 'input'));
+  const outputDir = path.resolve(path.join(subWorkspace, 'output'));
   const lang = options.language;
 
   if (!fs.existsSync(subWorkspace)) {
@@ -88,7 +90,7 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
 
   for (const file of files) {
     const filePath = path.resolve(path.join(srcDir, file.filename));
-    console.log(`Writing file to ${filePath}`)
+    console.log(`Writing file to ${filePath}`);
     await writeFile(filePath, file.content);
   }
 
@@ -98,13 +100,12 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
   }
 
   try {
-    return await new Promise(async (resolve) => {
-      await writeFile(timePath, "");
-      await writeFile(stdoutPath, "");
-      await writeFile(stderrPath, "");
-      await writeFile(compileStdoutPath, "");
-      await writeFile(compileStderrPath, "");
-
+    await writeFile(timePath, '');
+    await writeFile(stdoutPath, '');
+    await writeFile(stderrPath, '');
+    await writeFile(compileStdoutPath, '');
+    await writeFile(compileStderrPath, '');
+    return await new Promise((resolve) => {
       const extraArgs = [];
 
       if (CPU_LIMIT_PER_EXECUTION) {
@@ -116,47 +117,42 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
       }
 
       if (!ENABLE_NETWORK_IN_EXECUTION) {
-        extraArgs.push("--network=none");
+        extraArgs.push('--network=none');
       }
 
       const args = [
         'run',
-        "--rm",
-        "-v",
+        '--rm',
+        '-v',
         `${srcDir}:/exc/src`,
-        "-v",
+        '-v',
         `${inputDir}:/exc/input`,
-        "-v",
+        '-v',
         `${outputDir}:/exc/output`,
-        "-v",
+        '-v',
         `${timePath}:/exc/${timeFilename}`,
-        "-v",
+        '-v',
         `${stdoutPath}:/exc/${stdoutFilename}`,
-        "-v",
+        '-v',
         `${stderrPath}:/exc/${stderrFilename}`,
-        "-v",
+        '-v',
         `${compileStdoutPath}:/exc/${compileStdoutFilename}`,
-        "-v",
+        '-v',
         `${compileStderrPath}:/exc/${compileStderrFilename}`,
         ...extraArgs,
-        "-i",
-        `${IMAGE_BASE}${lang}`
+        '-i',
+        `${IMAGE_BASE}${lang}`,
       ];
 
       const child = cp.spawn('docker', args);
-      console.log(child.spawnargs.join(' '))
-
-      let stdout = '';
-      let stderr = '';
+      console.log(child.spawnargs.join(' '));
 
       child.stdout.on('data', (data) => {
         console.log(`stdout: ${data}`);
-        stdout += data;
       });
 
       child.stderr.on('data', (data) => {
         console.error(`stderr: ${data}`);
-        stderr += data;
       });
 
       child.on('close', async (code) => {
@@ -169,14 +165,18 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
           const stderrPath = path.resolve(path.join(outputDir, `${inp.filename}.stderr`));
           const timePath = path.resolve(path.join(outputDir, `${inp.filename}.time`));
           const stdout = await readIfExists(stdoutPath);
-          
+
           const stderr = await readIfExists(stderrPath);
           const time = await readIfExists(timePath);
 
           let parsedTime = null;
           if (time) {
-            const timeSplits = time.split("\n").map((t) => t.trim()).filter(x => x).map(x => x.split("\t"));
-            const [ realTime ] = timeSplits;
+            const timeSplits = time
+              .split('\n')
+              .map((t) => t.trim())
+              .filter((x) => x)
+              .map((x) => x.split('\t'));
+            const [realTime] = timeSplits;
             parsedTime = parseDuration(realTime[1]);
             if (!parsedTime) {
               console.error(`Failed to parse time from ${time}`);

@@ -4,13 +4,14 @@
   "types": "dist/amqp.d.ts",
   "scripts": {
     "build": "tsc -p .",
-    "watch": "tsc -p . -w"
+    "watch": "tsc -p . -w",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "rabbitmq-client": "^4.5.2"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
-    "@types/node": "^20.11.30"
+    "@types/node": "20.19.43",
+    "typescript": "6.0.3"
   }
 }

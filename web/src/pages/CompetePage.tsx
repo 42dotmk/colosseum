@@ -1,10 +1,16 @@
-import { useState, useEffect, useRef } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
@@ -19,7 +25,7 @@ interface Problem {
   slug: string;
   points: number;
   testCases?: TestCase[];
-  starterCodes?: any[];
+  starterCodes?: unknown[];
 }
 
 interface TestCase {
@@ -30,6 +36,12 @@ interface TestCase {
   locked: boolean;
   weight: number;
   explanation?: string;
+}
+
+interface Language {
+  documentId: string;
+  name: string;
+  codeName: string;
 }
 
 interface Execution {
@@ -65,7 +77,7 @@ export default function CompetePage() {
   const [selectedLanguage, setSelectedLanguage] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [problem, setProblem] = useState<Problem | null>(null);
-  const [languages, setLanguages] = useState<any[]>([]);
+  const [languages, setLanguages] = useState<Language[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -74,36 +86,46 @@ export default function CompetePage() {
   const initialCodeLoadedRef = useRef(false);
 
   // Fetch submissions from API
-  const fetchSubmissions = async (loadCodeFromSubmission = false) => {
-    try {
-      const token = localStorage.getItem('jwt');
-      const headers = {
-        Authorization: token ? `Bearer ${token}` : '',
-      };
+  const fetchSubmissions = useCallback(
+    async (loadCodeFromSubmission = false) => {
+      try {
+        const token = localStorage.getItem('jwt');
+        const headers = {
+          Authorization: token ? `Bearer ${token}` : '',
+        };
 
-      const submissionsRes = await fetch(
-        `${REST_URL}/submissions?filters[problem][documentId][$eq]=${problemId}&populate[language]=*&populate[executions][populate][testCase][fields][0]=documentId&populate[executions][populate][testCase][fields][1]=input&populate[executions][populate][testCase][fields][2]=output&populate[executions][populate][testCase][fields][3]=hidden&sort=createdAt:desc`,
-        { headers }
-      );
+        const submissionsRes = await fetch(
+          `${REST_URL}/submissions?filters[problem][documentId][$eq]=${problemId}&populate[language]=*&populate[executions][populate][testCase][fields][0]=documentId&populate[executions][populate][testCase][fields][1]=input&populate[executions][populate][testCase][fields][2]=output&populate[executions][populate][testCase][fields][3]=hidden&sort=createdAt:desc`,
+          { headers },
+        );
 
-      if (submissionsRes.ok) {
-        const submissionsData = await submissionsRes.json();
-        const submissionsArray = Array.isArray(submissionsData) ? submissionsData : (submissionsData.data || []);
-        setSubmissions(submissionsArray);
-        
-        // Load code from latest submission only on initial load or when explicitly requested
-        if (loadCodeFromSubmission && submissionsArray.length > 0 && submissionsArray[0].code && !initialCodeLoadedRef.current) {
-          setCode(submissionsArray[0].code);
-          if (submissionsArray[0].language?.documentId) {
-            setSelectedLanguage(submissionsArray[0].language.documentId);
+        if (submissionsRes.ok) {
+          const submissionsData = await submissionsRes.json();
+          const submissionsArray = Array.isArray(submissionsData)
+            ? submissionsData
+            : submissionsData.data || [];
+          setSubmissions(submissionsArray);
+
+          // Load code from latest submission only on initial load or when explicitly requested
+          if (
+            loadCodeFromSubmission &&
+            submissionsArray.length > 0 &&
+            submissionsArray[0].code &&
+            !initialCodeLoadedRef.current
+          ) {
+            setCode(submissionsArray[0].code);
+            if (submissionsArray[0].language?.documentId) {
+              setSelectedLanguage(submissionsArray[0].language.documentId);
+            }
+            initialCodeLoadedRef.current = true;
           }
-          initialCodeLoadedRef.current = true;
         }
+      } catch (err) {
+        console.error('Failed to fetch submissions:', err);
       }
-    } catch (err) {
-      console.error('Failed to fetch submissions:', err);
-    }
-  };
+    },
+    [problemId],
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -124,14 +146,17 @@ export default function CompetePage() {
 
         const problemData = await problemRes.json();
         const languagesData = await languagesRes.json();
-        
-        console.log('Problem API response:', problemData);
-        console.log('Languages API response:', languagesData);
 
         // Handle both wrapped and unwrapped responses
         setProblem(problemData.data || problemData);
-        setLanguages(Array.isArray(languagesData) ? languagesData : (languagesData.data || []));
-        
+
+        const fetchedLanguages: Language[] = Array.isArray(languagesData)
+          ? languagesData
+          : languagesData.data || [];
+        setLanguages(fetchedLanguages);
+
+        setSelectedLanguage((current) => current || fetchedLanguages[0]?.documentId || '');
+
         // Fetch user's submissions and load code from latest submission
         await fetchSubmissions(true);
       } catch (err) {
@@ -142,16 +167,10 @@ export default function CompetePage() {
       }
     };
     fetchData();
-  }, [problemId]);
+  }, [problemId, fetchSubmissions]);
 
   const testCases = problem?.testCases || [];
   const publicTestCases = testCases.filter((tc: TestCase) => !tc.hidden);
-
-  useEffect(() => {
-    if (languages.length > 0 && !selectedLanguage) {
-      setSelectedLanguage(languages[0].documentId);
-    }
-  }, [languages, selectedLanguage]);
 
   // Keyboard shortcuts for tab switching (Cmd/Ctrl+Enter handled in Monaco editor)
   useEffect(() => {
@@ -174,11 +193,13 @@ export default function CompetePage() {
 
   // Poll submissions for updates
   useEffect(() => {
-    if (submissions.length === 0) return;
+    if (submissions.length === 0) {
+      return;
+    }
 
     // Check if any submission has unprocessed executions
-    const hasUnprocessed = submissions.some(sub => 
-      sub.executions?.some(exec => !exec.processed)
+    const hasUnprocessed = submissions.some((sub) =>
+      sub.executions?.some((exec) => !exec.processed),
     );
 
     if (!hasUnprocessed) {
@@ -191,17 +212,17 @@ export default function CompetePage() {
 
     const pollSubmissions = async () => {
       await fetchSubmissions();
-      
+
       // Check if all done and show toast
-      const updatedHasUnprocessed = submissions.some(sub => 
-        sub.executions?.some(exec => !exec.processed)
+      const updatedHasUnprocessed = submissions.some((sub) =>
+        sub.executions?.some((exec) => !exec.processed),
       );
-      
+
       if (!updatedHasUnprocessed && submissions.length > 0) {
         const latestSub = submissions[0];
         if (latestSub.executions) {
-          const passed = latestSub.executions.filter((exec: Execution) => 
-            exec.stdout?.trim() === exec.testCase?.output?.trim()
+          const passed = latestSub.executions.filter(
+            (exec: Execution) => exec.stdout?.trim() === exec.testCase?.output?.trim(),
           ).length;
           toast({
             title: 'Execution Complete',
@@ -219,7 +240,7 @@ export default function CompetePage() {
         clearInterval(pollingIntervalRef.current);
       }
     };
-  }, [submissions, toast]);
+  }, [submissions, toast, fetchSubmissions]);
 
   const handleSubmit = async () => {
     if (!selectedLanguage) {
@@ -261,7 +282,6 @@ export default function CompetePage() {
       });
 
       const submitData = await submitRes.json();
-      console.log('Submit response:', submitData);
 
       if (submitData.executions && submitData.executions.length > 0) {
         // Fetch updated submissions
@@ -302,7 +322,7 @@ export default function CompetePage() {
     );
   }
 
-  const selectedLang = languages.find((l: any) => l.documentId === selectedLanguage);
+  const selectedLang = languages.find((language) => language.documentId === selectedLanguage);
 
   return (
     <div className="h-[calc(100vh-7rem)] flex flex-col">
@@ -314,9 +334,7 @@ export default function CompetePage() {
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <h1 className="text-lg font-medium">
-            {problem.title}
-          </h1>
+          <h1 className="text-lg font-medium">{problem.title}</h1>
         </div>
         <div className="flex items-center gap-2">
           <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
@@ -324,7 +342,7 @@ export default function CompetePage() {
               <SelectValue placeholder="Select language" />
             </SelectTrigger>
             <SelectContent>
-              {languages.map((lang: any) => (
+              {languages.map((lang) => (
                 <SelectItem key={lang.documentId} value={lang.documentId}>
                   {lang.name}
                 </SelectItem>
@@ -345,40 +363,48 @@ export default function CompetePage() {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
             <div className="border-b px-4 py-2">
               <TabsList className="h-8">
-                <TabsTrigger value="description" className="text-xs px-3 h-7">Problem</TabsTrigger>
-                <TabsTrigger value="testcases" className="text-xs px-3 h-7">Tests</TabsTrigger>
+                <TabsTrigger value="description" className="text-xs px-3 h-7">
+                  Problem
+                </TabsTrigger>
+                <TabsTrigger value="testcases" className="text-xs px-3 h-7">
+                  Tests
+                </TabsTrigger>
                 <TabsTrigger value="results" className="text-xs px-3 h-7">
                   Results
                   {submissions.length > 0 && (
-                    <span className="ml-1.5 text-xs text-muted-foreground">({submissions.length})</span>
+                    <span className="ml-1.5 text-xs text-muted-foreground">
+                      ({submissions.length})
+                    </span>
                   )}
                 </TabsTrigger>
               </TabsList>
             </div>
-            
+
             <div className="flex-1 overflow-auto p-4">
               <TabsContent value="description" className="mt-0 h-full">
                 <div className="space-y-4">
                   <div className="prose prose-sm prose-invert max-w-none">
                     <Markdown content={problem.description || ''} />
                   </div>
-                  
+
                   <Separator />
-                  
+
                   <div className="text-xs text-muted-foreground">
                     {testCases.length} test cases ({publicTestCases.length} visible)
                   </div>
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="testcases" className="mt-0 h-full">
                 <div className="space-y-3">
                   {publicTestCases.length === 0 ? (
                     <p className="text-sm text-muted-foreground">No public test cases available</p>
                   ) : (
-                    publicTestCases.map((tc: any, index: number) => (
+                    publicTestCases.map((tc, index: number) => (
                       <div key={tc.documentId} className="rounded-lg border p-3 space-y-2">
-                        <div className="text-xs font-medium text-muted-foreground">Test {index + 1}</div>
+                        <div className="text-xs font-medium text-muted-foreground">
+                          Test {index + 1}
+                        </div>
                         <div>
                           <div className="text-xs text-muted-foreground mb-1">Input</div>
                           <pre className="text-xs bg-muted p-2 rounded font-mono overflow-x-auto">
@@ -396,22 +422,21 @@ export default function CompetePage() {
                   )}
                 </div>
               </TabsContent>
-              
+
               <TabsContent value="results" className="mt-0 h-full">
                 <div className="space-y-4">
                   {submissions.length === 0 ? (
                     <div className="text-center py-12">
                       <AlertCircle className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">
-                        No submissions yet
-                      </p>
+                      <p className="text-sm text-muted-foreground">No submissions yet</p>
                     </div>
                   ) : (
                     submissions.map((submission, subIndex) => {
                       const executions = submission.executions || [];
-                      const hasUnprocessed = executions.some(exec => !exec.processed);
-                      const passedCount = executions.filter((exec: Execution) => 
-                        exec.processed && exec.stdout?.trim() === exec.testCase?.output?.trim()
+                      const hasUnprocessed = executions.some((exec) => !exec.processed);
+                      const passedCount = executions.filter(
+                        (exec: Execution) =>
+                          exec.processed && exec.stdout?.trim() === exec.testCase?.output?.trim(),
                       ).length;
 
                       return (
@@ -422,7 +447,8 @@ export default function CompetePage() {
                                 #{submissions.length - subIndex}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                {new Date(submission.createdAt).toLocaleTimeString()} • {submission.language?.name}
+                                {new Date(submission.createdAt).toLocaleTimeString()} •{' '}
+                                {submission.language?.name}
                               </p>
                             </div>
                             <div>
@@ -432,13 +458,13 @@ export default function CompetePage() {
                                   Running
                                 </Badge>
                               ) : (
-                                <Badge 
+                                <Badge
                                   variant="outline"
                                   className={cn(
-                                    "text-xs",
-                                    passedCount === executions.length 
-                                      ? "border-emerald-500/50 text-emerald-500"
-                                      : "border-destructive/50 text-destructive"
+                                    'text-xs',
+                                    passedCount === executions.length
+                                      ? 'border-emerald-500/50 text-emerald-500'
+                                      : 'border-destructive/50 text-destructive',
                                   )}
                                 >
                                   {passedCount}/{executions.length}
@@ -449,18 +475,19 @@ export default function CompetePage() {
 
                           <div className="space-y-2 ml-3 pl-3 border-l">
                             {executions.map((execution, index) => {
-                              const isPassed = execution.processed && 
+                              const isPassed =
+                                execution.processed &&
                                 execution.stdout?.trim() === execution.testCase?.output?.trim();
                               const isFailed = execution.processed && !isPassed;
                               const isRunning = !execution.processed;
 
                               return (
-                                <div 
-                                  key={execution.documentId} 
+                                <div
+                                  key={execution.documentId}
                                   className={cn(
-                                    "rounded-lg border p-3 space-y-2",
-                                    isPassed && "border-emerald-500/30",
-                                    isFailed && "border-destructive/30"
+                                    'rounded-lg border p-3 space-y-2',
+                                    isPassed && 'border-emerald-500/30',
+                                    isFailed && 'border-destructive/30',
                                   )}
                                 >
                                   <div className="flex items-center justify-between">
@@ -475,40 +502,48 @@ export default function CompetePage() {
                                     {isPassed && (
                                       <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                                     )}
-                                    {isFailed && (
-                                      <XCircle className="h-4 w-4 text-destructive" />
-                                    )}
+                                    {isFailed && <XCircle className="h-4 w-4 text-destructive" />}
                                   </div>
-                                  
+
                                   {execution.processed && (
                                     <div className="space-y-2">
                                       {!execution.testCase?.hidden && (
                                         <>
                                           <div>
-                                            <div className="text-xs text-muted-foreground mb-1">Input</div>
+                                            <div className="text-xs text-muted-foreground mb-1">
+                                              Input
+                                            </div>
                                             <pre className="text-xs bg-muted p-2 rounded font-mono overflow-x-auto">
                                               {execution.testCase?.input}
                                             </pre>
                                           </div>
                                           <div>
-                                            <div className="text-xs text-muted-foreground mb-1">Expected</div>
+                                            <div className="text-xs text-muted-foreground mb-1">
+                                              Expected
+                                            </div>
                                             <pre className="text-xs bg-muted p-2 rounded font-mono overflow-x-auto">
                                               {execution.testCase?.output}
                                             </pre>
                                           </div>
                                         </>
                                       )}
-                                      
+
                                       <div>
-                                        <div className="text-xs text-muted-foreground mb-1">Output</div>
-                                        <pre className={cn(
-                                          "text-xs p-2 rounded font-mono overflow-x-auto",
-                                          isPassed ? "bg-emerald-500/10 text-emerald-400" : "bg-destructive/10 text-destructive"
-                                        )}>
+                                        <div className="text-xs text-muted-foreground mb-1">
+                                          Output
+                                        </div>
+                                        <pre
+                                          className={cn(
+                                            'text-xs p-2 rounded font-mono overflow-x-auto',
+                                            isPassed
+                                              ? 'bg-emerald-500/10 text-emerald-400'
+                                              : 'bg-destructive/10 text-destructive',
+                                          )}
+                                        >
                                           {execution.stdout || '(empty)'}
                                         </pre>
                                       </div>
-                                      
+
                                       {execution.stderr && (
                                         <div>
                                           <div className="text-xs text-destructive mb-1">Error</div>
@@ -517,7 +552,7 @@ export default function CompetePage() {
                                           </pre>
                                         </div>
                                       )}
-                                      
+
                                       {execution.executionTime >= 0 && (
                                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-1">
                                           <Clock className="h-3 w-3" />
@@ -576,19 +611,21 @@ export default function CompetePage() {
 }
 
 function getEditorLanguage(codeName: string | undefined): string {
-  if (!codeName) return 'javascript';
-  
+  if (!codeName) {
+    return 'javascript';
+  }
+
   const languageMap: Record<string, string> = {
-    'python': 'python',
-    'javascript': 'javascript',
-    'typescript': 'typescript',
-    'java': 'java',
-    'cpp': 'cpp',
-    'c': 'c',
-    'csharp': 'csharp',
-    'go': 'go',
-    'rust': 'rust',
+    python: 'python',
+    javascript: 'javascript',
+    typescript: 'typescript',
+    java: 'java',
+    cpp: 'cpp',
+    c: 'c',
+    csharp: 'csharp',
+    go: 'go',
+    rust: 'rust',
   };
-  
+
   return languageMap[codeName] || 'javascript';
 }

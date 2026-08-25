@@ -1,4 +1,4 @@
-import { Box, FormControl, MenuItem, Select, Typography } from "@mui/material";
+import { Box, FormControl, MenuItem, Select, Typography } from '@mui/material';
 
 type Props = {
   currentLanguage: string;
@@ -6,44 +6,40 @@ type Props = {
   setCurrentLanguage: (language: string) => void;
 };
 
-const LanguageSelect = ({
-  currentLanguage,
-  languages,
-  setCurrentLanguage,
-}: Props) => (
+const LanguageSelect = ({ currentLanguage, languages, setCurrentLanguage }: Props) => (
   <Box
     sx={{
-      display: "flex",
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
+      display: 'flex',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
     }}
   >
     <Typography color="typography.subtitle2" variant="subtitle2" align="left">
       SELECT LANGUAGE:
     </Typography>
-    <FormControl sx={{ width: "150px" }} size="small">
+    <FormControl sx={{ width: '150px' }} size="small">
       <Select
         size="small"
         value={currentLanguage}
         onChange={(e) => setCurrentLanguage(e.target.value)}
         displayEmpty
-        inputProps={{ "aria-label": "Without label" }}
+        inputProps={{ 'aria-label': 'Without label' }}
         sx={{
-          "& .MuiOutlinedInput-notchedOutline": {
+          '& .MuiOutlinedInput-notchedOutline': {
             border: 1,
             borderRadius: 1.5,
-            borderColor: "text.disabled",
+            borderColor: 'text.disabled',
           },
-          "&:hover .MuiOutlinedInput-notchedOutline": {
+          '&:hover .MuiOutlinedInput-notchedOutline': {
             border: 1,
             borderRadius: 1.5,
-            borderColor: "text.disabled",
+            borderColor: 'text.disabled',
           },
-          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
             border: 1,
             borderRadius: 1.5,
-            borderColor: "text.disabled",
+            borderColor: 'text.disabled',
           },
         }}
       >
@@ -52,11 +48,11 @@ const LanguageSelect = ({
             key={language}
             value={language}
             sx={{
-              "&:hover .Mui-selected": {
-                backgroundColor: "text.disabled",
+              '&:hover .Mui-selected': {
+                backgroundColor: 'text.disabled',
               },
-              "&.Mui-selected": {
-                backgroundColor: "text.disabled",
+              '&.Mui-selected': {
+                backgroundColor: 'text.disabled',
               },
             }}
           >

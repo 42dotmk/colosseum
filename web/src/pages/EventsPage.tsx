@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, Clock, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { REST_URL } from '@/config';
+import { Language } from '@/types';
 
 interface Event {
   documentId: string;
@@ -12,23 +13,29 @@ interface Event {
   start: string;
   end: string;
   slug: string;
-  problems?: any[];
-  supportedLanguages?: any[];
+  problems?: unknown[];
+  supportedLanguages?: Language[];
   publishedAt: string;
 }
 
 function getTimeRemaining(date: Date): string {
   const now = new Date();
   const diff = date.getTime() - now.getTime();
-  
-  if (diff < 0) return 'Started';
-  
+
+  if (diff < 0) {
+    return 'Started';
+  }
+
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  
-  if (days > 0) return `${days}d ${hours}h`;
-  if (hours > 0) return `${hours}h ${minutes}m`;
+
+  if (days > 0) {
+    return `${days}d ${hours}h`;
+  }
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
   return `${minutes}m`;
 }
 
@@ -36,10 +43,26 @@ function formatDuration(start: Date, end: Date): string {
   const diff = end.getTime() - start.getTime();
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  
-  if (hours > 0 && minutes > 0) return `${hours}h ${minutes}m`;
-  if (hours > 0) return `${hours}h`;
+
+  if (hours > 0 && minutes > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+  if (hours > 0) {
+    return `${hours}h`;
+  }
   return `${minutes}m`;
+}
+
+interface EmptyStateProps {
+  message: string;
+}
+
+function EmptyState({ message }: EmptyStateProps) {
+  return (
+    <div className="text-center py-16 text-muted-foreground">
+      <p className="text-sm">{message}</p>
+    </div>
+  );
 }
 
 export default function EventsPage() {
@@ -57,13 +80,13 @@ export default function EventsPage() {
             Authorization: token ? `Bearer ${token}` : '',
           },
         });
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
-        const eventsData = Array.isArray(data) ? data : (data.data || []);
+        const eventsData = Array.isArray(data) ? data : data.data || [];
         setEvents(eventsData);
       } catch (err) {
         console.error('Failed to load events:', err);
@@ -76,13 +99,13 @@ export default function EventsPage() {
   }, []);
 
   const now = new Date();
-  const activeEvents = events.filter(e => {
+  const activeEvents = events.filter((e) => {
     const start = new Date(e.start);
     const end = new Date(e.end);
     return now >= start && now <= end;
   });
-  const upcomingEvents = events.filter(e => new Date(e.start) > now);
-  const pastEvents = events.filter(e => new Date(e.end) < now);
+  const upcomingEvents = events.filter((e) => new Date(e.start) > now);
+  const pastEvents = events.filter((e) => new Date(e.end) < now);
 
   if (loading) {
     return (
@@ -108,10 +131,7 @@ export default function EventsPage() {
     const problemCount = event.problems?.length || 0;
 
     return (
-      <Link 
-        to={`/event/${event.documentId}`}
-        className="block group"
-      >
+      <Link to={`/event/${event.documentId}`} className="block group">
         <div className="border rounded-lg p-5 transition-all hover:border-primary/50 hover:bg-secondary/20">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
@@ -129,12 +149,16 @@ export default function EventsPage() {
                   </span>
                 )}
               </div>
-              
+
               <div className="flex items-center flex-wrap gap-x-4 gap-y-1 mt-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5" />
                   <span>
-                    {startDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {startDate.toLocaleDateString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -149,13 +173,19 @@ export default function EventsPage() {
 
               {event.supportedLanguages && event.supportedLanguages.length > 0 && (
                 <div className="flex items-center gap-1.5 mt-3">
-                  {event.supportedLanguages.slice(0, 5).map((lang: any) => (
-                    <Badge key={lang.documentId} variant="outline" className="text-[10px] px-1.5 py-0 h-5 font-normal">
+                  {event.supportedLanguages.slice(0, 5).map((lang) => (
+                    <Badge
+                      key={lang.documentId}
+                      variant="outline"
+                      className="text-[10px] px-1.5 py-0 h-5 font-normal"
+                    >
                       {lang.name}
                     </Badge>
                   ))}
                   {event.supportedLanguages.length > 5 && (
-                    <span className="text-xs text-muted-foreground">+{event.supportedLanguages.length - 5}</span>
+                    <span className="text-xs text-muted-foreground">
+                      +{event.supportedLanguages.length - 5}
+                    </span>
                   )}
                 </div>
               )}
@@ -185,12 +215,6 @@ export default function EventsPage() {
       </Link>
     );
   };
-
-  const EmptyState = ({ message }: { message: string }) => (
-    <div className="text-center py-16 text-muted-foreground">
-      <p className="text-sm">{message}</p>
-    </div>
-  );
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -226,7 +250,7 @@ export default function EventsPage() {
           {activeEvents.length === 0 ? (
             <EmptyState message="No active contests right now" />
           ) : (
-            activeEvents.map(event => <EventCard key={event.documentId} event={event} />)
+            activeEvents.map((event) => <EventCard key={event.documentId} event={event} />)
           )}
         </TabsContent>
 
@@ -234,7 +258,7 @@ export default function EventsPage() {
           {upcomingEvents.length === 0 ? (
             <EmptyState message="No upcoming contests scheduled" />
           ) : (
-            upcomingEvents.map(event => <EventCard key={event.documentId} event={event} />)
+            upcomingEvents.map((event) => <EventCard key={event.documentId} event={event} />)
           )}
         </TabsContent>
 
@@ -242,7 +266,7 @@ export default function EventsPage() {
           {pastEvents.length === 0 ? (
             <EmptyState message="No past contests" />
           ) : (
-            pastEvents.map(event => <EventCard key={event.documentId} event={event} />)
+            pastEvents.map((event) => <EventCard key={event.documentId} event={event} />)
           )}
         </TabsContent>
       </Tabs>

@@ -2,11 +2,19 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { ArrowLeft, Circle, ChevronRight, FileText, Trophy } from 'lucide-react';
 import { REST_URL } from '@/config';
 import Markdown from '@/components/Markdown';
 import { cn } from '@/lib/utils';
+import type { Language } from '@/types';
 
 interface Problem {
   documentId: string;
@@ -15,7 +23,7 @@ interface Problem {
   slug: string;
   difficulty?: string;
   points: number;
-  testCases?: any[];
+  testCases?: unknown[];
 }
 
 interface Event {
@@ -24,28 +32,34 @@ interface Event {
   start: string;
   end: string;
   problems?: Problem[];
-  supportedLanguages?: any[];
+  supportedLanguages?: Language[];
 }
 
 function getTimeRemaining(date: Date): string {
   const now = new Date();
   const diff = date.getTime() - now.getTime();
-  
-  if (diff < 0) return '0:00:00';
-  
+
+  if (diff < 0) {
+    return '0:00:00';
+  }
+
   const hours = Math.floor(diff / (1000 * 60 * 60));
   const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
   const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-  
+
   return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
 function getDifficultyColor(difficulty?: string) {
   switch (difficulty?.toLowerCase()) {
-    case 'easy': return 'text-emerald-500';
-    case 'medium': return 'text-amber-500';
-    case 'hard': return 'text-red-500';
-    default: return 'text-muted-foreground';
+    case 'easy':
+      return 'text-emerald-500';
+    case 'medium':
+      return 'text-amber-500';
+    case 'hard':
+      return 'text-red-500';
+    default:
+      return 'text-muted-foreground';
   }
 }
 
@@ -66,11 +80,11 @@ export default function EventDetailPage() {
             Authorization: token ? `Bearer ${token}` : '',
           },
         });
-        
+
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
+
         const data = await response.json();
         const eventData = data.data || data;
         setEvent(eventData);
@@ -86,13 +100,15 @@ export default function EventDetailPage() {
 
   // Timer effect
   useEffect(() => {
-    if (!event) return;
-    
+    if (!event) {
+      return;
+    }
+
     const endDate = new Date(event.end);
     const updateTimer = () => {
       setTimeRemaining(getTimeRemaining(endDate));
     };
-    
+
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
@@ -126,14 +142,14 @@ export default function EventDetailPage() {
     <div className="max-w-5xl mx-auto">
       {/* Header */}
       <div className="border-b pb-6 mb-6">
-        <Link 
-          to="/" 
+        <Link
+          to="/"
           className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4"
         >
           <ArrowLeft className="h-4 w-4" />
           Back to contests
         </Link>
-        
+
         <div className="flex items-start justify-between gap-6">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
@@ -147,24 +163,36 @@ export default function EventDetailPage() {
                   <span className="text-xs text-emerald-500 font-medium">LIVE</span>
                 </span>
               )}
-              {isUpcoming && (
-                <Badge variant="secondary">Upcoming</Badge>
-              )}
+              {isUpcoming && <Badge variant="secondary">Upcoming</Badge>}
               {isEnded && (
-                <Badge variant="outline" className="text-muted-foreground">Ended</Badge>
+                <Badge variant="outline" className="text-muted-foreground">
+                  Ended
+                </Badge>
               )}
             </div>
-            
+
             <div className="flex items-center gap-4 text-sm text-muted-foreground">
               <span>
-                {startDate.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                {startDate.toLocaleDateString(undefined, {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                })}
                 {' · '}
-                {startDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {startDate.toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
                 {' – '}
-                {endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {endDate.toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
               </span>
               <span>·</span>
-              <span>{problems.length} {problems.length === 1 ? 'problem' : 'problems'}</span>
+              <span>
+                {problems.length} {problems.length === 1 ? 'problem' : 'problems'}
+              </span>
             </div>
           </div>
 
@@ -193,7 +221,9 @@ export default function EventDetailPage() {
               <FileText className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
               <h3 className="font-medium mb-1">No problems yet</h3>
               <p className="text-sm text-muted-foreground">
-                {isUpcoming ? 'Problems will be revealed when the contest starts' : 'No problems have been added to this contest'}
+                {isUpcoming
+                  ? 'Problems will be revealed when the contest starts'
+                  : 'No problems have been added to this contest'}
               </p>
             </div>
           ) : (
@@ -211,16 +241,16 @@ export default function EventDetailPage() {
                 </TableHeader>
                 <TableBody>
                   {problems.map((problem, index) => (
-                    <TableRow 
+                    <TableRow
                       key={problem.documentId}
                       className="group cursor-pointer"
-                      onClick={() => window.location.href = `/compete/${problem.documentId}`}
+                      onClick={() => (window.location.href = `/compete/${problem.documentId}`)}
                     >
                       <TableCell className="text-center font-mono text-muted-foreground">
                         {index + 1}
                       </TableCell>
                       <TableCell>
-                        <Link 
+                        <Link
                           to={`/compete/${problem.documentId}`}
                           className="font-medium group-hover:text-primary transition-colors"
                           onClick={(e) => e.stopPropagation()}
@@ -234,7 +264,12 @@ export default function EventDetailPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-center">
-                        <span className={cn("text-sm font-medium", getDifficultyColor(problem.difficulty))}>
+                        <span
+                          className={cn(
+                            'text-sm font-medium',
+                            getDifficultyColor(problem.difficulty),
+                          )}
+                        >
                           {problem.difficulty || '—'}
                         </span>
                       </TableCell>
@@ -269,7 +304,7 @@ export default function EventDetailPage() {
               <div className="mt-6 pt-6 border-t">
                 <h3 className="text-sm font-medium mb-3">Supported Languages</h3>
                 <div className="flex flex-wrap gap-2">
-                  {event.supportedLanguages.map((lang: any) => (
+                  {event.supportedLanguages.map((lang) => (
                     <Badge key={lang.documentId} variant="secondary" className="font-normal">
                       {lang.name}
                     </Badge>

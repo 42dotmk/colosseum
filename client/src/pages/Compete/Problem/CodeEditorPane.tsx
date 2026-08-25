@@ -1,6 +1,6 @@
-import { Box, Button, Grid } from "@mui/material";
-import CodeEditor from "../../../components/CodeEditor";
-import LanguageSelect from "../../../components/LanguageSelect";
+import { Box, Button, Grid } from '@mui/material';
+import CodeEditor from '../../../components/CodeEditor';
+import LanguageSelect from '../../../components/LanguageSelect';
 import { useState } from 'react';
 
 type Props = {
@@ -11,20 +11,20 @@ const CodeEditorPane = ({ supportedLanguages }: Props) => {
   const [currentLanguage, setCurrentLanguage] = useState(supportedLanguages[0]);
   const [currentCode, setCurrentCode] = useState([
     "const message: string = 'Hello, World!';",
-    "console.log(message);",
+    'console.log(message);',
   ]);
- 
+
   return (
     <Box
       sx={{
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        height: "100%",
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        height: '100%',
         gap: 2,
       }}
     >
-      <LanguageSelect 
+      <LanguageSelect
         currentLanguage={currentLanguage}
         languages={supportedLanguages}
         setCurrentLanguage={(e) => setCurrentLanguage(e)}
@@ -42,7 +42,7 @@ const CodeEditorPane = ({ supportedLanguages }: Props) => {
           sx={{
             border: 1,
             borderRadius: 1.5,
-            borderColor: "text.disabled",
+            borderColor: 'text.disabled',
           }}
         >
           RUN CODE
@@ -53,7 +53,7 @@ const CodeEditorPane = ({ supportedLanguages }: Props) => {
           sx={{
             border: 1,
             borderRadius: 1.5,
-            borderColor: "text.disabled",
+            borderColor: 'text.disabled',
           }}
         >
           SUBMIT CODE

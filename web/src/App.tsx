@@ -55,7 +55,7 @@ function App() {
               </ProtectedRoute>
             }
           />
-          
+
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

@@ -1,6 +1,4 @@
-import {
-  Route, Routes, BrowserRouter, Navigate,
-} from 'react-router-dom';
+import { Route, Routes, BrowserRouter, Navigate } from 'react-router-dom';
 import { Grid } from '@mui/material';
 import HomePage from './pages/Home';
 import CompetePage from './pages/Compete';

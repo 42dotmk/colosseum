@@ -1,12 +1,4 @@
-import {
-  Toolbar,
-  Box,
-  Typography,
-  Button,
-  AppBar,
-  Tab,
-  Tabs,
-} from '@mui/material';
+import { Toolbar, Box, Typography, Button, AppBar, Tab, Tabs } from '@mui/material';
 import { Link, useLocation } from 'react-router-dom';
 
 const Header = () => {
@@ -14,13 +6,10 @@ const Header = () => {
 
   return (
     <Box flexGrow={1}>
-      <AppBar
-        position="static"
-        sx={{ borderBottom: 1, borderColor: 'divider' }}
-      >
-        <Toolbar sx={{ backgroundColor: "background.default" }}>
-          <Box flexGrow={1} display={"inline-flex"} marginLeft={5}>
-            <Link to="/" style={{ display: "flex", textDecoration: "none" }}>
+      <AppBar position="static" sx={{ borderBottom: 1, borderColor: 'divider' }}>
+        <Toolbar sx={{ backgroundColor: 'background.default' }}>
+          <Box flexGrow={1} display={'inline-flex'} marginLeft={5}>
+            <Link to="/" style={{ display: 'flex', textDecoration: 'none' }}>
               <img src="/logo.svg" alt="logo" />
               <Typography color="primary" variant="h6" textTransform="uppercase" marginX={1}>
                 Colosseum
@@ -37,7 +26,13 @@ const Header = () => {
               role="navigation"
             >
               <Tab label="Home" component={Link} to="/home" value="/home" color="text.primary" />
-              <Tab label="Compete" component={Link} to="/compete" value="/compete" color="text.primary" />
+              <Tab
+                label="Compete"
+                component={Link}
+                to="/compete"
+                value="/compete"
+                color="text.primary"
+              />
             </Tabs>
           </Box>
 

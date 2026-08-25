@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { REST_URL } from '@/config';
 
 interface User {
@@ -18,19 +18,23 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // Check if user is already logged in
+  const [user, setUser] = useState<User | null>(() => {
     const token = localStorage.getItem('jwt');
     const storedUser = localStorage.getItem('user');
-    
-    if (token && storedUser) {
-      setUser(JSON.parse(storedUser));
+
+    if (!token || !storedUser) {
+      return null;
     }
-    setIsLoading(false);
-  }, []);
+
+    try {
+      return JSON.parse(storedUser) as User;
+    } catch {
+      localStorage.removeItem('jwt');
+      localStorage.removeItem('user');
+      return null;
+    }
+  });
+  const isLoading = false;
 
   const login = async (identifier: string, password: string) => {
     const response = await fetch(`${REST_URL}/auth/local`, {

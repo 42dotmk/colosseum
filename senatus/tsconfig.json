@@ -1,15 +1,12 @@
 {
   "extends": "@strapi/typescript-utils/tsconfigs/server",
   "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "outDir": "dist",
     "rootDir": "."
   },
-  "include": [
-    "./",
-    "./**/*.ts",
-    "./**/*.js",
-    "src/**/*.json"
-  ],
+  "include": ["./", "./**/*.ts", "./**/*.js", "src/**/*.json"],
   "exclude": [
     "node_modules/",
     "build/",

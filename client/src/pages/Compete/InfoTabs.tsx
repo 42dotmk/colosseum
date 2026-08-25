@@ -1,6 +1,6 @@
-import { Grid, Tab, Tabs } from "@mui/material";
-import { SyntheticEvent, useState } from "react";
-import SubmissionStatus from "./SubmissionStatus";
+import { Grid, Tab, Tabs } from '@mui/material';
+import { SyntheticEvent, useState } from 'react';
+import SubmissionStatus from './SubmissionStatus';
 
 const InfoTabs = () => {
   const [value, setValue] = useState(0);
@@ -10,22 +10,20 @@ const InfoTabs = () => {
   };
 
   return (
-    <Grid container sx={{ marginTop: 3, padding: 2 }} direction={"column"}>
+    <Grid container sx={{ marginTop: 3, padding: 2 }} direction={'column'}>
       <Grid item>
         <Tabs
           value={value}
           onChange={handleChange}
           aria-label="basic tabs example"
           variant="fullWidth"
-          style={{ width: "100%" }}
+          style={{ width: '100%' }}
         >
           <Tab label="Submissions Status" />
           <Tab label="Announcements (0)" />
         </Tabs>
       </Grid>
-      <Grid item>
-      {value === 0 && (<SubmissionStatus />)}
-      </Grid>
+      <Grid item>{value === 0 && <SubmissionStatus />}</Grid>
     </Grid>
   );
 };

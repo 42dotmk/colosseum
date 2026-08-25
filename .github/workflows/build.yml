@@ -68,7 +68,7 @@ jobs:
               - 'executioner/**/rust/**'
             golang_executioner:
               - 'executioner/**/golang/**'
-      
+
   senatus:
     name: Senatus
     needs: find_modified_files
@@ -180,7 +180,6 @@ jobs:
       docker-context: ./executioner/runtimes/languages/rust/
       docker-file-path: ./executioner/runtimes/languages/rust/Dockerfile
       docker-tags: ghcr.io/42dotmk/colosseum-executioner-rust:latest
-    
 
   golang_executioner:
     name: Golang executioner
@@ -191,4 +190,3 @@ jobs:
       docker-context: ./executioner/runtimes/languages/golang/
       docker-file-path: ./executioner/runtimes/languages/golang/Dockerfile
       docker-tags: ghcr.io/42dotmk/colosseum-executioner-golang:latest
-    
