@@ -1,14 +1,15 @@
 {
   "compilerOptions": {
-    "moduleResolution": "node",
+    "moduleResolution": "NodeNext",
     "target": "ES2015",
-    "module": "CommonJS",
+    "module": "NodeNext",
     "lib": ["es2015", "es2016", "es2017", "dom"],
     "strict": true,
     "declaration": true,
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "rootDir": "src",
     "outDir": "dist"
   },
   "include": ["src"],

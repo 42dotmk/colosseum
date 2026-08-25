@@ -1,64 +1,123 @@
+# Colosseum Local Setup
+
 ## Prerequisites
 
-Create a `.env` file in the root of the repository by following the example file: `.env.example`
+Install:
 
-### RabbitMQ
+- Node.js 20+
+- npm
+- Docker
+- Docker Compose
+- Git
 
-> Required to run the Executioner/code execution engine.
-
-To run the RabbitMQ and PostgreSQL in Docker for development, just run:
+Create the root environment file:
 
 ```bash
-docker compose -f docker-compose.q.yml up -d
+cp .env.example .env
 ```
 
-### Queue Library
+Create and configure:
 
-Build the queue library before continuing.
-
-```bash
-cd lib/queue;
-npm install;
-npm run build;
+```text
+senatus/.env
 ```
 
-### Client / Frontend
+For Senatus running directly on the host:
 
-To start the frontend
-
-```bash
-cd client;
-npm install;
-npm run dev;
+```env
+DATABASE_HOST=localhost
+DATABASE_PORT=15432
 ```
 
-### Executioner
+## First-Time Setup
 
-> Note: Node version should be v20
-
-There's no additional setup required, it will automatically connect to `amqp://localhost` (RabbitMQ on port `5672`).
+From the repository root:
 
 ```bash
-cd executioner;
-npm install;
-npm start;
+npm run setup
 ```
 
-### Execution Environments
+This will:
 
-The execution environments are defined in `./executioner/runtimes/languages` there are 2 scripts:
+- install dependencies
+- start PostgreSQL and RabbitMQ
+- pull execution runtime images
+- build the project
 
-- `build.sh` Will build all available languages (all directories contain a language defined by the directory name (ex: `csharp` is C#))
-- `pull.sh` Will pull all of the readily available images so that there's no pulling when a code execution is requested.
-
-Usually you just need to run `pull.sh` to get the images available locally.
-
-### Senatus
-
-You initially would need to setup the `.env` file by following the example file: `.env.example`
+## Start Development
 
 ```bash
-cd senatus;
-npm install;
-npm run develop;
+npm run dev
+```
+
+Main local services:
+
+```text
+Web:           http://localhost:1338
+Senatus:       http://localhost:1337
+Strapi Admin:  http://localhost:1337/admin
+RabbitMQ UI:   http://localhost:15672
+```
+
+## Execution Runtime Images
+
+Pull the available runtime images:
+
+```bash
+npm run runtimes:pull
+```
+
+Rebuild them when modifying runtime Dockerfiles:
+
+```bash
+npm run runtimes:build
+```
+
+## Infrastructure
+
+Start:
+
+```bash
+npm run dev:infra
+```
+
+Check status:
+
+```bash
+npm run dev:infra:status
+```
+
+View logs:
+
+```bash
+npm run dev:infra:logs
+```
+
+Stop:
+
+```bash
+npm run dev:down
+```
+
+Reset local infrastructure and volumes:
+
+```bash
+npm run dev:infra:reset
+```
+
+## Development Checks
+
+Before pushing:
+
+```bash
+npm run check
+```
+
+Individual checks:
+
+```bash
+npm run lint
+npm run format:check
+npm run typecheck
+npm run build
 ```
