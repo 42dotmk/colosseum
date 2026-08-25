@@ -36,17 +36,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
   const isLoading = false;
 
-  /*useEffect(() => {
-    // Check if user is already logged in
-    const token = localStorage.getItem("jwt");
-    const storedUser = localStorage.getItem("user");
-
-    if (token && storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
-  }, []);*/
-
   const login = async (identifier: string, password: string) => {
     const response = await fetch(`${REST_URL}/auth/local`, {
       method: 'POST',
