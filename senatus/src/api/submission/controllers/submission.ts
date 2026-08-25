@@ -98,7 +98,14 @@ export default factories.createCoreController('api::submission.submission', ({ s
 
       const msg = JSON.stringify(qPayload);
 
-      const { publish, disconnect } = await connect(strapi.config.get('server.app.rabbitUrl'));
+      const rabbitUrl = strapi.config.get('server.app.rabbitUrl') as string | undefined;
+      if (!rabbitUrl) {
+        ctx.status = 500;
+        ctx.body = { error: 'RabbitMQ URL is not configured (server.app.rabbitUrl)' };
+        return;
+      }
+
+      const { publish, disconnect } = await connect(rabbitUrl);
 
       console.log('Connected to RabbitMQ');
 
