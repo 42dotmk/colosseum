@@ -253,7 +253,7 @@ const sanitizeSubmissionCollectionResponse = (response: any) => {
   return sanitizeSubmissionForParticipant(response);
 };
 
-// Resolves ctx.request.body.data.language to a documentId in-place.
+// Resolves ctx.request.body.data.language to an explicit documentId relation in-place.
 // Accepts codeName ("gcc"), documentId string, or numeric id.
 const resolveLanguageInBody = async (ctx: any, strapi: any) => {
   const payload = ctx.request.body?.data;
@@ -265,10 +265,9 @@ const resolveLanguageInBody = async (ctx: any, strapi: any) => {
       ? { id: Number(payload.language) }
       : { codeName: payload.language },
   });
-  if (lang) {
-    payload.language = lang.documentId;
-  }
-  // If not found by codeName/id, leave as-is (may already be a documentId).
+  // Bare digit-leading document IDs are mistaken for row IDs by Strapi's
+  // shorthand relation parser. Explicit documentId relations avoid that ambiguity.
+  payload.language = { documentId: lang?.documentId ?? payload.language };
 };
 
 export default factories.createCoreController('api::submission.submission', ({ strapi }) => ({
@@ -430,18 +429,18 @@ export default factories.createCoreController('api::submission.submission', ({ s
 
     const payload = ctx.request.body?.data || {};
 
-    // Resolve payload.language to a documentId for the Strapi v5 Document Service.
+    // Resolve payload.language to an explicit relation for the Strapi v5 Document Service.
     // Accepts: codeName string ("gcc"), documentId string, or numeric id.
     await resolveLanguageInBody(ctx, strapi);
-    const languageDocumentId: string | undefined = payload.language;
-    if (!languageDocumentId) {
+    const languageRelation = payload.language;
+    if (!languageRelation) {
       return ctx.badRequest('Language is required');
     }
 
     const createdSubmission = await strapi.documents('api::submission.submission').create({
       data: {
         code: payload.code,
-        language: languageDocumentId,
+        language: languageRelation,
         problem: problemId,
         user: user.documentId || user.id,
         event: problem.event.documentId,
