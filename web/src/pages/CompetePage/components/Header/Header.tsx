@@ -16,7 +16,7 @@ type ProblemProps = {
 type LanguageProps = {
   selectedLanguageObject: Language | undefined,
   currentLanguage: string,
-  setCurrentLanguage: React.Dispatch<React.SetStateAction<string>>,
+  setCurrentLanguage: (languageId: string) => void,
   languages: Language[],
 }
 

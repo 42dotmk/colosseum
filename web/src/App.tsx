@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import { Toaster } from '@/components/ui/toaster';
 import Layout from '@/components/Layout';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -16,13 +16,9 @@ import TutorialsPage from '@/pages/TutorialsPage/TutorialsPage';
 import TutorialDetailPage from '@/pages/TutorialDetailPage/TutorialDetailPage';
 
 function App() {
-  useEffect(() => {
-    // Force dark mode
-    document.documentElement.classList.add('dark');
-  }, []);
-
   return (
-    <AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
       <BrowserRouter>
         <Routes>
           {/* Public routes */}
@@ -116,7 +112,8 @@ function App() {
         </Routes>
         <Toaster />
       </BrowserRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

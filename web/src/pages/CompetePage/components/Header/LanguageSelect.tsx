@@ -3,7 +3,7 @@ import Language from "../../types/Language";
 
 type LanguageSelectProps = {
   currentLanguage: string,
-  setCurrentLanguage: React.Dispatch<React.SetStateAction<string>>,
+  setCurrentLanguage: (languageId: string) => void,
   languages: Language[]
 }
 

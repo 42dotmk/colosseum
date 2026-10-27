@@ -6,7 +6,9 @@ import { Submission } from "@/pages/CompetePage/types/Submission";
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import SyntaxHighlighterBase from "react-syntax-highlighter";
-import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { oneDark, oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { useTheme } from "@/contexts/ThemeContext";
+import CopyButton from "../../CopyButton";
 
 const SyntaxHighlighter = SyntaxHighlighterBase as any;
 
@@ -29,6 +31,9 @@ export default function SubmissionResult({
 }: SubmissionResultProps) {
   const [showCode, setShowCode] = useState(true);
   const [showExecutionDetails, setShowExecutionDetails] = useState(false);
+  const { theme } = useTheme();
+
+  const visibleCode = (submission.metadata as { userCode?: string } | undefined)?.userCode ?? submission.code;
 
   const getSubmissionExecutions = (submission: Submission) =>
     executionOverrides[submission.documentId]?.length
@@ -93,23 +98,26 @@ export default function SubmissionResult({
             <div className="flex items-center justify-between px-3 py-2">
               <span className="text-sm font-medium">Code</span>
 
-              <button onClick={() => setShowCode((prev) => !prev)}>
-                {showCode
-                  ? <ChevronUp className="h-4 w-4" />
-                  : <ChevronDown className="h-4 w-4" />}
-              </button>
+              <div className="flex items-center gap-3">
+                <CopyButton value={visibleCode} label="code" />
+                <button onClick={() => setShowCode((prev) => !prev)}>
+                  {showCode
+                    ? <ChevronUp className="h-4 w-4" />
+                    : <ChevronDown className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
 
             {showCode && (
               <SyntaxHighlighter
                 language={submission.language.name.toLowerCase()}
-                style={oneDark}
+                style={theme === 'dark' ? oneDark : oneLight}
                 customStyle={{
                   margin: 0,
                   padding: "1rem",
                   borderRadius: "0.5rem",
                   fontSize: "0.875rem",
-                  background: "#0f172a",
+                  background: theme === 'dark' ? "#0f172a" : "#f8fafc",
                 }}
                 codeTagProps={{
                   style: {
@@ -117,7 +125,7 @@ export default function SubmissionResult({
                   },
                 }}
               >
-                {submission.code}
+                {visibleCode}
               </SyntaxHighlighter>
             )}
           </div>

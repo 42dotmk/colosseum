@@ -33,8 +33,8 @@ export function useCppLsp(enabled: boolean) {
   // The LSP model we created — kept alive so the editor doesn't go blank
   const lspModelRef = useRef<MonacoType.editor.ITextModel | null>(null);
 
-  // Teardown helper
-  const teardown = useCallback(() => {
+  // Cleanup helper (no state change — used by both teardown and failed connects)
+  const cleanup = useCallback(() => {
     // Dispose providers / event listeners (NOT models)
     for (const d of disposablesRef.current) {
       try { d.dispose(); } catch { /* ignore */ }
@@ -54,13 +54,19 @@ export function useCppLsp(enabled: boolean) {
     // Don't dispose lspModelRef — keep it cached for potential re-enable
     // (Monaco editor caches by URI, so re-creating is harmless either way)
 
-    if (clientRef.current) {
-      try { clientRef.current.notify('exit'); } catch { /* ignore */ }
-      clientRef.current.dispose();
-      clientRef.current = null;
+    const client = clientRef.current;
+    clientRef.current = null;
+    if (client) {
+      try { client.notify('exit'); } catch { /* ignore */ }
+      client.dispose();
     }
-    setLspState('disabled');
   }, []);
+
+  // Teardown helper — only called when the user turns LSP off
+  const teardown = useCallback(() => {
+    cleanup();
+    setLspState('disabled');
+  }, [cleanup]);
 
   // Connect and initialize clangd
   const connect = useCallback(
@@ -68,7 +74,7 @@ export function useCppLsp(enabled: boolean) {
       editor: MonacoType.editor.IStandaloneCodeEditor,
       monacoInstance: typeof MonacoType,
     ) => {
-      teardown();
+      cleanup();
 
       editorRef.current = editor;
       monacoRef.current = monacoInstance;
@@ -76,7 +82,9 @@ export function useCppLsp(enabled: boolean) {
       setLspState('connecting');
       const lsp = new LspClient(LSP_WS_URL);
       clientRef.current = lsp;
-      lsp.onStateChange(setLspState);
+      lsp.onStateChange((nextState) => {
+        if (clientRef.current === lsp) setLspState(nextState);
+      });
 
       // Wait for WebSocket open (needed before we can send initialize)
       await new Promise<void>((resolve, reject) => {
@@ -164,11 +172,13 @@ export function useCppLsp(enabled: boolean) {
         }
       } catch (err) {
         console.error('[useCppLsp] Failed to initialize clangd:', err);
-        setLspState('error');
-        teardown();
+        if (clientRef.current === lsp) {
+          cleanup();
+          setLspState('error');
+        }
       }
     },
-    [teardown],
+    [cleanup],
   );
 
   // Disable when `enabled` becomes false
