@@ -9,7 +9,13 @@ on:
         required: true
         type: string
 
+      image-name:
+        description: 'Base image name without tag (e.g. ghcr.io/42dotmk/colosseum-senatus). Used to generate sha/branch/semver tags.'
+        required: true
+        type: string
+
       docker-tags:
+        description: 'Explicit tags to apply (e.g. :latest or :dev). Combined with auto-generated tags.'
         required: true
         type: string
 
@@ -32,12 +38,27 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Generate image tags
+        id: meta
+        uses: docker/metadata-action@v5
+        env:
+          DOCKER_METADATA_PR_HEAD_SHA: true
+        with:
+          images: ${{ inputs.image-name }}
+          tags: |
+            type=sha,format=short
+            type=ref,event=branch
+            type=ref,event=tag
+            type=ref,event=pr
+
       - name: Build image
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
         with:
           context: ${{ inputs.docker-context }}
           file: ${{ inputs.docker-file-path }}
-          tags: ${{ inputs.docker-tags }}
+          tags: |
+            ${{ inputs.docker-tags }}
+            ${{ steps.meta.outputs.tags }}
           build-args: ${{ inputs.docker-build-args }}
 
   push_image:
@@ -51,6 +72,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Login to ghcr.io
         uses: docker/login-action@v3
@@ -59,11 +82,26 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Generate image tags
+        id: meta
+        uses: docker/metadata-action@v5
+        env:
+          DOCKER_METADATA_PR_HEAD_SHA: true
+        with:
+          images: ${{ inputs.image-name }}
+          tags: |
+            type=sha,format=short
+            type=ref,event=branch
+            type=ref,event=tag
+            type=ref,event=pr
+
       - name: Push production image
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
         with:
           context: ${{ inputs.docker-context }}
           file: ${{ inputs.docker-file-path }}
-          tags: ${{ inputs.docker-tags }}
+          tags: |
+            ${{ inputs.docker-tags }}
+            ${{ steps.meta.outputs.tags }}
           build-args: ${{ inputs.docker-build-args }}
           push: true

@@ -51,6 +51,40 @@ const isUserRegisteredForEvent = (registrations: any[], user: any) =>
 	});
 
 export default factories.createCoreController('api::problem.problem', ({ strapi }) => ({
+	async find(ctx) {
+		await this.validateQuery(ctx);
+		const sanitizedQueryParams = await this.sanitizeQuery(ctx);
+
+		const { results, pagination } = await strapi
+			.service('api::problem.problem')
+			.find({
+				...sanitizedQueryParams,
+				populate: {
+					starterCodes: {
+						populate: { language: true },
+					},
+				},
+			});
+
+		const sanitizedResults = await this.sanitizeOutput(results, ctx);
+
+		// sanitizeOutput strips relations nested inside components (Strapi v5 limitation).
+		// Re-attach the language from the raw results.
+		const mergedResults = (sanitizedResults as any[]).map((problem: any, i: number) => {
+			const rawStarterCodes = results[i]?.starterCodes;
+			if (!problem.starterCodes || !rawStarterCodes) return problem;
+			return {
+				...problem,
+				starterCodes: problem.starterCodes.map((sc: any, j: number) => ({
+					...sc,
+					language: rawStarterCodes[j]?.language ?? null,
+				})),
+			};
+		});
+
+		return this.transformResponse(mergedResults, { pagination });
+	},
+
 	async findOne(ctx) {
 		const user = await getCurrentUser(strapi, ctx);
 		if (!user) {
