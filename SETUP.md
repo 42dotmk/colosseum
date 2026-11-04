@@ -31,7 +31,7 @@ To test submitting, start the first event in the past, for example
 `SEED_FIRST_EVENT_START=2026-10-01T00:00:00Z npm run dev` on a fresh database
 (`docker compose -f docker-compose.q.yml down -v` resets it).
 
-`node scripts/verify-seed.mjs` runs security and grading checks against the running stack
+`node scripts/verify-seed.mjs` and `node scripts/verify-multiuser.mjs` run security, grading and multi-user isolation checks against the running stack
 (`SOLUTION_FILE=<cpp file>` also submits and grades a solution).
 
 ## Prerequisites
