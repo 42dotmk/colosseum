@@ -1,4 +1,5 @@
 import { connect } from '@colosseum/queue'
+import { runDevSeed } from './seed/dev-seed'
 
 let disconnectRabbit: () => Promise<any> | undefined;
 
@@ -86,6 +87,9 @@ export default {
     console.log("Senatus is bootstrapping");
     console.log(strapi.config.get("server.app.rabbitUrl"));
     await ensureDefaultTutorialExists(strapi);
+    if (process.env.SEED_DEV_DATA === 'true') {
+      await runDevSeed(strapi);
+    }
     const prefetchCount = strapi.config.get("server.app.prefetchResults");
     const { 
       subscribe,
