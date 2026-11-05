@@ -15,6 +15,7 @@
  *   --mem        address space limit (RLIMIT_AS), checked by the kernel on every allocation
  *   --fsize      largest file the program may write (stdout redirected to a file counts), in MB
  *   --time-file  receives the CPU seconds the program used, for example "0.123"
+ *   --mem-file   receives the peak resident memory of the program in MB, for example "52.31"
  *   --uid        run the program as this unprivileged user (and group), with no way to regain privileges
  *
  * Exit status: 124 CPU limit exceeded, 125 wall-clock safety net hit, otherwise the program's own status
@@ -67,7 +68,7 @@ static void limit(int resource, rlim_t soft, rlim_t hard) {
 int main(int argc, char **argv) {
   double cpu_limit = 10, wall_limit = 60;
   long mem_mb = 0, fsize_mb = 0;
-  const char *time_file = NULL;
+  const char *time_file = NULL, *mem_file = NULL;
   long uid = -1;
   int i = 1;
   for (; i < argc; i++) {
@@ -78,6 +79,7 @@ int main(int argc, char **argv) {
     else if (!strcmp(argv[i], "--mem")) mem_mb = atol(argv[++i]);
     else if (!strcmp(argv[i], "--fsize")) fsize_mb = atol(argv[++i]);
     else if (!strcmp(argv[i], "--time-file")) time_file = argv[++i];
+    else if (!strcmp(argv[i], "--mem-file")) mem_file = argv[++i];
     else if (!strcmp(argv[i], "--uid")) uid = atol(argv[++i]);
     else { fprintf(stderr, "runner: unknown option %s\n", argv[i]); return 2; }
   }
@@ -131,6 +133,11 @@ int main(int argc, char **argv) {
   /* a program that finished between two checks but used more than its limit is still over the limit */
   if (!reason && used > cpu_limit) reason = 1;
 
+  if (mem_file) {
+    /* peak resident memory of the program in MB (the largest of it and the children it waited for) */
+    FILE *f = fopen(mem_file, "w");
+    if (f) { fprintf(f, "%.2f\n", ru.ru_maxrss / 1024.0); fclose(f); }
+  }
   if (time_file) {
     FILE *f = fopen(time_file, "w");
     if (f) { fprintf(f, "%.3f\n", used); fclose(f); }

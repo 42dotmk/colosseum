@@ -14,6 +14,8 @@ export type Outcome = {
   stderr: string;
   /** execution time reported by the runtime (seconds), null when the program was killed */
   time: number | null;
+  /** peak resident memory of the program (MB) */
+  memory: number | null;
   /** wall time of the whole job including compile and container start */
   wallMs: number;
   limitsLine?: string;
@@ -23,16 +25,17 @@ export type Outcome = {
 /**
  * Runs one job directly through the executioner (no queue) as a server with the given capabilities.
  * The same code path as the queue worker uses, so limits, isolation and messages are the real ones.
+ * Several inputs run one after the other in the same container, like the test cases of one submission.
  */
-export const execute = async (
+export const executeMany = async (
   code: string,
   request: Request,
   serverEnv: Record<string, string> = {},
-  input = '',
-): Promise<Outcome> => {
+  inputs: string[] = [''],
+): Promise<Outcome[]> => {
   const job = {
     sources: [{ filename: 'main.cpp', content: code }],
-    input: [{ filename: 't1', content: input, metadata: { id: 1 } }],
+    input: inputs.map((content, i) => ({ filename: `t${i + 1}`, content, metadata: { id: i + 1 } })),
     options: { language: 'cpp', entrypointFile: 'main.cpp', ...request },
   };
   const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'e2e-job-')), 'job.json');
@@ -41,18 +44,27 @@ export const execute = async (
   const { stdout } = await run(process.execPath, [TSX, 'tools/exec-cli.ts', file], {
     cwd: EXECUTIONER_DIR,
     env: { ...process.env, MAX_EXECUTION_TIME: '60', MEMORY_LIMIT_PER_EXECUTION: '2G', ...serverEnv },
-    maxBuffer: 50 * 1024 * 1024,
+    maxBuffer: 200 * 1024 * 1024,
   });
-  const line = stdout.split('\n').find((l) => l.startsWith('RESULT_JSON:'));
-  if (!line) throw new Error(`no result from executioner:\n${stdout.slice(-2000)}`);
-  const [result] = JSON.parse(line.slice('RESULT_JSON:'.length));
-  return {
+  const lines = stdout.split(/\r?\n/);
+  const line = lines.find((l) => l.startsWith('RESULT_JSON:'));
+  if (!line) throw new Error(`no result from executioner: ${stdout.slice(-2000)}`);
+  const results = JSON.parse(line.slice('RESULT_JSON:'.length)) as any[];
+  const limitsLine = lines.find((l) => l.includes('Limits for this execution'));
+  return results.map((result) => ({
     ...result,
     wallMs: Date.now() - started,
-    limitsLine: stdout.split('\n').find((l) => l.includes('Limits for this execution')),
+    limitsLine,
     passed: String(result.stdout).trim() === 'ok' && !result.stderr,
-  };
+  }));
 };
+
+export const execute = async (
+  code: string,
+  request: Request,
+  serverEnv: Record<string, string> = {},
+  input = '',
+): Promise<Outcome> => (await executeMany(code, request, serverEnv, [input]))[0];
 
 // ------------------------------------------------------------------ test programs (all print "ok" on success)
 export const PROGRAMS = {

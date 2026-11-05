@@ -273,6 +273,8 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
             stdout: stdout.toString(),
             stderr: stderr.toString(),
             time: parsedTime,
+            // peak resident memory of the program in MB, reported next to the time
+            memory: Number((await readIfExists(path.resolve(path.join(outputDir, `${inp.filename}.mem`)))).trim()) || null,
             metadata: inp.metadata,
           });
         }

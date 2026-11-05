@@ -11,7 +11,7 @@ COMPILE_TIMEOUT=${COMPILE_TIMEOUT:-60}    # compiling is not timed against the p
 run_limited() {
   local timeFile="$1"; shift
   /exc/runner --cpu "${TIMEOUT}" --wall "${WALL_TIMEOUT}" --mem "${MEMORY_LIMIT_MB:-0}" --fsize "${OUTPUT_LIMIT_MB:-0}" \
-    --time-file "${timeFile}" --uid 65534 -- "$@"
+    --time-file "${timeFile}" --mem-file "${timeFile%.time}.mem" --uid 65534 -- "$@"
 }
 chmod 700 input src output 2>/dev/null
 

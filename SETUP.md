@@ -70,6 +70,11 @@ How limits are judged:
   contests use judging hosts with homogeneous cores at a fixed frequency (no turbo or power saving) that run nothing else heavy,
   keep `PREFETCH_COUNT` at most the number of cores, and set limits with a margin (2x or more) over the reference solution.
   Instruction counters (perf) would be deterministic, but virtual machines usually do not expose them.
+- **Repeatability** (`e2e/tests/executioner/repeatability.spec.ts`, 100 runs of the same code per case, measured on a hybrid
+  laptop CPU): the verdict and the output were identical in every run. Peak memory (reported next to the time) varied by at most
+  0.17 MB. CPU time varied by about 5% (coefficient of variation) for a 0.4 s program in separate containers, 7% inside one
+  container, and 26% while 4 jobs ran at the same time, where a few runs took 2x the median. Expect a quiet homogeneous server to
+  be tighter than these numbers.
 - **Different machines**: a CPU that is slower per instruction declares `TIME_LIMIT_SCALE`, and jobs a server cannot fully serve are
   left to other servers.
 - **Memory** is an address-space limit (`RLIMIT_AS`, like many judges), so reserved memory counts. It is the same on every
