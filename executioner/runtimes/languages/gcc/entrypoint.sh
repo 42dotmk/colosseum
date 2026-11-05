@@ -76,7 +76,7 @@ if [ "${INTERACTIVE}" = "1" ]; then
       2>"output/${filename}.int_stderr" &
     INT_PID=$!
 
-    { time ( [ -n "${MEMORY_LIMIT_MB}" ] && ulimit -v $((MEMORY_LIMIT_MB * 1024)); timeout "${TIMEOUT}" ${RUN_AS} ./solution \
+    { time ( ulimit -c 0; [ -n "${MEMORY_LIMIT_MB}" ] && ulimit -v $((MEMORY_LIMIT_MB * 1024)); timeout "${TIMEOUT}" ${RUN_AS} ./solution \
       <"${INT_TO_SOL}" \
       2>"output/${filename}.stderr" \
       | tee "${USER_OUT_FILE}" >"${SOL_TO_INT}"); } 2>"output/${filename}.time"
@@ -161,11 +161,14 @@ else
       echo "Compilation error:\\n $ERROR" > "output/$filename.stderr"
       continue
     fi
-    { time ( [ -n "${MEMORY_LIMIT_MB}" ] && ulimit -v $((MEMORY_LIMIT_MB * 1024)); cat "${inputFile}" | timeout "${TIMEOUT}" ${RUN_AS} ./main 1>"output/${filename}.stdout" 2>"output/${filename}.stderr"); } 2>"output/${filename}.time"
+    { time ( ulimit -c 0; [ -n "${MEMORY_LIMIT_MB}" ] && ulimit -v $((MEMORY_LIMIT_MB * 1024)); [ -n "${OUTPUT_LIMIT_MB}" ] && ulimit -f $((OUTPUT_LIMIT_MB * 1024)); cat "${inputFile}" | timeout "${TIMEOUT}" ${RUN_AS} ./main 1>"output/${filename}.stdout" 2>"output/${filename}.stderr"); } 2>"output/${filename}.time"
     EXIT_CODE=$?
     echo "Run resulted in $EXIT_CODE"
     if [ $EXIT_CODE -eq 124 ]; then
-      echo "Execution exceeded ${TIMEOUT}s" > "output/${filename}.stderr"
+      echo "Execution exceeded ${TIME_LIMIT_DISPLAY:-$TIMEOUT}s" > "output/${filename}.stderr"
+    fi
+    if [ $EXIT_CODE -eq 153 ]; then
+      echo "Output limit exceeded (${OUTPUT_LIMIT_MB:-?}MB)" > "output/${filename}.stderr"
     fi
     if [ $EXIT_CODE -eq 137 ] || grep -q "bad_alloc" "output/${filename}.stderr" 2>/dev/null; then
       echo "Memory limit exceeded (${MEMORY_LIMIT_MB:-?}MB)" > "output/${filename}.stderr"

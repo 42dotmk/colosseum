@@ -26,9 +26,15 @@ type File = {
   metadata?: any;
 };
 
-const CPU_LIMIT_PER_EXECUTION = process.env.CPU_LIMIT_PER_EXECUTION;
+// One core per execution by default, with one concurrent job per core (see index.ts), so executions do not
+// steal CPU from each other (a compile in one container must not slow the timed run in another).
+// Set to 0 to remove the quota.
+const CPU_LIMIT_PER_EXECUTION = (process.env.CPU_LIMIT_PER_EXECUTION ?? '1') === '0' ? undefined : (process.env.CPU_LIMIT_PER_EXECUTION ?? '1');
 const COMPILE_HEADROOM_MB = parseInt(process.env.COMPILE_HEADROOM_MB || '1024');
 const PIDS_LIMIT_PER_EXECUTION = process.env.PIDS_LIMIT_PER_EXECUTION ?? '256';
+const OUTPUT_LIMIT_MB = parseInt(process.env.OUTPUT_LIMIT_MB || '4');
+// Optional: run the runtime image for another CPU architecture (for example linux/arm64, emulated or native)
+const PLATFORM = process.env.EXECUTION_PLATFORM;
 const ENABLE_NETWORK_IN_EXECUTION = process.env.ENABLE_NETWORK_IN_EXECUTION === 'true';
 const IMAGE_BASE = process.env.IMAGE_BASE || 'ghcr.io/42dotmk/colosseum-executioner-';
 const WORKDIR = process.env.WORKDIR || '_work';
@@ -145,13 +151,23 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
       }
 
       const limits = resolveLimits(options, getServerCaps());
-      console.log(`Limits for this execution: ${limits.timeSeconds}s, ${limits.memoryMb}MB`);
+      console.log(`Limits for this execution: ${limits.timeSeconds}s, ${limits.memoryMb}MB (deadline ${limits.enforcedTimeSeconds}s on this server)`);
       // The container ceiling leaves headroom for compiling (g++ needs ~600MB); the run itself is held to
       // MEMORY_LIMIT_MB by the runtime (ulimit -v). memory-swap equal to memory disables swap so the
       // ceiling cannot be dodged.
       const containerMemoryMb = limits.memoryMb + COMPILE_HEADROOM_MB;
       extraArgs.push(`--memory=${containerMemoryMb}m`, `--memory-swap=${containerMemoryMb}m`);
-      extraArgs.push('-e', `EXECUTION_TIMEOUT=${limits.timeSeconds}`, '-e', `MEMORY_LIMIT_MB=${limits.memoryMb}`);
+      // EXECUTION_TIMEOUT is the deadline on this server (scaled for its speed); TIME_LIMIT_DISPLAY is the
+      // limit the participant is told about. OUTPUT_LIMIT_MB caps what a program may write to stdout.
+      extraArgs.push(
+        '-e', `EXECUTION_TIMEOUT=${limits.enforcedTimeSeconds}`,
+        '-e', `TIME_LIMIT_DISPLAY=${limits.timeSeconds}`,
+        '-e', `MEMORY_LIMIT_MB=${limits.memoryMb}`,
+        '-e', `OUTPUT_LIMIT_MB=${OUTPUT_LIMIT_MB}`,
+      );
+      if (PLATFORM) {
+        extraArgs.push(`--platform=${PLATFORM}`);
+      }
       if (PIDS_LIMIT_PER_EXECUTION) {
         extraArgs.push(`--pids-limit=${PIDS_LIMIT_PER_EXECUTION}`);
       }

@@ -536,8 +536,9 @@ export default factories.createCoreController('api::submission.submission', ({ s
           language: submission.language.codeName,
           entrypointFile: submission.language.entrypoint,
           // Requested limits; the executioner caps them to what its server can offer
-          maxCpuTime: submission.language.defaultMaxCpuTime ?? null,
-          maxMemory: submission.language.defaultMaxMemory ?? null,
+          // Always concrete, so every executioner applies the same limits (defaults from the platform, not the server)
+          maxCpuTime: submission.language.defaultMaxCpuTime ?? Number(process.env.DEFAULT_EXECUTION_TIME ?? 10),
+          maxMemory: submission.language.defaultMaxMemory ?? Number(process.env.DEFAULT_EXECUTION_MEMORY ?? 256),
           ...(isInteractiveProblem(problem) ? {
             interactive: '1',
             interactorSource: (problem as any).interactorSource || '',

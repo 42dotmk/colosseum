@@ -35,19 +35,31 @@ The course homework is 100 problems plus one interactive problem ("Guess the num
 
 ### Execution limits
 
-Senatus sends the language's time (`defaultMaxCpuTime`, seconds) and memory (`defaultMaxMemory`, MB) limit with every job.
-The executioner applies the smaller of that request and what its own server allows, so a weaker server never promises more
-than it can give. Set the server capabilities on the executioner process:
+Senatus sends the language's time (`defaultMaxCpuTime`, seconds, fractions allowed) and memory (`defaultMaxMemory`, MB) limit
+with every job (`DEFAULT_EXECUTION_TIME` / `DEFAULT_EXECUTION_MEMORY` on Senatus fill in when a language has none).
+
+You can run several executioners on the same queue with different capabilities. An executioner only runs a job whose limits it
+can fully give; otherwise it passes the job on to another one (so a weak server never silently shortens a limit), and a job that
+no server can satisfy fails with "No execution server can satisfy the limits of this problem". Set the capabilities on each
+executioner process:
 
 | Variable | Default | Meaning |
 |---|---|---|
+| `EXECUTOR_NAME` | host name | Name used in logs |
 | `MAX_EXECUTION_TIME` | `10` | Highest time limit (seconds) this server accepts |
 | `MEMORY_LIMIT_PER_EXECUTION` | `1G` | Highest memory limit this server accepts (`512m`, `2G`, ...) |
+| `TIME_LIMIT_SCALE` | `1` | Wall-clock multiplier for slower hardware (`2` = half as fast). The participant still sees the unscaled limit |
+| `CPU_LIMIT_PER_EXECUTION` | `1` | `docker --cpus` per execution (`0` removes the quota) |
+| `PREFETCH_COUNT` | CPU cores | Jobs run at the same time. Time limits are wall-clock, so more jobs than cores would make verdicts depend on load |
 | `COMPILE_HEADROOM_MB` | `1024` | Extra container memory for compiling; the program itself is held to the memory limit |
-| `CPU_LIMIT_PER_EXECUTION` | unset | `docker --cpus` per execution |
 | `PIDS_LIMIT_PER_EXECUTION` | `256` | Process limit per execution |
+| `OUTPUT_LIMIT_MB` | `4` | Output a program may write before it is stopped |
+| `MAX_JOB_WAIT_SECONDS` | `120` | How long a job may be passed on between servers that cannot satisfy it before it fails (a capable server may just be busy) |
+| `EXECUTION_PLATFORM`, `IMAGE_BASE` | unset | Run a runtime image for another architecture, for example `linux/arm64` |
 
-The participant's program runs as an unprivileged user and cannot read test inputs, sources or judge binaries.
+Notes: time limits are wall-clock, so keep concurrency (`PREFETCH_COUNT`) below what the machine can really run in parallel: on an overloaded server a trivial program can take seconds. Judging by CPU time instead is the recommended next step. The memory limit is an address-space limit (`ulimit -v`, like `RLIMIT_AS`), so reserved memory counts. Time is wall-clock,
+so waiting counts too. The participant's program runs as an unprivileged user and cannot read test inputs, sources or judge
+binaries. On an emulated architecture (QEMU) the memory limit is not enforced; a native arm64 server enforces it.
 
 ### End-to-end tests (Playwright)
 
@@ -59,9 +71,12 @@ npm install
 npx playwright install chromium
 npx playwright test                 # everything
 npx playwright test --project=api   # seed, security, grading, practice, snapshots, interactive
-npx playwright test --project=limits  # time and memory limits on servers with different capabilities
+npx playwright test --project=limits  # time/memory limits, abuse, two executioners, slower hardware, arm64
 npx playwright test --project=ui    # browser flows
 ```
+
+The fleet tests start a second, weaker executioner next to the stack's own. The arm64 tests are skipped unless the image exists:
+`docker build --platform linux/arm64 -t ghcr.io/42dotmk/colosseum-executioner-arm64-gcc:latest executioner/runtimes/languages/gcc`.
 
 The tests create their own events and problems through a temporary admin API token and remove them afterwards. Strapi
 rate-limits logins (5 per minute), so wait a minute between runs.

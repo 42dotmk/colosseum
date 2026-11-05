@@ -44,18 +44,18 @@ test.describe('limit resolution (pure)', () => {
   });
 
   test('the smaller of requested limit and server capability wins', () => {
-    const small = { maxTimeSeconds: 2, maxMemoryMb: 64 };
-    const large = { maxTimeSeconds: 10, maxMemoryMb: 1024 };
-    expect(resolveLimits({ maxCpuTime: 5, maxMemory: 256 }, small)).toEqual({ timeSeconds: 2, memoryMb: 64 }); // server too weak
-    expect(resolveLimits({ maxCpuTime: 5, maxMemory: 256 }, large)).toEqual({ timeSeconds: 5, memoryMb: 256 }); // request is stricter
-    expect(resolveLimits({}, large)).toEqual({ timeSeconds: 10, memoryMb: 1024 }); // no request: server default
-    expect(resolveLimits({ maxCpuTime: 0, maxMemory: -1 }, small)).toEqual({ timeSeconds: 2, memoryMb: 64 }); // junk is ignored
-    expect(resolveLimits({ maxCpuTime: 999, maxMemory: 99999 }, small)).toEqual({ timeSeconds: 2, memoryMb: 64 }); // never above the cap
+    const small = { maxTimeSeconds: 2, maxMemoryMb: 64, timeScale: 1, name: 'small' };
+    const large = { maxTimeSeconds: 10, maxMemoryMb: 1024, timeScale: 1, name: 'large' };
+    expect(resolveLimits({ maxCpuTime: 5, maxMemory: 256 }, small)).toMatchObject({ timeSeconds: 2, memoryMb: 64 }); // server too weak
+    expect(resolveLimits({ maxCpuTime: 5, maxMemory: 256 }, large)).toMatchObject({ timeSeconds: 5, memoryMb: 256 }); // request is stricter
+    expect(resolveLimits({}, large)).toMatchObject({ timeSeconds: 10, memoryMb: 1024 }); // no request: server default
+    expect(resolveLimits({ maxCpuTime: 0, maxMemory: -1 }, small)).toMatchObject({ timeSeconds: 2, memoryMb: 64 }); // junk is ignored
+    expect(resolveLimits({ maxCpuTime: 999, maxMemory: 99999 }, small)).toMatchObject({ timeSeconds: 2, memoryMb: 64 }); // never above the cap
   });
 
   test('server capabilities come from the environment with safe defaults', () => {
-    expect(getServerCaps({} as any)).toEqual({ maxTimeSeconds: 10, maxMemoryMb: 1024 });
-    expect(getServerCaps({ MAX_EXECUTION_TIME: '3', MEMORY_LIMIT_PER_EXECUTION: '128m' } as any)).toEqual({ maxTimeSeconds: 3, maxMemoryMb: 128 });
+    expect(getServerCaps({} as any)).toMatchObject({ maxTimeSeconds: 10, maxMemoryMb: 1024 });
+    expect(getServerCaps({ MAX_EXECUTION_TIME: '3', MEMORY_LIMIT_PER_EXECUTION: "128m" } as any)).toMatchObject({ maxTimeSeconds: 3, maxMemoryMb: 128 });
   });
 });
 
