@@ -3,7 +3,7 @@
  */
 
 import { factories } from '@strapi/strapi'
-import { getCurrentUser } from '../../../utils/current-user';
+import { getCurrentUser, isApiTokenRequest } from '../../../utils/current-user';
 
 const getCurrentUserFilter = (user: any) => {
 	if (user?.documentId) {
@@ -21,6 +21,10 @@ export default factories.createCoreController('api::event-registration.event-reg
 	async find(ctx) {
 		const user = await getCurrentUser(strapi, ctx);
 		if (!user) {
+			// Admin-issued API tokens are trusted server-to-server credentials: Strapi already enforced their permissions
+			if (isApiTokenRequest(ctx)) {
+			  return super.find(ctx);
+			}
 			return ctx.unauthorized('Authentication required');
 		}
 

@@ -4,11 +4,15 @@ import cp from 'child_process';
 import { v4 } from 'uuid';
 
 import { readFile, writeFile } from 'fs/promises';
+import { getServerCaps, resolveLimits } from './limits';
 
 type LanguageOptions = {
-  [key: string]: string | undefined;
+  [key: string]: string | number | null | undefined;
   language: string;
   entrypointFile: string;
+  // Requested limits (from the language). Capped by this server's capabilities, see limits.ts
+  maxCpuTime?: number | string | null;
+  maxMemory?: number | string | null;
   // Interactive problem support
   interactive?: string; // '1' when interactive
   interactorSource?: string;
@@ -23,7 +27,8 @@ type File = {
 };
 
 const CPU_LIMIT_PER_EXECUTION = process.env.CPU_LIMIT_PER_EXECUTION;
-const MEMORY_LIMIT_PER_EXECUTION = process.env.MEMORY_LIMIT_PER_EXECUTION ?? '1G';
+const COMPILE_HEADROOM_MB = parseInt(process.env.COMPILE_HEADROOM_MB || '1024');
+const PIDS_LIMIT_PER_EXECUTION = process.env.PIDS_LIMIT_PER_EXECUTION ?? '256';
 const ENABLE_NETWORK_IN_EXECUTION = process.env.ENABLE_NETWORK_IN_EXECUTION === 'true';
 const IMAGE_BASE = process.env.IMAGE_BASE || 'ghcr.io/42dotmk/colosseum-executioner-';
 const WORKDIR = process.env.WORKDIR || '_work';
@@ -139,8 +144,16 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
         extraArgs.push(`--cpus=${CPU_LIMIT_PER_EXECUTION}`);
       }
 
-      if (MEMORY_LIMIT_PER_EXECUTION) {
-        extraArgs.push(`--memory=${MEMORY_LIMIT_PER_EXECUTION}`);
+      const limits = resolveLimits(options, getServerCaps());
+      console.log(`Limits for this execution: ${limits.timeSeconds}s, ${limits.memoryMb}MB`);
+      // The container ceiling leaves headroom for compiling (g++ needs ~600MB); the run itself is held to
+      // MEMORY_LIMIT_MB by the runtime (ulimit -v). memory-swap equal to memory disables swap so the
+      // ceiling cannot be dodged.
+      const containerMemoryMb = limits.memoryMb + COMPILE_HEADROOM_MB;
+      extraArgs.push(`--memory=${containerMemoryMb}m`, `--memory-swap=${containerMemoryMb}m`);
+      extraArgs.push('-e', `EXECUTION_TIMEOUT=${limits.timeSeconds}`, '-e', `MEMORY_LIMIT_MB=${limits.memoryMb}`);
+      if (PIDS_LIMIT_PER_EXECUTION) {
+        extraArgs.push(`--pids-limit=${PIDS_LIMIT_PER_EXECUTION}`);
       }
 
       if (!ENABLE_NETWORK_IN_EXECUTION) {

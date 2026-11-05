@@ -200,6 +200,32 @@ const seedCourse = async (strapi: any, language: any, users: Record<string, any>
           ),
         );
       }
+      // One interactive problem (judge/interactor based) in the searching lecture
+      const interactiveTitle = 'Guess the number (interactive)';
+      if (lecture.number === 5 && !existingTitles.has(interactiveTitle)) {
+        const dir = path.join(strapi.dirs.app.root, 'seed', 'interactive');
+        const interactive = await strapi.documents('api::problem.problem').create({
+          data: {
+            title: interactiveTitle,
+            description: fs.readFileSync(path.join(dir, 'binary-search.md'), 'utf8'),
+            points: 200,
+            isInteractive: true,
+            interactorSource: fs.readFileSync(path.join(dir, 'binary-search.interactor.cpp'), 'utf8'),
+            event: event.documentId,
+          },
+          status: 'published',
+        });
+        // "N secret" -> the interactor answers "Accepted" when the secret is found within the query limit
+        const interactiveTests = ['16\n9', '1000\n42', '1000000\n1', '1000000\n1000000', '2\n2'];
+        await Promise.all(
+          interactiveTests.map((input, t) =>
+            strapi.documents('api::test-case.test-case').create({
+              data: { input, output: 'Accepted', hidden: t >= 1, locked: t >= 3, weight: t + 1, problem: interactive.documentId },
+              status: 'published',
+            }),
+          ),
+        );
+      }
       log(`lecture ${lecture.number}: ${lecture.problems.length} problems ensured`);
     }
 

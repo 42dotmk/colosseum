@@ -31,8 +31,42 @@ To test submitting, start the first event in the past, for example
 `SEED_FIRST_EVENT_START=2026-10-01T00:00:00Z npm run dev` on a fresh database
 (`docker compose -f docker-compose.q.yml down -v` resets it).
 
-`node scripts/verify-seed.mjs` and `node scripts/verify-multiuser.mjs` run security, grading and multi-user isolation checks against the running stack
-(`SOLUTION_FILE=<cpp file>` also submits and grades a solution).
+The course homework is 100 problems plus one interactive problem ("Guess the number") in the Lecture 5 event.
+
+### Execution limits
+
+Senatus sends the language's time (`defaultMaxCpuTime`, seconds) and memory (`defaultMaxMemory`, MB) limit with every job.
+The executioner applies the smaller of that request and what its own server allows, so a weaker server never promises more
+than it can give. Set the server capabilities on the executioner process:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `MAX_EXECUTION_TIME` | `10` | Highest time limit (seconds) this server accepts |
+| `MEMORY_LIMIT_PER_EXECUTION` | `1G` | Highest memory limit this server accepts (`512m`, `2G`, ...) |
+| `COMPILE_HEADROOM_MB` | `1024` | Extra container memory for compiling; the program itself is held to the memory limit |
+| `CPU_LIMIT_PER_EXECUTION` | unset | `docker --cpus` per execution |
+| `PIDS_LIMIT_PER_EXECUTION` | `256` | Process limit per execution |
+
+The participant's program runs as an unprivileged user and cannot read test inputs, sources or judge binaries.
+
+### End-to-end tests (Playwright)
+
+With the stack running and seeded (see above, with the first event in the past):
+
+```bash
+cd e2e
+npm install
+npx playwright install chromium
+npx playwright test                 # everything
+npx playwright test --project=api   # seed, security, grading, practice, snapshots, interactive
+npx playwright test --project=limits  # time and memory limits on servers with different capabilities
+npx playwright test --project=ui    # browser flows
+```
+
+The tests create their own events and problems through a temporary admin API token and remove them afterwards. Strapi
+rate-limits logins (5 per minute), so wait a minute between runs.
+
+GraphQL is disabled by default (it bypasses the REST sanitizers for hidden test cases); set `ENABLE_GRAPHQL=true` to opt in.
 
 ## Prerequisites
 

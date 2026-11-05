@@ -79,10 +79,18 @@ for (const d of ['senatus', 'executioner', 'lsp-proxy', 'web']) {
 }
 
 // ---------------------------------------------------------------- executioner image
+// The entrypoint is baked into the image, so rebuild whenever the runtime files change.
 const image = 'ghcr.io/42dotmk/colosseum-executioner-gcc:latest';
-if (spawnSync('docker', ['image', 'inspect', image], { stdio: 'ignore' }).status !== 0) {
-  say('building C++ runtime image (first run only)');
-  run('docker', ['build', '-t', image, '.'], path.join(root, 'executioner/runtimes/languages/gcc'));
+const gccDir = path.join(root, 'executioner/runtimes/languages/gcc');
+const runtimeHash = crypto.createHash('sha256');
+for (const f of fs.readdirSync(gccDir).sort()) {
+  runtimeHash.update(f).update(fs.readFileSync(path.join(gccDir, f)).toString().replace(/\r\n/g, '\n'));
+}
+const wantedHash = runtimeHash.digest('hex').slice(0, 16);
+const currentHash = spawnSync('docker', ['image', 'inspect', image, '--format', '{{ index .Config.Labels "colosseum.runtime-hash" }}'], { encoding: 'utf8' }).stdout?.trim();
+if (currentHash !== wantedHash) {
+  say('building C++ runtime image (first run or runtime files changed)');
+  run('docker', ['build', '-t', image, '--label', `colosseum.runtime-hash=${wantedHash}`, '.'], gccDir);
 }
 
 // ---------------------------------------------------------------- clangd check
