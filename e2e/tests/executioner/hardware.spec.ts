@@ -3,55 +3,10 @@ import { execSync } from 'node:child_process';
 import { execute, PROGRAMS } from '../../helpers/executioner';
 
 /**
- * Servers differ in speed. A time limit is only fair if it is measured against the server's own speed:
- * a slower server declares TIME_LIMIT_SCALE and gets proportionally more wall-clock time, while the limit
- * reported to the participant stays the same. Slower hardware is simulated with a CPU quota and, when
- * available, a different CPU architecture (arm64 under emulation).
+ * Different CPU architectures. Time is CPU time, so load never matters (see fairness.spec.ts); a CPU that is
+ * genuinely slower per instruction declares TIME_LIMIT_SCALE. arm64 under emulation is the slow architecture here.
  */
 const REF = { MAX_EXECUTION_TIME: '60', MEMORY_LIMIT_PER_EXECUTION: '2G' };
-const WORK = PROGRAMS.cpuWork(500_000_000); // about 0.7 s on a full-speed core
-
-test.describe('slower servers', () => {
-  let reference: number; // seconds the work takes on the full-speed server
-  let slowTime: number; // seconds it takes with half a CPU
-
-  test.beforeAll(async () => {
-    const r = await execute(WORK, { maxCpuTime: 30, maxMemory: 256 }, REF);
-    expect(r.passed, r.stderr).toBe(true);
-    reference = r.time!;
-    const s = await execute(WORK, { maxCpuTime: 60, maxMemory: 256 }, { ...REF, CPU_LIMIT_PER_EXECUTION: '0.5' });
-    expect(s.passed, s.stderr).toBe(true);
-    slowTime = s.time!;
-  });
-
-  test('a CPU quota really makes the same work slower', async () => {
-    expect(slowTime).toBeGreaterThan(reference * 1.5);
-  });
-
-  test('without a scale the slower server fails a limit the reference passes (unfair)', async () => {
-    const limit = Number((reference * 1.6).toFixed(2));
-    const onReference = await execute(WORK, { maxCpuTime: limit, maxMemory: 256 }, REF);
-    expect(onReference.passed, `limit ${limit}s: ${onReference.stderr}`).toBe(true);
-    const onSlow = await execute(WORK, { maxCpuTime: limit, maxMemory: 256 }, { ...REF, CPU_LIMIT_PER_EXECUTION: '0.5' });
-    expect(onSlow.passed).toBe(false);
-    expect(onSlow.stderr).toContain(`Execution exceeded ${limit}s`);
-  });
-
-  test('with TIME_LIMIT_SCALE the slower server gives the same verdict as the reference', async () => {
-    const limit = Number((reference * 1.6).toFixed(2));
-    const scale = Math.ceil((slowTime / reference) * 1.4 * 10) / 10;
-    const server = { ...REF, CPU_LIMIT_PER_EXECUTION: '0.5', TIME_LIMIT_SCALE: String(scale) };
-
-    const ok = await execute(WORK, { maxCpuTime: limit, maxMemory: 256 }, server);
-    expect(ok.passed, `limit ${limit}s x${scale}: ${ok.stderr}`).toBe(true);
-
-    // a program that is really too slow still fails, and the participant is told the unscaled limit
-    const tooSlow = await execute(PROGRAMS.busyFor(10_000), { maxCpuTime: limit, maxMemory: 256 }, server);
-    expect(tooSlow.passed).toBe(false);
-    expect(tooSlow.stderr).toContain(`Execution exceeded ${limit}s`);
-    expect(tooSlow.limitsLine).toContain(`deadline ${Number((limit * scale).toFixed(3))}s on this server`);
-  });
-});
 
 test.describe('another CPU architecture', () => {
   const IMAGE = 'ghcr.io/42dotmk/colosseum-executioner-arm64-gcc:latest';

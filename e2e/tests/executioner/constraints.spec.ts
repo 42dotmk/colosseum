@@ -100,11 +100,19 @@ test.describe('time limits', () => {
       expect(r.time).toBeLessThan(3.6);
     });
 
-    test('waiting counts as well: a program that sleeps 5 s is stopped at 3 s', async () => {
-      const r = await execute(PROGRAMS.sleepFor(5000), ask, REF);
-      expect(r.passed).toBe(false);
-      expect(r.stderr).toContain('Execution exceeded 3s');
-    });
+  });
+
+  test('the limit is CPU time: waiting does not use it up', async () => {
+    const r = await execute(PROGRAMS.sleepFor(2000), { maxCpuTime: 0.5, maxMemory: 256 }, REF);
+    expect(r.passed, r.stderr).toBe(true);
+    expect(r.time).toBeLessThan(0.1); // slept 2 s, used almost no CPU
+  });
+
+  test('a program that only waits is still stopped by the wall-clock safety net', async () => {
+    const r = await execute(PROGRAMS.sleepFor(60_000), { maxCpuTime: 0.5, maxMemory: 256 }, { ...REF, WALL_FACTOR: '1', WALL_SLACK_SECONDS: '1' });
+    expect(r.passed).toBe(false);
+    expect(r.stderr).toContain('Execution exceeded 0.5s');
+    expect(r.wallMs).toBeLessThan(40_000);
   });
 
   test('a program waiting for input that is not there does not hang the job', async () => {

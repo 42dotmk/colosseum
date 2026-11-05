@@ -6,14 +6,15 @@
  *
  *  1. A worker only accepts a job whose limits it can fully give (canSatisfy). Otherwise the job is passed
  *     on to another worker, so a weak server never silently shortens a limit.
- *  2. Limits are measured on the server's own speed: a slower server declares TIME_LIMIT_SCALE (for example 2
- *     for "half as fast as the reference machine") and the wall-clock deadline is scaled while the limit that
- *     is reported to the participant stays the same.
+ *  2. The time limit is a CPU time limit (user + system time the program itself used), so it does not change
+ *     with how busy the server is. A server whose CPU is genuinely slower than the reference declares
+ *     TIME_LIMIT_SCALE (for example 2 for "half as fast") and gets a proportionally larger CPU allowance, while
+ *     the limit reported to the participant stays the same.
  *
  * Server env:
  *   MAX_EXECUTION_TIME          highest time limit (seconds) this server accepts, default 10
  *   MEMORY_LIMIT_PER_EXECUTION  highest memory limit this server accepts (512m, 2G, ...), default 1G
- *   TIME_LIMIT_SCALE            wall-clock multiplier for slower hardware, default 1
+ *   TIME_LIMIT_SCALE            CPU time multiplier for a CPU that is slower than the reference, default 1
  *   EXECUTOR_NAME               name used in logs, default the host name
  *   DEFAULT_EXECUTION_TIME / DEFAULT_EXECUTION_MEMORY  used when a job does not state a limit (10 s / 256 MB)
  */
@@ -34,7 +35,7 @@ export type ServerCaps = {
 export type EffectiveLimits = {
   /** The limit as the participant sees it (seconds). */
   timeSeconds: number;
-  /** The wall-clock deadline enforced on this server: timeSeconds * timeScale. */
+  /** The CPU time limit enforced on this server: timeSeconds * timeScale. */
   enforcedTimeSeconds: number;
   memoryMb: number;
 };

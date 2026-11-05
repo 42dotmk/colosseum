@@ -48,18 +48,33 @@ executioner process:
 | `EXECUTOR_NAME` | host name | Name used in logs |
 | `MAX_EXECUTION_TIME` | `10` | Highest time limit (seconds) this server accepts |
 | `MEMORY_LIMIT_PER_EXECUTION` | `1G` | Highest memory limit this server accepts (`512m`, `2G`, ...) |
-| `TIME_LIMIT_SCALE` | `1` | Wall-clock multiplier for slower hardware (`2` = half as fast). The participant still sees the unscaled limit |
+| `TIME_LIMIT_SCALE` | `1` | CPU time multiplier for a CPU that is genuinely slower per instruction (`2` = half as fast, for example an emulated architecture). The participant still sees the unscaled limit |
 | `CPU_LIMIT_PER_EXECUTION` | `1` | `docker --cpus` per execution (`0` removes the quota) |
-| `PREFETCH_COUNT` | CPU cores | Jobs run at the same time. Time limits are wall-clock, so more jobs than cores would make verdicts depend on load |
+| `PREFETCH_COUNT` | half the CPU cores | Jobs run at the same time. Each job compiles in its container, so do not oversubscribe the cores |
+| `WALL_FACTOR`, `WALL_SLACK_SECONDS` | `4`, `5` | Safety net only: a program that waits without using the CPU is stopped after `limit * 4 + 5` seconds of wall-clock time |
+| `COMPILE_TIMEOUT_SECONDS` | `60` | A compile that does not finish is reported as a failure |
 | `COMPILE_HEADROOM_MB` | `1024` | Extra container memory for compiling; the program itself is held to the memory limit |
 | `PIDS_LIMIT_PER_EXECUTION` | `256` | Process limit per execution |
 | `OUTPUT_LIMIT_MB` | `4` | Output a program may write before it is stopped |
 | `MAX_JOB_WAIT_SECONDS` | `120` | How long a job may be passed on between servers that cannot satisfy it before it fails (a capable server may just be busy) |
 | `EXECUTION_PLATFORM`, `IMAGE_BASE` | unset | Run a runtime image for another architecture, for example `linux/arm64` |
 
-Notes: time limits are wall-clock, so keep concurrency (`PREFETCH_COUNT`) below what the machine can really run in parallel: on an overloaded server a trivial program can take seconds. Judging by CPU time instead is the recommended next step. The memory limit is an address-space limit (`ulimit -v`, like `RLIMIT_AS`), so reserved memory counts. Time is wall-clock,
-so waiting counts too. The participant's program runs as an unprivileged user and cannot read test inputs, sources or judge
-binaries. On an emulated architecture (QEMU) the memory limit is not enforced; a native arm64 server enforces it.
+How limits are judged:
+
+- **Time is CPU time** (user + system time of the program, all threads), measured by a small supervisor (`runner.c`) baked into the
+  runtime image. Queueing, CPU quotas, how many jobs run at once and waiting (sleep, blocked reads) do not change it, so the same
+  program gets the same verdict on an idle and on a busy server. Time spent compiling is not counted.
+- **What software cannot remove** is the speed of the hardware itself: shared caches, frequency scaling and hybrid (fast and slow)
+  cores change how long the same instructions take. On a hybrid laptop CPU the same program measured from 0.46 s to 1.05 s depending
+  on load and core type, and a software calibration (a benchmark run before the program) did not track it reliably. For fair
+  contests use judging hosts with homogeneous cores at a fixed frequency (no turbo or power saving) that run nothing else heavy,
+  keep `PREFETCH_COUNT` at most the number of cores, and set limits with a margin (2x or more) over the reference solution.
+  Instruction counters (perf) would be deterministic, but virtual machines usually do not expose them.
+- **Different machines**: a CPU that is slower per instruction declares `TIME_LIMIT_SCALE`, and jobs a server cannot fully serve are
+  left to other servers.
+- **Memory** is an address-space limit (`RLIMIT_AS`, like many judges), so reserved memory counts. It is the same on every
+  machine. On an emulated architecture (QEMU) it is not enforced; a native arm64 server enforces it.
+- The participant program runs as an unprivileged user and cannot read test inputs, sources or judge binaries.
 
 ### End-to-end tests (Playwright)
 
