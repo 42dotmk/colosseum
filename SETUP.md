@@ -32,6 +32,30 @@ npm install;
 npm run dev;
 ```
 
+### LSP Proxy (C++ IntelliSense)
+
+> Not part of either compose file. `docker compose up` does **not** start it, so C++ IntelliSense
+> shows a red **LSP error** badge in the editor until you run this.
+
+The competition editor's clangd IntelliSense goes browser → `ws://localhost:3030` → `lsp-proxy`.
+The proxy spawns `clangd` on demand and needs it on `PATH`:
+
+- Windows: `winget install LLVM.LLVM` (or `scoop install llvm`)
+- Debian/Ubuntu: `sudo apt install clangd`
+- macOS: `brew install llvm`
+
+Start it from its own terminal and leave it running:
+
+```bash
+cd lsp-proxy;
+npm install;
+npm start;        # or `npm run dev` to reload on change
+```
+
+It hard-codes port `3030` (no env override). Check it with `curl http://localhost:3030` →
+`clangd LSP proxy running`. If the badge stays red after starting it, reload the problem page and
+toggle IntelliSense off/on — the client does not retry a failed socket. See `lsp-proxy/README.md`.
+
 ### Executioner
 
 > Note: Node version should be v20
