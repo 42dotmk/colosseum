@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,7 +18,7 @@ import ProblemMode from './components/ProblemMode/ProblemMode';
 import LeftPanel from './components/LeftPanel/LeftPanel';
 import RightPanel from './components/RightPanel/RightPanel';
 import { DEFAULT_CODE, getScaffold, inferParameterNames } from './starterTemplates';
-import { codeDraftStorageKey, readCodeDraftState, writeCodeDraftState, type CodeDraftState } from './codeDrafts';
+import { useCodeDrafts } from './hooks/useCodeDrafts';
 
 export default function CompetePage() {
   const { problemId } = useParams();
@@ -64,74 +64,25 @@ export default function CompetePage() {
     [selectedLanguageObject?.codeName, parameterNames, problem?.testCases]
   );
 
-  const draftStorageKey = useMemo(
-    () => codeDraftStorageKey(user?.documentId, problemId),
-    [user?.documentId, problemId]
-  );
+  // Per-language buffers: storage, debounce and restore semantics live in the hook.
+  const {
+    storageKey: draftStorageKey,
+    getDraft,
+    getLastLanguage,
+    rememberDraft,
+    selectLanguage,
+    flushDrafts,
+  } = useCodeDrafts(user?.documentId, problemId);
 
-  const draftStateRef = useRef<CodeDraftState>({ version: 1, drafts: {} });
-  const draftPersistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const draftsHydratedRef = useRef(false);
-
-  const persistDrafts = useCallback((immediate = false) => {
-    if (!draftStorageKey) {
-      return;
-    }
-
-    if (draftPersistTimerRef.current) {
-      clearTimeout(draftPersistTimerRef.current);
-      draftPersistTimerRef.current = null;
-    }
-
-    if (immediate) {
-      writeCodeDraftState(draftStorageKey, draftStateRef.current);
-      return;
-    }
-
-    draftPersistTimerRef.current = setTimeout(() => {
-      draftPersistTimerRef.current = null;
-      writeCodeDraftState(draftStorageKey, draftStateRef.current);
-    }, 300);
-  }, [draftStorageKey]);
-
-  const storeDraft = useCallback((codeName: string | undefined, value: string, scaffoldVisible: string) => {
-    if (!codeName) {
-      return;
-    }
-
-    const state = draftStateRef.current;
-
-    if (!value.trim() || value === scaffoldVisible) {
-      delete state.drafts[codeName];
-    } else {
-      state.drafts[codeName] = value;
-    }
-
-    state.language = codeName;
-  }, []);
-
+  // A new storage key means a different user or problem: let the fresh session decide
+  // again what belongs in the editor (restored draft vs. starter scaffold).
   useEffect(() => {
-    draftStateRef.current = readCodeDraftState(draftStorageKey);
-    draftsHydratedRef.current = true;
     starterAppliedRef.current = false;
     initialCodeLoadedRef.current = false;
   }, [draftStorageKey]);
 
-  useEffect(() => {
-    return () => {
-      if (!draftsHydratedRef.current) {
-        return;
-      }
-
-      if (draftPersistTimerRef.current) {
-        clearTimeout(draftPersistTimerRef.current);
-        draftPersistTimerRef.current = null;
-      }
-
-      writeCodeDraftState(draftStorageKey, draftStateRef.current);
-    };
-  }, [draftStorageKey]);
-
+  // Autosave the active buffer. `rememberDraft` drops empty and untouched-scaffold
+  // buffers, so a restored draft always means the user actually typed something.
   useEffect(() => {
     if (!draftStorageKey || !selectedLanguageObject) {
       return;
@@ -141,9 +92,9 @@ export default function CompetePage() {
       return;
     }
 
-    storeDraft(selectedLanguageObject.codeName, code, scaffold.visible);
-    persistDrafts();
-  }, [code, draftStorageKey, selectedLanguageObject?.codeName, scaffold.visible, storeDraft, persistDrafts]);
+    rememberDraft(selectedLanguageObject.codeName, code, scaffold.visible);
+    flushDrafts();
+  }, [code, draftStorageKey, selectedLanguageObject?.codeName, scaffold.visible, rememberDraft, flushDrafts]);
 
   const getSubmissionExecutions = (submission: Submission) =>
     executionOverrides[submission.documentId]?.length
@@ -377,7 +328,7 @@ export default function CompetePage() {
         setProblem(loadedProblem);
         setLanguages(loadedLanguages);
 
-        const storedLanguage = draftStateRef.current.language;
+        const storedLanguage = getLastLanguage();
         const restoredLanguage = storedLanguage
           ? loadedLanguages.find((language) => language.codeName === storedLanguage)
           : undefined;
@@ -389,7 +340,7 @@ export default function CompetePage() {
             restoredNames,
             loadedProblem.testCases
           );
-          const restoredCode = draftStateRef.current.drafts[restoredLanguage.codeName];
+          const restoredCode = getDraft(restoredLanguage.codeName);
 
           starterAppliedRef.current = true;
           initialCodeLoadedRef.current = true;
@@ -409,7 +360,7 @@ export default function CompetePage() {
     };
 
     fetchData();
-  }, [problemId, isViewMode, isTrainingMode, draftStorageKey]);
+  }, [problemId, isViewMode, isTrainingMode, draftStorageKey, getLastLanguage, getDraft]);
 
   useEffect(() => {
     if (languages.length > 0 && !currentLanguage) {
@@ -602,14 +553,15 @@ export default function CompetePage() {
     }
 
     if (selectedLanguageObject) {
-      storeDraft(selectedLanguageObject.codeName, code, scaffold.visible);
+      rememberDraft(selectedLanguageObject.codeName, code, scaffold.visible);
     }
 
-    draftStateRef.current.language = nextLanguage.codeName;
-    persistDrafts(true);
+    // Persist synchronously: the switch below replaces the editor buffer, and a debounced
+    // write could otherwise be cancelled before the old language's text is on disk.
+    selectLanguage(nextLanguage.codeName);
 
     const nextScaffold = getScaffold(nextLanguage.codeName, parameterNames, problem?.testCases);
-    setCode(draftStateRef.current.drafts[nextLanguage.codeName] ?? nextScaffold.visible);
+    setCode(getDraft(nextLanguage.codeName) ?? nextScaffold.visible);
     setCurrentLanguage(nextLanguageId);
   };
 
