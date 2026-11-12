@@ -41,7 +41,7 @@ export default function TutorialDetailPage() {
       />
       <TutorialContent 
         content={tutorial.content} 
-        className="prose prose-sm prose-invert max-w-none"
+        className="prose-sm"
       />
     </div>
   );

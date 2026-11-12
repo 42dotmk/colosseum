@@ -12,7 +12,7 @@ interface MarkdownProps {
 export default function Markdown({ content, className = '' }: MarkdownProps) {
   return (
     <ReactMarkdown
-      className={`prose prose-invert max-w-none ${className}`}
+      className={`prose max-w-none dark:prose-invert ${className}`}
       remarkPlugins={[remarkGfm]}
       rehypePlugins={[rehypeRaw, rehypeHighlight]}
     >
