@@ -13,10 +13,8 @@ export default function ProblemTab({problemDescription,testCasesLength,publicTes
     <>
       <TabsContent value="description" className="mt-0 h-full">
         <div className="space-y-4">
-          {/* problem description */}
-          <div className="prose prose-sm prose-invert max-w-none">
-            <Markdown content={problemDescription || ''} />
-          </div>
+          {/* problem description - colors come from Markdown (light prose, dark:prose-invert) */}
+          <Markdown content={problemDescription || ''} className="prose-sm" />
 
           <Separator />
 

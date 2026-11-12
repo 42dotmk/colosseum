@@ -17,7 +17,7 @@ import * as http from 'http';
 import * as os from 'os';
 import * as path from 'path';
 import * as fs from 'fs';
-import { execSync } from 'child_process';
+import { execSync, spawnSync } from 'child_process';
 
 // Common Windows paths where clangd might be installed
 const CLANGD_CANDIDATES = [
@@ -43,10 +43,52 @@ function findClangd(): string {
   );
 }
 
+const GCC_CANDIDATES = [
+  'g++',
+  'C:\\MinGW\\bin\\g++.exe',
+  'C:\\msys64\\mingw64\\bin\\g++.exe',
+  'C:\\msys64\\ucrt64\\bin\\g++.exe',
+  '/usr/bin/g++',
+  '/usr/local/bin/g++',
+];
+
+type GccToolchain = { target: string; includes: string[] };
+
+function findGccToolchain(): GccToolchain | null {
+  for (const candidate of GCC_CANDIDATES) {
+    try {
+      const target = spawnSync(candidate, ['-dumpmachine'], { encoding: 'utf8' });
+      if (target.status !== 0) continue;
+      const probe = spawnSync(
+        candidate,
+        ['-E', '-v', '-x', 'c++', process.platform === 'win32' ? 'NUL' : '/dev/null'],
+        { encoding: 'utf8' },
+      );
+      const output = `${probe.stdout ?? ''}\n${probe.stderr ?? ''}`;
+      const start = output.indexOf('#include <...> search starts here:');
+      const end = output.indexOf('End of search list.');
+      if (start === -1 || end === -1) continue;
+      const includes = output
+        .slice(start + '#include <...> search starts here:'.length, end)
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0 && !line.startsWith('('));
+      if (includes.length === 0) continue;
+      return { target: (target.stdout ?? '').trim(), includes };
+    } catch { /* try next */ }
+  }
+  return null;
+}
+
+const gccToolchain = findGccToolchain();
+
 let clangdExe: string;
 try {
   clangdExe = findClangd();
   console.log(`[lsp-proxy] Using clangd: ${clangdExe}`);
+  if (gccToolchain) {
+    console.log(`[lsp-proxy] Using C++ stdlib: ${gccToolchain.target} (${gccToolchain.includes.length} include paths)`);
+  }
 } catch (err) {
   console.error('[lsp-proxy]', (err as Error).message);
   process.exit(1);
@@ -79,15 +121,26 @@ wss.on('connection', (ws: WebSocket, req: http.IncomingMessage) => {
   const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'clangd-'));
 
   // compile_flags.txt — add -I. so the local bits/stdc++.h shim is found
+  const compileFlags = [
+    '-std=c++17',
+    '-Wall',
+    '-I.',
+    '-include',
+    path.join(workDir, 'prefix.h'),
+  ];
+
+  if (gccToolchain) {
+    compileFlags.push(`--target=${gccToolchain.target}`);
+    for (const includePath of gccToolchain.includes) {
+      compileFlags.push('-isystem', includePath);
+    }
+  } else {
+    compileFlags.push('-I/usr/include', '-I/usr/local/include');
+  }
+
   fs.writeFileSync(
     path.join(workDir, 'compile_flags.txt'),
-    [
-      '-std=c++17',
-      '-Wall',
-      '-I.',
-      '-I/usr/include',
-      '-I/usr/local/include',
-    ].join('\n'),
+    compileFlags.join('\n'),
   );
 
   // Provide a bits/stdc++.h shim — GCC-only header used heavily in competitive programming
@@ -138,6 +191,14 @@ wss.on('connection', (ws: WebSocket, req: http.IncomingMessage) => {
       '#include <utility>',
       '#include <variant>',
       '#include <vector>',
+    ].join('\n'),
+  );
+  fs.writeFileSync(
+    path.join(workDir, 'prefix.h'),
+    [
+      '#pragma once',
+      '#include <bits/stdc++.h>',
+      'using namespace std;',
     ].join('\n'),
   );
   console.log(`[lsp-proxy] Created workspace: ${workDir}`);

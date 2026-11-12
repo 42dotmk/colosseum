@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { REST_URL } from '@/config';
 
 import type { Problem } from './types/Problem';
@@ -16,18 +17,21 @@ import Header from './components/Header/Header';
 import ProblemMode from './components/ProblemMode/ProblemMode';
 import LeftPanel from './components/LeftPanel/LeftPanel';
 import RightPanel from './components/RightPanel/RightPanel';
+import { DEFAULT_CODE, getScaffold, inferParameterNames } from './starterTemplates';
+import { useCodeDrafts } from './hooks/useCodeDrafts';
 
 export default function CompetePage() {
   const { problemId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const query = new URLSearchParams(location.search);
   const isViewMode = query.get('mode') === 'view';
   const isTrainingMode = query.get('mode') === 'training';
 
-  const [code, setCode] = useState('// Write your solution here\n');
+  const [code, setCode] = useState(DEFAULT_CODE);
   const [currentLanguage, setCurrentLanguage] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [problem, setProblem] = useState<Problem | null>(null);
@@ -40,6 +44,8 @@ export default function CompetePage() {
   const [executionOverrides, setExecutionOverrides] = useState<Record<string, Execution[]>>({});
 
   const initialCodeLoadedRef = useRef(false);
+  const starterAppliedRef = useRef(false);
+  const problemRef = useRef<Problem | null>(null);
   const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -48,6 +54,47 @@ export default function CompetePage() {
     (l: Language) => l.documentId === currentLanguage
   );
   const isInteractiveProblem = !!problem?.isInteractive;
+
+  const parameterNames = useMemo(
+    () => inferParameterNames(problem?.testCases),
+    [problem]
+  );
+  const scaffold = useMemo(
+    () => getScaffold(selectedLanguageObject?.codeName, parameterNames, problem?.testCases),
+    [selectedLanguageObject?.codeName, parameterNames, problem?.testCases]
+  );
+
+  // Per-language buffers: storage, debounce and restore semantics live in the hook.
+  const {
+    storageKey: draftStorageKey,
+    getDraft,
+    getLastLanguage,
+    rememberDraft,
+    selectLanguage,
+    flushDrafts,
+  } = useCodeDrafts(user?.documentId, problemId);
+
+  // A new storage key means a different user or problem: let the fresh session decide
+  // again what belongs in the editor (restored draft vs. starter scaffold).
+  useEffect(() => {
+    starterAppliedRef.current = false;
+    initialCodeLoadedRef.current = false;
+  }, [draftStorageKey]);
+
+  // Autosave the active buffer. `rememberDraft` drops empty and untouched-scaffold
+  // buffers, so a restored draft always means the user actually typed something.
+  useEffect(() => {
+    if (!draftStorageKey || !selectedLanguageObject) {
+      return;
+    }
+
+    if (!starterAppliedRef.current && !initialCodeLoadedRef.current) {
+      return;
+    }
+
+    rememberDraft(selectedLanguageObject.codeName, code, scaffold.visible);
+    flushDrafts();
+  }, [code, draftStorageKey, selectedLanguageObject?.codeName, scaffold.visible, rememberDraft, flushDrafts]);
 
   const getSubmissionExecutions = (submission: Submission) =>
     executionOverrides[submission.documentId]?.length
@@ -230,13 +277,20 @@ export default function CompetePage() {
         filteredSubmissions[0].code &&
         !initialCodeLoadedRef.current
       ) {
-        setCode(filteredSubmissions[0].code);
-
-        if (filteredSubmissions[0].language?.documentId) {
-          setCurrentLanguage(filteredSubmissions[0].language.documentId);
-        }
+        const latestSubmission = filteredSubmissions[0];
+        const storedUserCode = (latestSubmission.metadata as { userCode?: string } | undefined)?.userCode;
+        const submissionScaffold = getScaffold(
+          latestSubmission.language?.codeName,
+          inferParameterNames(problemRef.current?.testCases),
+          problemRef.current?.testCases
+        );
 
         initialCodeLoadedRef.current = true;
+        setCode(storedUserCode ?? submissionScaffold.extract(latestSubmission.code));
+
+        if (latestSubmission.language?.documentId) {
+          setCurrentLanguage(latestSubmission.language.documentId);
+        }
       }
 
       return filteredSubmissions;
@@ -265,9 +319,34 @@ export default function CompetePage() {
 
         const problemData = await problemRes.json();
         const languagesData = await languagesRes.json();
+        const loadedProblem = problemData.data || problemData;
+        const loadedLanguages: Language[] = Array.isArray(languagesData)
+          ? languagesData
+          : (languagesData.data || []);
 
-        setProblem(problemData.data || problemData);
-        setLanguages(Array.isArray(languagesData) ? languagesData : (languagesData.data || []));
+        problemRef.current = loadedProblem;
+        setProblem(loadedProblem);
+        setLanguages(loadedLanguages);
+
+        const storedLanguage = getLastLanguage();
+        const restoredLanguage = storedLanguage
+          ? loadedLanguages.find((language) => language.codeName === storedLanguage)
+          : undefined;
+
+        if (restoredLanguage) {
+          const restoredNames = inferParameterNames(loadedProblem.testCases);
+          const restoredScaffold = getScaffold(
+            restoredLanguage.codeName,
+            restoredNames,
+            loadedProblem.testCases
+          );
+          const restoredCode = getDraft(restoredLanguage.codeName);
+
+          starterAppliedRef.current = true;
+          initialCodeLoadedRef.current = true;
+          setCurrentLanguage(restoredLanguage.documentId);
+          setCode(restoredCode ?? restoredScaffold.visible);
+        }
 
         if (!isViewMode) {
           await fetchSubmissions(true);
@@ -281,13 +360,22 @@ export default function CompetePage() {
     };
 
     fetchData();
-  }, [problemId, isViewMode, isTrainingMode]);
+  }, [problemId, isViewMode, isTrainingMode, draftStorageKey, getLastLanguage, getDraft]);
 
   useEffect(() => {
     if (languages.length > 0 && !currentLanguage) {
       setCurrentLanguage(languages[0].documentId);
     }
   }, [languages, currentLanguage]);
+
+  useEffect(() => {
+    if (starterAppliedRef.current || initialCodeLoadedRef.current || !selectedLanguageObject) {
+      return;
+    }
+
+    starterAppliedRef.current = true;
+    setCode(scaffold.visible);
+  }, [selectedLanguageObject, scaffold]);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -453,6 +541,30 @@ export default function CompetePage() {
     };
   }, [submissions, executionIdsBySubmission, executionOverrides, toast, isViewMode]);
 
+  const handleLanguageChange = (nextLanguageId: string) => {
+    if (!nextLanguageId || nextLanguageId === currentLanguage) {
+      return;
+    }
+
+    const nextLanguage = languages.find((l: Language) => l.documentId === nextLanguageId);
+
+    if (!nextLanguage) {
+      return;
+    }
+
+    if (selectedLanguageObject) {
+      rememberDraft(selectedLanguageObject.codeName, code, scaffold.visible);
+    }
+
+    // Persist synchronously: the switch below replaces the editor buffer, and a debounced
+    // write could otherwise be cancelled before the old language's text is on disk.
+    selectLanguage(nextLanguage.codeName);
+
+    const nextScaffold = getScaffold(nextLanguage.codeName, parameterNames, problem?.testCases);
+    setCode(getDraft(nextLanguage.codeName) ?? nextScaffold.visible);
+    setCurrentLanguage(nextLanguageId);
+  };
+
   const handleSubmit = async () => {
     if (isViewMode) {
       toast({
@@ -487,9 +599,10 @@ export default function CompetePage() {
           data: {
             problem: problemId,
             language: currentLanguage,
-            code,
+            code: scaffold.compose(code),
             metadata: {
               mode: isTrainingMode ? 'practice' : 'competition',
+              userCode: code,
             },
             mode: isTrainingMode ? 'practice' : 'competition',
           },
@@ -590,7 +703,7 @@ export default function CompetePage() {
   return (
     <div className="h-[calc(100vh-7rem)] flex flex-col">
       <Header
-        languageProps={{selectedLanguageObject, currentLanguage, setCurrentLanguage, languages}}
+        languageProps={{selectedLanguageObject, currentLanguage, setCurrentLanguage: handleLanguageChange, languages}}
         problemProps={{isTrainingMode, isViewMode, problemTitle: problem.title, isInteractiveProblem}}
         handleSubmit={handleSubmit}
         isSubmitting={isSubmitting}
@@ -619,6 +732,7 @@ export default function CompetePage() {
           selectedLanguageObject={selectedLanguageObject}
           code={code}
           setCode={setCode}
+          defaultCode={scaffold.visible}
           handleSubmit={handleSubmit}
         />
       </div>

@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils"
 import { Execution } from "@/pages/CompetePage/types/Execution"
+import CopyButton from "../../../CopyButton";
 
 type ExecutionOutputProps = {
   isPassed: boolean,
@@ -13,8 +14,11 @@ export default function ExecutionOutput({
   return (
     <>
       <div>
-        <div className="text-xs text-muted-foreground mb-1">
-          Output
+        <div className="flex items-center justify-between mb-1">
+          <div className="text-xs text-muted-foreground">
+            Output
+          </div>
+          <CopyButton value={execution.stdout ?? ''} label="output" />
         </div>
         <pre
           className={cn(
@@ -30,8 +34,11 @@ export default function ExecutionOutput({
 
       {execution.stderr && isFailed && (
         <div>
-          <div className="text-xs text-destructive mb-1">
-            Error
+          <div className="flex items-center justify-between mb-1">
+            <div className="text-xs text-destructive">
+              Error
+            </div>
+            <CopyButton value={execution.stderr ?? ''} label="error output" />
           </div>
           <pre className="text-xs bg-destructive/10 text-destructive p-2 rounded font-mono overflow-x-auto">
             {execution.stderr}

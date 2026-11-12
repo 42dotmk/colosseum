@@ -7,9 +7,7 @@ interface TutorialContentProps {
 
 const TutorialContent = ({content, className} : TutorialContentProps) => {
     return (
-        <div className={className}>
-            <Markdown content={content || ''} />
-        </div>
+        <Markdown content={content || ''} className={className} />
     )
 }
 

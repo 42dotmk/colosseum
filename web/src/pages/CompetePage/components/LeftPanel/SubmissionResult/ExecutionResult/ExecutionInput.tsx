@@ -1,4 +1,5 @@
 import { Execution } from "@/pages/CompetePage/types/Execution"
+import CopyButton from "../../../CopyButton";
 
 type ExecutionInputProps = {
   execution: Execution,
@@ -11,8 +12,11 @@ export default function ExecutionInput({
   return (
     <>
       <div>
-        <div className="text-xs text-muted-foreground mb-1">
-          Input
+        <div className="flex items-center justify-between mb-1">
+          <div className="text-xs text-muted-foreground">
+            Input
+          </div>
+          <CopyButton value={execution.testCase?.input ?? ''} label="input" />
         </div>
         <pre className="text-xs bg-muted p-2 rounded font-mono overflow-x-auto">
           {execution.testCase?.input}
@@ -22,8 +26,11 @@ export default function ExecutionInput({
       {/* Here this feild may not always be needed, like if there are multiple solutions */}
       {!isInteractiveProblem && (
         <div>
-          <div className="text-xs text-muted-foreground mb-1">
-            Expected
+          <div className="flex items-center justify-between mb-1">
+            <div className="text-xs text-muted-foreground">
+              Expected
+            </div>
+            <CopyButton value={execution.testCase?.output ?? ''} label="expected output" />
           </div>
           <pre className="text-xs bg-muted p-2 rounded font-mono overflow-x-auto">
             {execution.testCase?.output}

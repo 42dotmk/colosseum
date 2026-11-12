@@ -4,9 +4,7 @@ export default function OverviewDescription({description}: { description: string
   return (
     <>
       {description ? (
-        <div className="prose prose-sm prose-invert max-w-none">
-          <Markdown content={description} />
-        </div>
+        <Markdown content={description} className="prose-sm" />
       ) : (
         <p className="text-muted-foreground text-sm">No description provided.</p>
       )}

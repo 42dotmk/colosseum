@@ -114,6 +114,21 @@ CSHARP_ID=$(curl -s -X POST "$BASE_URL/languages" \
 
 echo "Created C# language (ID: $CSHARP_ID)"
 
+CPP_ID=$(curl -s -X POST "$BASE_URL/languages" \
+  -H "Content-Type: application/json" \
+  -H "$AUTH_HEADER" \
+  -d '{
+    "data": {
+      "name": "C++",
+      "codeName": "cpp",
+      "entrypoint": "main.cpp",
+      "defaultMaxCpuTime": 10.0,
+      "defaultMaxMemory": 512
+    }
+  }' | jq -r '.data.id')
+
+echo "Created C++ language (ID: $CPP_ID)"
+
 # 2. Create a Problem
 echo "📝 Creating Problem: Two Sum..."
 
