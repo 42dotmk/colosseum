@@ -8,6 +8,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+// problem.md starts with a metadata line (difficulty stars and concepts) that is not part of the statement
+// (it looks like: **Difficulty:** ★☆☆ (easy) **Concepts:** `cout`, ...). It is removed together with the blank line after it.
+const stripMetadata = (md) => md.replace(/^\*\*Difficulty:\*\*.*\n(?:[ \t]*\n)?/m, '');
+
 const root = process.argv[2];
 if (!root) {
   console.error('Usage: node scripts/build-seed-data.mjs "<path to CPP Course>"');
@@ -44,7 +48,7 @@ for (const dir of fs.readdirSync(root).filter((d) => /^Lecture \d+/.test(d)).sor
       title: lesson.title.en,
       difficulty: lesson.difficulty,
       concepts: lesson.concepts,
-      description: fs.readFileSync(path.join(hwDir, 'problem.md'), 'utf8').replace(/\r\n/g, '\n'),
+      description: stripMetadata(fs.readFileSync(path.join(hwDir, 'problem.md'), 'utf8').replace(/\r\n/g, '\n')),
       tests,
     });
   }

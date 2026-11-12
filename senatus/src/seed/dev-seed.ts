@@ -171,7 +171,18 @@ const seedCourse = async (strapi: any, language: any, users: Record<string, any>
     {
       for (const p of lecture.problems) {
         const problemTitle = `${String(p.order).padStart(2, '0')}. ${p.title}`;
-        if (existingTitles.has(problemTitle)) continue;
+        const existing: any = existingProblems.find((e: any) => e.title === problemTitle);
+        if (existing) {
+          // Older seeds put a "Difficulty / Concepts" line at the top of the statement: drop it from problems that still have it
+          if (typeof existing.description === 'string' && /^\*\*Difficulty:\*\*/m.test(existing.description)) {
+            await strapi.documents('api::problem.problem').update({
+              documentId: existing.documentId,
+              data: { description: p.description },
+              status: 'published',
+            });
+          }
+          continue;
+        }
         const problem = await strapi.documents('api::problem.problem').create({
           data: {
             title: problemTitle,
