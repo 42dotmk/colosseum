@@ -21,7 +21,7 @@ then runs Senatus (Strapi), the Executioner, the LSP proxy and the web app. The 
 
 Enabled by `SEED_DEV_DATA=true` in `senatus/.env` (idempotent, runs on every Senatus bootstrap). It creates the admin, the users
 above, the C++ language and the C++ course homework (100 problems, English) as one event per lecture. The first event starts on
-`SEED_FIRST_EVENT_START` (default `2026-12-01`), each next one 14 days later, each lasting 14 days.
+`SEED_FIRST_EVENT_START` (default `2027-01-12T21:00:00+01:00`, that is Jan 12 21:00 CET), each next one 14 days later, each lasting 14 days.
 
 Per problem: test 1 is the visible sample (weight 1), test 2 is hidden (weight 2), test 3 is hidden and locked (weight 3).
 The data lives in `senatus/seed/cpp-course.json` and is generated from the course folder with

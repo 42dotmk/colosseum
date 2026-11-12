@@ -4,7 +4,7 @@
  *
  * Seeds: Strapi admin, participant users, role permissions, the C++ language and the
  * C++ course homework as one event per lecture (first event starts at
- * SEED_FIRST_EVENT_START, default 2026-12-01, each next one 14 days later).
+ * SEED_FIRST_EVENT_START, default 2027-01-12 21:00 CET, each next one 14 days later).
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -135,7 +135,7 @@ int main()
 `;
 
 const seedCourse = async (strapi: any, language: any, users: Record<string, any>) => {
-  const firstStart = new Date(process.env.SEED_FIRST_EVENT_START || '2026-12-01T00:00:00Z');
+  const firstStart = new Date(process.env.SEED_FIRST_EVENT_START || '2027-01-12T21:00:00+01:00');
   if (Number.isNaN(firstStart.getTime())) throw new Error('Invalid SEED_FIRST_EVENT_START');
 
   const courseFile = path.join(strapi.dirs.app.root, 'seed', 'cpp-course.json');
