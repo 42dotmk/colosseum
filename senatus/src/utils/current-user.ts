@@ -16,7 +16,13 @@ export const getCurrentUser = async (strapi: any, ctx: any) => {
 	}
 
 	const jwtService = strapi.plugin('users-permissions')?.service('jwt');
-	const token = jwtService?.getToken ? await jwtService.getToken(ctx) : null;
+	let token: any = null;
+	try {
+		token = jwtService?.getToken ? await jwtService.getToken(ctx) : null;
+	} catch {
+		// not a user JWT (for example an API token): no user, never a 500
+		token = null;
+	}
 	const tokenUserId = token?.id;
 
 	if (!tokenUserId) {
@@ -32,3 +38,6 @@ export const getCurrentUser = async (strapi: any, ctx: any) => {
 
 	return dbUser || null;
 };
+
+/** True when the request was authenticated with an admin-issued API token instead of a user JWT. */
+export const isApiTokenRequest = (ctx: any) => ctx.state?.auth?.strategy?.name === 'api-token';

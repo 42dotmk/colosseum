@@ -9,7 +9,7 @@ import {
 	canUserSeeInviteOnlyEvent,
 	isRegistrationOpenNow,
 } from '../../../utils/event-registration';
-import { getCurrentUser } from '../../../utils/current-user';
+import { getCurrentUser, isApiTokenRequest } from '../../../utils/current-user';
 
 type LeaderboardVisibilityMode = 'public_only_live' | 'full_live';
 
@@ -236,6 +236,10 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
 	async find(ctx) {
 		const user = await getCurrentUser(strapi, ctx);
 		if (!user) {
+			// Admin-issued API tokens are trusted server-to-server credentials: Strapi already enforced their permissions
+			if (isApiTokenRequest(ctx)) {
+			  return super.find(ctx);
+			}
 			return ctx.unauthorized('Authentication required');
 		}
 
@@ -263,6 +267,9 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
 	async findOne(ctx) {
 		const user = await getCurrentUser(strapi, ctx);
 		if (!user) {
+			if (isApiTokenRequest(ctx)) {
+			  return super.findOne(ctx);
+			}
 			return ctx.unauthorized('Authentication required');
 		}
 
@@ -447,11 +454,11 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
 				answeredAt: record.answeredAt || record.createdAt,
 				askedBy: {
 					documentId: record.user?.documentId,
-					displayName: record.user?.username || record.user?.email || 'participant',
+					displayName: record.user?.username || 'participant',
 				},
 				answeredBy: {
 					documentId: record.answeredBy?.documentId,
-					displayName: record.answeredBy?.username || record.answeredBy?.email || 'organizer',
+					displayName: record.answeredBy?.username || 'organizer',
 				},
 			})),
 		};
@@ -588,7 +595,7 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
 		);
 
 		const problemById = new Map(uniqueProblems.map((problem) => [problem.documentId, problem]));
-		const usersById = new Map<string, { documentId: string; username?: string; email?: string }>();
+		const usersById = new Map<string, { documentId: string; username?: string }>();
 
 		const byUserProblem = new Map<string, {
 			solved: boolean;
@@ -675,7 +682,7 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
 		}
 
 		const rows = new Map<string, {
-			user: { documentId: string; username?: string; email?: string; displayName: string };
+			user: { documentId: string; username?: string; displayName: string };
 			solvedCount: number;
 			totalTime: number;
 		}>();
@@ -687,14 +694,13 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
 
 			const [userId] = key.split('::');
 			const userRecord = usersById.get(userId);
-			const displayName = userRecord?.username || userRecord?.email || `user-${userId.slice(0, 8)}`;
+			const displayName = userRecord?.username || `user-${userId.slice(0, 8)}`;
 
 			if (!rows.has(userId)) {
 				rows.set(userId, {
 					user: {
 						documentId: userId,
 						username: userRecord?.username,
-						email: userRecord?.email,
 						displayName,
 					},
 					solvedCount: 0,
@@ -731,6 +737,13 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
 
 		if (!eventId) {
 			return ctx.badRequest('Missing event id');
+		}
+
+		// The route is not protected by the auth middleware (auth: false), so require a user here:
+		// the leaderboard lists participants and must not be readable anonymously.
+		const requester = await getCurrentUser(strapi, ctx);
+		if (!requester) {
+			return ctx.unauthorized('Authentication required');
 		}
 
 		const event = await strapi.documents('api::event.event').findOne({
@@ -889,7 +902,7 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
 			}
 		}
 
-		const usersById = new Map<string, { documentId: string; username?: string; email?: string }>();
+		const usersById = new Map<string, { documentId: string; username?: string }>();
 		submissions.forEach((submission) => {
 			if (submission.user?.documentId && !usersById.has(submission.user.documentId)) {
 				usersById.set(submission.user.documentId, submission.user);
@@ -905,13 +918,12 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
 				usersById.set(registration.user.documentId, {
 					documentId: registration.user.documentId,
 					username: registration.user.username,
-					email: registration.user.email,
 				});
 			}
 		});
 
 		const rows = new Map<string, {
-			user: { documentId: string; username?: string; email?: string; displayName: string };
+			user: { documentId: string; username?: string; displayName: string };
 			totalScore: number;
 			solvedCount: number;
 			totalTime: number;
@@ -922,14 +934,13 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
 		for (const [key, best] of bestByUserProblem.entries()) {
 			const [userId] = key.split('::');
 			const user = usersById.get(userId);
-			const displayName = user?.username || user?.email || `user-${userId.slice(0, 8)}`;
+			const displayName = user?.username || `user-${userId.slice(0, 8)}`;
 
 			if (!rows.has(userId)) {
 				rows.set(userId, {
 					user: {
 						documentId: userId,
 						username: user?.username,
-						email: user?.email,
 						displayName,
 					},
 					totalScore: 0,
@@ -966,14 +977,12 @@ export default factories.createCoreController('api::event.event', ({ strapi }) =
 
 			const displayName =
 				registrationUser.username ||
-				registrationUser.email ||
 				`user-${registrationUser.documentId.slice(0, 8)}`;
 
 			rows.set(registrationUser.documentId, {
 				user: {
 					documentId: registrationUser.documentId,
 					username: registrationUser.username,
-					email: registrationUser.email,
 					displayName,
 				},
 				totalScore: 0,

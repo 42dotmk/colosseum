@@ -4,11 +4,15 @@ import cp from 'child_process';
 import { v4 } from 'uuid';
 
 import { readFile, writeFile } from 'fs/promises';
+import { getServerCaps, resolveLimits } from './limits';
 
 type LanguageOptions = {
-  [key: string]: string | undefined;
+  [key: string]: string | number | null | undefined;
   language: string;
   entrypointFile: string;
+  // Requested limits (from the language). Capped by this server's capabilities, see limits.ts
+  maxCpuTime?: number | string | null;
+  maxMemory?: number | string | null;
   // Interactive problem support
   interactive?: string; // '1' when interactive
   interactorSource?: string;
@@ -22,8 +26,19 @@ type File = {
   metadata?: any;
 };
 
-const CPU_LIMIT_PER_EXECUTION = process.env.CPU_LIMIT_PER_EXECUTION;
-const MEMORY_LIMIT_PER_EXECUTION = process.env.MEMORY_LIMIT_PER_EXECUTION ?? '1G';
+// One core per execution by default, with one concurrent job per core (see index.ts), so executions do not
+// steal CPU from each other (a compile in one container must not slow the timed run in another).
+// Set to 0 to remove the quota.
+const CPU_LIMIT_PER_EXECUTION = (process.env.CPU_LIMIT_PER_EXECUTION ?? '1') === '0' ? undefined : (process.env.CPU_LIMIT_PER_EXECUTION ?? '1');
+const COMPILE_HEADROOM_MB = parseInt(process.env.COMPILE_HEADROOM_MB || '1024');
+const PIDS_LIMIT_PER_EXECUTION = process.env.PIDS_LIMIT_PER_EXECUTION ?? '256';
+// Safety net for programs that wait without using the CPU (sleep, blocked read). The verdict itself is on CPU time.
+const WALL_FACTOR = Number(process.env.WALL_FACTOR || '4');
+const WALL_SLACK_SECONDS = Number(process.env.WALL_SLACK_SECONDS || '5');
+const COMPILE_TIMEOUT_SECONDS = process.env.COMPILE_TIMEOUT_SECONDS || '60';
+const OUTPUT_LIMIT_MB = parseInt(process.env.OUTPUT_LIMIT_MB || '4');
+// Optional: run the runtime image for another CPU architecture (for example linux/arm64, emulated or native)
+const PLATFORM = process.env.EXECUTION_PLATFORM;
 const ENABLE_NETWORK_IN_EXECUTION = process.env.ENABLE_NETWORK_IN_EXECUTION === 'true';
 const IMAGE_BASE = process.env.IMAGE_BASE || 'ghcr.io/42dotmk/colosseum-executioner-';
 const WORKDIR = process.env.WORKDIR || '_work';
@@ -139,8 +154,28 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
         extraArgs.push(`--cpus=${CPU_LIMIT_PER_EXECUTION}`);
       }
 
-      if (MEMORY_LIMIT_PER_EXECUTION) {
-        extraArgs.push(`--memory=${MEMORY_LIMIT_PER_EXECUTION}`);
+      const limits = resolveLimits(options, getServerCaps());
+      console.log(`Limits for this execution: ${limits.timeSeconds}s, ${limits.memoryMb}MB (deadline ${limits.enforcedTimeSeconds}s on this server)`);
+      // The container ceiling leaves headroom for compiling (g++ needs ~600MB); the run itself is held to
+      // MEMORY_LIMIT_MB by the runtime (RLIMIT_AS, set by /exc/runner). memory-swap equal to memory disables
+      // swap so the ceiling cannot be dodged.
+      const containerMemoryMb = limits.memoryMb + COMPILE_HEADROOM_MB;
+      extraArgs.push(`--memory=${containerMemoryMb}m`, `--memory-swap=${containerMemoryMb}m`);
+      // EXECUTION_TIMEOUT is the CPU time limit on this server (scaled for its speed); the verdict is on CPU time,
+      // so it does not depend on how busy the machine is. TIME_LIMIT_DISPLAY is the limit the participant is told about. OUTPUT_LIMIT_MB caps what a program may write to stdout.
+      extraArgs.push(
+        '-e', `EXECUTION_TIMEOUT=${limits.enforcedTimeSeconds}`,
+        '-e', `TIME_LIMIT_DISPLAY=${limits.timeSeconds}`,
+        '-e', `MEMORY_LIMIT_MB=${limits.memoryMb}`,
+        '-e', `WALL_TIMEOUT=${Number((limits.enforcedTimeSeconds * WALL_FACTOR + WALL_SLACK_SECONDS).toFixed(3))}`,
+        '-e', `COMPILE_TIMEOUT=${COMPILE_TIMEOUT_SECONDS}`,
+        '-e', `OUTPUT_LIMIT_MB=${OUTPUT_LIMIT_MB}`,
+      );
+      if (PLATFORM) {
+        extraArgs.push(`--platform=${PLATFORM}`);
+      }
+      if (PIDS_LIMIT_PER_EXECUTION) {
+        extraArgs.push(`--pids-limit=${PIDS_LIMIT_PER_EXECUTION}`);
       }
 
       if (!ENABLE_NETWORK_IN_EXECUTION) {
@@ -225,10 +260,11 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
 
           let parsedTime = null;
           if (time) {
-            const timeSplits = time.split("\n").map((t) => t.trim()).filter(x => x).map(x => x.split("\t"));
-            const [ realTime ] = timeSplits;
-            parsedTime = parseDuration(realTime[1]);
-            if (!parsedTime) {
+            // The runtime writes the CPU seconds the program used, for example "0.123"
+            const plain = time.trim().match(/^\d+(?:\.\d+)?$/);
+            if (plain) {
+              parsedTime = Number(plain[0]);
+            } else {
               console.error(`Failed to parse time from ${time}`);
             }
           }
@@ -237,6 +273,8 @@ export const execute = async (files: File[], input: File[], options: LanguageOpt
             stdout: stdout.toString(),
             stderr: stderr.toString(),
             time: parsedTime,
+            // peak resident memory of the program in MB, reported next to the time
+            memory: Number((await readIfExists(path.resolve(path.join(outputDir, `${inp.filename}.mem`)))).trim()) || null,
             metadata: inp.metadata,
           });
         }

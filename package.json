@@ -7,7 +7,9 @@
   },
   "scripts": {
     "prepareClientHusky": "husky client/.husky",
-    "prepareSenatusHusky": "husky senatus/.husky"
+    "prepareSenatusHusky": "husky senatus/.husky",
+    "dev": "node scripts/dev.mjs",
+    "seed:build": "node scripts/build-seed-data.mjs"
   },
   "dependencies": {
     "react-syntax-highlighter": "^16.1.1"

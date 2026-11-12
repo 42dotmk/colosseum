@@ -1,6 +1,19 @@
 #!/bin/bash
 
-TIMEOUT=${EXECUTION_TIMEOUT:-10}
+TIMEOUT=${EXECUTION_TIMEOUT:-10}          # CPU seconds the program may use (judged by /exc/runner)
+WALL_TIMEOUT=${WALL_TIMEOUT:-60}          # safety net for programs that wait without using the CPU
+COMPILE_TIMEOUT=${COMPILE_TIMEOUT:-60}    # compiling is not timed against the participant, but must end
+
+# The participant's program runs through /exc/runner: as an unprivileged user ("nobody") and judged on CPU
+# time, so the verdict does not depend on how busy the machine is. Inputs (for interactive problems they
+# contain the secret), sources and outputs are root-only, so the program cannot read them.
+# usage: run_limited <time file> <program and arguments...>
+run_limited() {
+  local timeFile="$1"; shift
+  /exc/runner --cpu "${TIMEOUT}" --wall "${WALL_TIMEOUT}" --mem "${MEMORY_LIMIT_MB:-0}" --fsize "${OUTPUT_LIMIT_MB:-0}" \
+    --time-file "${timeFile}" --mem-file "${timeFile%.time}.mem" --uid 65534 -- "$@"
+}
+chmod 700 input src output 2>/dev/null
 
 if [ "${INTERACTIVE}" = "1" ]; then
   # ---------------------------------------------------------------------------
@@ -42,6 +55,9 @@ if [ "${INTERACTIVE}" = "1" ]; then
     exit 1
   fi
 
+  # judge binaries are root-only as well
+  chmod 700 interactor checker 2>/dev/null
+
   files=($(find input -type f -maxdepth 1))
   for inputFile in "${files[@]}"; do
     filename="${inputFile:6}"
@@ -62,17 +78,17 @@ if [ "${INTERACTIVE}" = "1" ]; then
     set -o pipefail
     # Start a single interactor process and tee its replies so we can display
     # the HIGHER/LOWER/FOUND transcript in the UI.
-    timeout "${TIMEOUT}" ./interactor "${inputFile}" \
+    timeout "${WALL_TIMEOUT}" ./interactor "${inputFile}" \
       > >(tee "${INT_OUT_FILE}" >"${INT_TO_SOL}") \
       <"${SOL_TO_INT}" \
       2>"output/${filename}.int_stderr" &
     INT_PID=$!
 
-    { time (timeout "${TIMEOUT}" ./solution \
+    run_limited "output/${filename}.time" ./solution \
       <"${INT_TO_SOL}" \
       2>"output/${filename}.stderr" \
-      | tee "${USER_OUT_FILE}" >"${SOL_TO_INT}"); } 2>"output/${filename}.time"
-    SOL_EXIT=$?
+      | tee "${USER_OUT_FILE}" >"${SOL_TO_INT}"
+    SOL_EXIT=${PIPESTATUS[0]}
     set +o pipefail
 
     wait "${INT_PID}" 2>/dev/null
@@ -90,12 +106,12 @@ if [ "${INTERACTIVE}" = "1" ]; then
     INT_OUT=$(cat "${INT_OUT_FILE}" 2>/dev/null || echo "")
     rm -f "${INT_OUT_FILE}"
 
-    if [ "${SOL_EXIT}" -eq 124 ]; then
+    if [ "${SOL_EXIT}" -eq 124 ] || [ "${SOL_EXIT}" -eq 125 ]; then
       echo "Wrong Answer" > "output/${filename}.stdout"
-      echo "Time Limit Exceeded (solution exceeded ${TIMEOUT}s)" >> "output/${filename}.stderr"
+      echo "Time Limit Exceeded (solution exceeded ${TIME_LIMIT_DISPLAY:-$TIMEOUT}s)" >> "output/${filename}.stderr"
     elif [ "${INT_EXIT}" -eq 124 ]; then
       echo "Wrong Answer" > "output/${filename}.stdout"
-      echo "Time Limit Exceeded (interactor exceeded ${TIMEOUT}s)" >> "output/${filename}.stderr"
+      echo "Time Limit Exceeded (interactor waited more than ${WALL_TIMEOUT}s)" >> "output/${filename}.stderr"
     elif [ "${INT_EXIT}" -eq 0 ]; then
       echo "Accepted" > "output/${filename}.stdout"
     else
@@ -142,7 +158,10 @@ else
   # ---------------------------------------------------------------------------
   # Standard non-interactive mode (unchanged)
   # ---------------------------------------------------------------------------
-  ERROR=$(g++ -O2 -static src/main.cpp -o ./main 2>&1)
+  ERROR=$(timeout "${COMPILE_TIMEOUT}" g++ -O2 -static src/main.cpp -o ./main 2>&1)
+  if [ -z "$ERROR" ] && [ ! -x ./main ]; then
+    ERROR="Compilation did not finish within ${COMPILE_TIMEOUT}s"
+  fi
 
   files=($(find input -type f -maxdepth 1))
   for inputFile in "${files[@]}"; do
@@ -153,11 +172,20 @@ else
       echo "Compilation error:\\n $ERROR" > "output/$filename.stderr"
       continue
     fi
-    { time (cat "${inputFile}" | timeout "${TIMEOUT}" ./main 1>"output/${filename}.stdout" 2>"output/${filename}.stderr"); } 2>"output/${filename}.time"
-    EXIT_CODE=$?
+    cat "${inputFile}" | run_limited "output/${filename}.time" ./main 1>"output/${filename}.stdout" 2>"output/${filename}.stderr"
+    EXIT_CODE=${PIPESTATUS[1]}
     echo "Run resulted in $EXIT_CODE"
     if [ $EXIT_CODE -eq 124 ]; then
-      echo "Execution exceeded ${TIMEOUT}s" > "output/${filename}.stderr"
+      echo "Execution exceeded ${TIME_LIMIT_DISPLAY:-$TIMEOUT}s" > "output/${filename}.stderr"
+    fi
+    if [ $EXIT_CODE -eq 125 ]; then
+      echo "Execution exceeded ${TIME_LIMIT_DISPLAY:-$TIMEOUT}s (the program kept waiting without doing work)" > "output/${filename}.stderr"
+    fi
+    if [ $EXIT_CODE -eq 153 ]; then
+      echo "Output limit exceeded (${OUTPUT_LIMIT_MB:-?}MB)" > "output/${filename}.stderr"
+    fi
+    if [ $EXIT_CODE -eq 137 ] || grep -q "bad_alloc" "output/${filename}.stderr" 2>/dev/null; then
+      echo "Memory limit exceeded (${MEMORY_LIMIT_MB:-?}MB)" > "output/${filename}.stderr"
     fi
   done
 fi

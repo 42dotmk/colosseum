@@ -4,10 +4,17 @@
 
 import { factories } from '@strapi/strapi'
 import { canUserRegisterForEvent } from '../../../utils/event-registration';
-import { getCurrentUser } from '../../../utils/current-user';
+import { getCurrentUser, isApiTokenRequest } from '../../../utils/current-user';
 
-const sanitizeProblemTestCases = (problem: any) => {
-	if (!problem || !Array.isArray(problem.testCases)) {
+const sanitizeProblemTestCases = (rawProblem: any) => {
+	if (!rawProblem) {
+		return rawProblem;
+	}
+
+	// Judge-side code must never reach participants (checker/interactor reveal how answers are validated)
+	const problem = { ...rawProblem, interactorSource: undefined, checkerSource: undefined };
+
+	if (!Array.isArray(problem.testCases)) {
 		return problem;
 	}
 
@@ -51,9 +58,73 @@ const isUserRegisteredForEvent = (registrations: any[], user: any) =>
 	});
 
 export default factories.createCoreController('api::problem.problem', ({ strapi }) => ({
+	/**
+	 * Listing must not leak problem statements the user could not open via findOne:
+	 * problems of events that have not started, or of running events the user is not registered for.
+	 * Ended events stay readable (practice mode).
+	 */
+	async find(ctx) {
+		const user = await getCurrentUser(strapi, ctx);
+		if (!user) {
+			// Admin-issued API tokens are trusted server-to-server credentials: Strapi already enforced their permissions
+			if (isApiTokenRequest(ctx)) {
+			  return super.find(ctx);
+			}
+			return ctx.unauthorized('Authentication required');
+		}
+
+		const response = (await super.find(ctx)) as any;
+		const entries: any[] = Array.isArray(response?.data) ? response.data : [];
+		if (entries.length === 0) {
+			return response;
+		}
+
+		const withEvents = await strapi.documents('api::problem.problem').findMany({
+			filters: { documentId: { $in: entries.map((entry) => entry.documentId) } },
+			populate: ['event'],
+			pagination: { page: 1, pageSize: 10000 },
+		});
+		const eventByProblem = new Map<string, any>(
+			(withEvents || []).map((problem: any) => [problem.documentId, problem.event]),
+		);
+
+		const registrations = await strapi.documents('api::event-registration.event-registration').findMany({
+			filters: { user: { documentId: user.documentId } },
+			populate: ['event'],
+			pagination: { page: 1, pageSize: 10000 },
+		});
+		const registeredEventIds = new Set(
+			(registrations || []).map((registration: any) => registration.event?.documentId).filter(Boolean),
+		);
+
+		const now = Date.now();
+		response.data = entries.filter((entry) => {
+			const event = eventByProblem.get(entry.documentId);
+			if (!event?.documentId) {
+				return false;
+			}
+			if (event.start && new Date(event.start).getTime() > now) {
+				return false;
+			}
+			if (event.end && new Date(event.end).getTime() < now) {
+				return true;
+			}
+			return registeredEventIds.has(event.documentId);
+		}).map((entry) => sanitizeProblemTestCases(entry));
+
+		if (response.meta?.pagination) {
+			response.meta.pagination.total = response.data.length;
+		}
+
+		return response;
+	},
+
 	async findOne(ctx) {
 		const user = await getCurrentUser(strapi, ctx);
 		if (!user) {
+			if (isApiTokenRequest(ctx)) {
+			  return super.findOne(ctx);
+			}
 			return ctx.unauthorized('Authentication required');
 		}
 

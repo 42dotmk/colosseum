@@ -119,7 +119,7 @@ export default function CompetePage() {
       };
 
       const response = await fetch(
-        `${REST_URL}/executions?filters[submission][documentId][$eq]=${submissionId}&populate[testCase]=*&sort=createdAt:asc`,
+        `${REST_URL}/executions?filters[submission][documentId][$eq]=${submissionId}&populate[testCase]=true&sort=createdAt:asc`,
         { headers }
       );
 

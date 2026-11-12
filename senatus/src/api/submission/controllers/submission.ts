@@ -5,7 +5,7 @@
 import { connect } from '@colosseum/queue';
 import { factories } from '@strapi/strapi'
 import { canUserRegisterForEvent, normalizeComparableIdentifiers } from '../../../utils/event-registration';
-import { getCurrentUser } from '../../../utils/current-user';
+import { getCurrentUser, isApiTokenRequest } from '../../../utils/current-user';
 
 let queueClientPromise: Promise<Awaited<ReturnType<typeof connect>>> | null = null;
 
@@ -297,6 +297,10 @@ export default factories.createCoreController('api::submission.submission', ({ s
   async find(ctx) {
     const user = await getCurrentUser(strapi, ctx);
     if (!user) {
+      // Admin-issued API tokens are trusted server-to-server credentials: Strapi already enforced their permissions
+      if (isApiTokenRequest(ctx)) {
+        return super.find(ctx);
+      }
       return ctx.unauthorized('Authentication required');
     }
 
@@ -358,6 +362,9 @@ export default factories.createCoreController('api::submission.submission', ({ s
   async findOne(ctx) {
     const user = await getCurrentUser(strapi, ctx);
     if (!user) {
+      if (isApiTokenRequest(ctx)) {
+        return super.findOne(ctx);
+      }
       return ctx.unauthorized('Authentication required');
     }
 
@@ -528,6 +535,10 @@ export default factories.createCoreController('api::submission.submission', ({ s
         options: {
           language: submission.language.codeName,
           entrypointFile: submission.language.entrypoint,
+          // Requested limits; the executioner caps them to what its server can offer
+          // Always concrete, so every executioner applies the same limits (defaults from the platform, not the server)
+          maxCpuTime: submission.language.defaultMaxCpuTime ?? Number(process.env.DEFAULT_EXECUTION_TIME ?? 10),
+          maxMemory: submission.language.defaultMaxMemory ?? Number(process.env.DEFAULT_EXECUTION_MEMORY ?? 256),
           ...(isInteractiveProblem(problem) ? {
             interactive: '1',
             interactorSource: (problem as any).interactorSource || '',

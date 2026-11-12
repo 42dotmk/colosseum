@@ -4,6 +4,7 @@ WORKDIR /exc/
 
 ADD . .
 
-RUN sed -i 's/\r$//' /exc/entrypoint.sh && chmod +x /exc/entrypoint.sh
+# runner.c is the supervisor that judges a program on CPU time (see the header of that file)
+RUN sed -i 's/\r$//' /exc/entrypoint.sh /exc/runner.c && chmod +x /exc/entrypoint.sh && gcc -O2 -o /exc/runner /exc/runner.c -lm
 
 ENTRYPOINT ["/exc/entrypoint.sh"]
